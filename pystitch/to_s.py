@@ -1,4 +1,5 @@
 import ast
+import base64
 
 from s_expression_parser import Pair, nil, Renderer, parse, ParserConfig
 
@@ -75,7 +76,7 @@ def s_exp_to_pair(x):
     if isinstance(x, int):
         return f"i{x}"
     if isinstance(x, str):
-        return repr(x)
+        return "s" + base64.b64encode(x.encode("utf-8")).decode("utf-8")
     raise ValueError(f"Unsupported: {type(x)}")
 
 
@@ -93,8 +94,8 @@ def pair_to_s_exp(x):
         return int(x[1:])
     if x.startswith("f"):
         return float(x[1:])
-    if x[0] in "'\"":
-        return ast.literal_eval(x)
+    if x.startswith("s"):
+        return base64.b64decode(x[1:].encode("utf-8")).decode("utf-8")
     return getattr(ast, x)
 
 
