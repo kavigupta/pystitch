@@ -3,23 +3,26 @@ import ast
 from s_expression_parser import Pair, nil, Renderer, parse, ParserConfig
 
 
-def field_is_body(f):
+def field_is_body(t, f):
+    assert isinstance(t, type)
+    if t == ast.IfExp:
+        return False # not body of statements
     return f in {"body", "orelse", "finalbody"}
 
 
 def to_list_s_expr(x, is_body=False):
     if is_body:
-        assert isinstance(x, list)
+        assert isinstance(x, list), str(x)
         if not x:
             return ["empty"]
         x = [to_list_s_expr(x) for x in x]
         result = x.pop()
         while x:
-            result = [";", x.pop(), result]
+            result = ["semi", x.pop(), result]
         return result
     if isinstance(x, ast.AST):
         return [type(x)] + [
-            to_list_s_expr(getattr(x, f), field_is_body(f)) for f in x._fields
+            to_list_s_expr(getattr(x, f), field_is_body(type(x), f)) for f in x._fields
         ]
     if isinstance(x, list):
         return [to_list_s_expr(x) for x in x]
@@ -32,7 +35,7 @@ def to_python(x, is_body=False):
     if is_body:
         if x == ["empty"]:
             return []
-        elif isinstance(x, list) and x[0] == ";":
+        elif isinstance(x, list) and x[0] == "semi":
             _, first, second = x
             return to_python(first, True) + to_python(second, True)
         else:
@@ -42,7 +45,7 @@ def to_python(x, is_body=False):
             t, *x = x
             f = t._fields
             assert len(x) == len(f)
-            x = t(*[to_python(x, field_is_body(f)) for x, f in zip(x, f)])
+            x = t(*[to_python(x, field_is_body(t, f)) for x, f in zip(x, f)])
             x.lineno = 0
             return x
         return [to_python(x) for x in x]
@@ -63,9 +66,9 @@ def s_exp_to_pair(x):
         return list_to_pair(x)
     if isinstance(x, type):
         return x.__name__
-    if x in {";", "empty"}:
+    if x in {"semi", "empty"}:
         return x
-    if x in {True, False, None}:
+    if x is True or x is False or x is None:
         return str(x)
     if isinstance(x, float):
         return f"f{x}"
@@ -83,8 +86,8 @@ def pair_to_s_exp(x):
         return [pair_to_s_exp(x.car), *pair_to_s_exp(x.cdr)]
     assert isinstance(x, str), str(type(x))
     if x in {"True", "False", "None"}:
-        return None
-    if x in {";", "empty"}:
+        return ast.literal_eval(x)
+    if x in {"semi", "empty"}:
         return x
     if x.startswith("i"):
         return int(x[1:])
