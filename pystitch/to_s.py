@@ -11,7 +11,7 @@ def to_list_s_expr(x, is_body=False):
     if is_body:
         assert isinstance(x, list)
         if not x:
-            return ["pass"]
+            return ["empty"]
         x = [to_list_s_expr(x) for x in x]
         result = x.pop()
         while x:
@@ -30,7 +30,7 @@ def to_list_s_expr(x, is_body=False):
 
 def to_python(x, is_body=False):
     if is_body:
-        if x == ["pass"]:
+        if x == ["empty"]:
             return []
         elif isinstance(x, list) and x[0] == ";":
             _, first, second = x
@@ -63,10 +63,10 @@ def s_exp_to_pair(x):
         return list_to_pair(x)
     if isinstance(x, type):
         return x.__name__
-    if x in {";", "pass"}:
+    if x in {";", "empty"}:
         return x
-    if x is None:
-        return "None"
+    if x in {True, False, None}:
+        return str(x)
     if isinstance(x, float):
         return f"f{x}"
     if isinstance(x, int):
@@ -82,9 +82,9 @@ def pair_to_s_exp(x):
     if isinstance(x, Pair):
         return [pair_to_s_exp(x.car), *pair_to_s_exp(x.cdr)]
     assert isinstance(x, str), str(type(x))
-    if x == "None":
+    if x in {"True", "False", "None"}:
         return None
-    if x in {";", "pass"}:
+    if x in {";", "empty"}:
         return x
     if x.startswith("i"):
         return int(x[1:])
