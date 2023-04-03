@@ -29,7 +29,7 @@ def to_list_s_expr(x, is_body=False):
         ]
     if isinstance(x, list):
         return [to_list_s_expr(x) for x in x]
-    if x is None or isinstance(x, (str, int, float)):
+    if x is None or isinstance(x, (str, int, float, bytes)):
         return x
     raise ValueError(f"Unsupported node {x}")
 
@@ -79,6 +79,8 @@ def s_exp_to_pair(x):
         return f"i{x}"
     if isinstance(x, str):
         return "s" + base64.b64encode(x.encode("utf-8")).decode("utf-8")
+    if isinstance(x, bytes):
+        return "b" + base64.b64encode(x).decode("utf-8")
     raise ValueError(f"Unsupported: {type(x)}")
 
 
@@ -98,6 +100,8 @@ def pair_to_s_exp(x):
         return float(x[1:])
     if x.startswith("s"):
         return base64.b64decode(x[1:].encode("utf-8")).decode("utf-8")
+    if x.startswith("b"):
+        return base64.b64decode(x[1:].encode("utf-8"))
     return getattr(ast, x)
 
 
