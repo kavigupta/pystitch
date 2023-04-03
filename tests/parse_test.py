@@ -1,10 +1,19 @@
 import ast
+from functools import lru_cache
+import json
 import os
 
 import unittest
+from parameterized import parameterized
 import tqdm.auto as tqdm
 
 from imperative_stitch.to_s import python_to_s_exp, s_exp_to_python
+
+@lru_cache(None)
+def small_set_examples():
+    with open("data/small_set.json") as f:
+        contents = json.load(f)
+    return contents
 
 
 class ParseUnparseInverseTest(unittest.TestCase):
@@ -38,24 +47,9 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def test_lambda(self):
         self.check("lambda: 1 + 2")
 
-    def realistic_test(self):
-        # TODO this is device-dependent
-        # this should be replaced
-        paths = [
-            os.path.join(root, file)
-            for root, _, files in os.walk("/home/kavi/mit/ExpeditionsBioDev/")
-            for file in files
-            if file.endswith(".py")
-        ]
-        contents = [(k, open(k).read()) for k in paths]
-        contents = sorted(contents, key=lambda x: len(x[1]))
-        for path, content in tqdm.tqdm(contents):
-            print(path)
-            try:
-                self.canonicalize(path)
-            except SyntaxError:
-                continue
-            try:
-                self.check(content)
-            except Exception as e:
-                self.assertFalse(f"Error: {e}")
+    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    def test_realistic(self, i):
+        try:
+            self.check(small_set_examples()[i])
+        except Exception as e:
+            self.assertFalse(f"Error: {e}")
