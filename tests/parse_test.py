@@ -4,7 +4,7 @@ import os
 import unittest
 import tqdm.auto as tqdm
 
-from pystitch.to_s import python_to_s_exp, s_exp_to_python
+from imperative_stitch.to_s import python_to_s_exp, s_exp_to_python
 
 
 class ParseUnparseInverseTest(unittest.TestCase):
