@@ -1,5 +1,6 @@
 import ast
 import base64
+from imperative_stitch.utils.recursion import recursionlimit
 
 from s_expression_parser import Pair, nil, Renderer, parse, ParserConfig
 
@@ -106,16 +107,18 @@ def pair_to_s_exp(x):
 
 
 def python_to_s_exp(code, renderer_kwargs=dict()):
-    code = ast.parse(code)
-    code = to_list_s_expr(code)
-    code = s_exp_to_pair(code)
-    code = Renderer(**renderer_kwargs).render(code)
-    return code
+    with recursionlimit(max(1500, len(code))):
+        code = ast.parse(code)
+        code = to_list_s_expr(code)
+        code = s_exp_to_pair(code)
+        code = Renderer(**renderer_kwargs).render(code)
+        return code
 
 
 def s_exp_to_python(code):
-    (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-    code = pair_to_s_exp(code)
-    code = to_python(code)
-    code = ast.unparse(code)
-    return code
+    with recursionlimit(max(1500, len(code))):
+        (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+        code = pair_to_s_exp(code)
+        code = to_python(code)
+        code = ast.unparse(code)
+        return code
