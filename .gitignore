@@ -1,1 +1,4 @@
+# python and setup
 *.pyc
+*.ipynb_checkpoints
+*.egg-info
