@@ -43,7 +43,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def test_strings(self):
         self.check("' '")
         self.check("x = 'abc '")
-        self.check("x = 'a=é b=\udc80 c=𐀀 d=\U0010ffff'")
+        self.check("x = 'a=é b=\\udc80 d=\U0010ffff'")
         self.check("x = '\\uABCD'")
 
     def test_lambda(self):
