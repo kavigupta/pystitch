@@ -81,7 +81,15 @@ def s_exp_to_pair(x):
     if isinstance(x, complex):
         return f"j{x}"
     if isinstance(x, str):
-        return "s" + base64.b64encode(x.encode("utf-8")).decode("utf-8")
+        # if all are renderable directly without whitespace, just use that
+        if all(
+            c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
+            for c in x
+        ):
+            return "s_" + x
+        return "s-" + base64.b64encode(str([ord(x) for x in x]).encode("ascii")).decode(
+            "utf-8"
+        )
     if isinstance(x, bytes):
         return "b" + base64.b64encode(x).decode("utf-8")
     raise ValueError(f"Unsupported: {type(x)}")
@@ -105,8 +113,15 @@ def pair_to_s_exp(x):
         return float(x[1:])
     if x.startswith("j"):
         return complex(x[1:])
-    if x.startswith("s"):
-        return base64.b64decode(x[1:].encode("utf-8")).decode("utf-8")
+    if x.startswith("s_"):
+        return x[2:]
+    if x.startswith("s-"):
+        return "".join(
+            chr(x)
+            for x in ast.literal_eval(
+                base64.b64decode(x[2:].encode("utf-8")).decode("ascii")
+            )
+        )
     if x.startswith("b"):
         return base64.b64decode(x[1:].encode("utf-8"))
     return getattr(ast, x)
