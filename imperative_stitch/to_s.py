@@ -30,7 +30,7 @@ def to_list_s_expr(x, is_body=False):
         ]
     if isinstance(x, list):
         return [to_list_s_expr(x) for x in x]
-    if x is None or isinstance(x, (int, float, complex, str, bytes)):
+    if x is None or x is Ellipsis or isinstance(x, (int, float, complex, str, bytes)):
         return x
     raise ValueError(f"Unsupported node {x}")
 
@@ -72,7 +72,7 @@ def s_exp_to_pair(x):
         return x.__name__
     if x in {"semi", "empty"}:
         return x
-    if x is True or x is False or x is None:
+    if x is True or x is False or x is None or x is Ellipsis:
         return str(x)
     if isinstance(x, float):
         return f"f{x}"
@@ -93,6 +93,8 @@ def pair_to_s_exp(x):
     if isinstance(x, Pair):
         return [pair_to_s_exp(x.car), *pair_to_s_exp(x.cdr)]
     assert isinstance(x, str), str(type(x))
+    if x == "Ellipsis":
+        return Ellipsis
     if x in {"True", "False", "None"}:
         return ast.literal_eval(x)
     if x in {"semi", "empty"}:
