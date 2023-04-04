@@ -1,5 +1,6 @@
 import sys
 
+
 class recursionlimit:
     # https://stackoverflow.com/a/50120316/1549476
     def __init__(self, limit):
