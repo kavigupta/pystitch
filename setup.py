@@ -18,5 +18,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.9",
-    install_requires=["s-exp-parser==1.2.0", "datasets==2.10.1"],
+    install_requires=["s-exp-parser==1.2.0", "datasets==2.10.1", "ast_scope>=0.3.1"],
 )

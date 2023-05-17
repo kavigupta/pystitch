@@ -1,8 +1,26 @@
 import ast
 import base64
-from imperative_stitch.utils.recursion import recursionlimit
 
+import attr
+import ast_scope
+
+from imperative_stitch.utils.recursion import recursionlimit
 from s_expression_parser import Pair, nil, Renderer, parse, ParserConfig
+
+
+@attr.s(hash=True)
+class Symbol:
+    name = attr.ib()
+    scope = attr.ib()
+
+    @classmethod
+    def parse(cls, x):
+        assert x.startswith("&")
+        name, scope = x[1:].split(":")
+        return cls(name, scope)
+
+    def render(self):
+        return f"&{self.name}:{self.scope}"
 
 
 def field_is_body(t, f):
@@ -14,22 +32,47 @@ def field_is_body(t, f):
     return f in {"body", "orelse", "finalbody"}
 
 
-def to_list_s_expr(x, is_body=False):
+def is_the_symbol(node, f):
+    x = type(node).__name__
+    if x == "Name":
+        return f == "id"
+    if x == "FunctionDef" or x == "AsyncFunctionDef":
+        return f == "name"
+    if x == "ClassDef":
+        return f == "name"
+    if x == "arg":
+        return f == "arg"
+    if x == "alias":
+        if node.asname is None:
+            return f == "name"
+        return f == "asname"
+    raise ValueError(f"Unsupported: {node}")
+
+
+def to_list_s_expr(x, descoper, is_body=False):
     if is_body:
         assert isinstance(x, list), str(x)
         if not x:
             return ["empty"]
-        x = [to_list_s_expr(x) for x in x]
+        x = [to_list_s_expr(x, descoper) for x in x]
         result = x.pop()
         while x:
             result = ["semi", x.pop(), result]
         return result
     if isinstance(x, ast.AST):
-        return [type(x)] + [
-            to_list_s_expr(getattr(x, f), field_is_body(type(x), f)) for f in x._fields
-        ]
+        result = [type(x)]
+        for f in x._fields:
+            el = getattr(x, f)
+            if x in descoper and is_the_symbol(x, f):
+                assert isinstance(el, str)
+                result.append(Symbol(el, descoper[x]))
+            else:
+                result.append(
+                    to_list_s_expr(el, descoper, is_body=field_is_body(type(x), f))
+                )
+        return result
     if isinstance(x, list):
-        return [to_list_s_expr(x) for x in x]
+        return [to_list_s_expr(x, descoper) for x in x]
     if x is None or x is Ellipsis or isinstance(x, (int, float, complex, str, bytes)):
         return x
     raise ValueError(f"Unsupported node {x}")
@@ -74,6 +117,8 @@ def s_exp_to_pair(x):
         return x
     if x is True or x is False or x is None or x is Ellipsis:
         return str(x)
+    if isinstance(x, Symbol):
+        return x.render()
     if isinstance(x, float):
         return f"f{x}"
     if isinstance(x, int):
@@ -101,6 +146,8 @@ def pair_to_s_exp(x):
     if isinstance(x, Pair):
         return [pair_to_s_exp(x.car), *pair_to_s_exp(x.cdr)]
     assert isinstance(x, str), str(type(x))
+    if x.startswith("&"):
+        return Symbol.parse(x).name
     if x == "Ellipsis":
         return Ellipsis
     if x in {"True", "False", "None"}:
@@ -130,7 +177,7 @@ def pair_to_s_exp(x):
 def python_to_s_exp(code, renderer_kwargs=dict()):
     with recursionlimit(max(1500, len(code))):
         code = ast.parse(code)
-        code = to_list_s_expr(code)
+        code = to_list_s_expr(code, descoper(code))
         code = s_exp_to_pair(code)
         code = Renderer(**renderer_kwargs).render(code)
         return code
@@ -143,3 +190,15 @@ def s_exp_to_python(code):
         code = to_python(code)
         code = ast.unparse(code)
         return code
+
+
+def descoper(code):
+    annot = ast_scope.annotate(code)
+    scopes = []
+    results = {}
+    for node in ast.walk(code):
+        if node in annot:
+            if annot[node] not in scopes:
+                scopes.append(annot[node])
+            results[node] = scopes.index(annot[node])
+    return results
