@@ -141,7 +141,7 @@ def s_exp_to_pair(x):
 
 
 def pair_to_s_exp(x):
-    if x is nil:
+    if x is nil or x == "nil":
         return []
     if isinstance(x, Pair):
         return [pair_to_s_exp(x.car), *pair_to_s_exp(x.cdr)]
@@ -179,7 +179,7 @@ def python_to_s_exp(code, renderer_kwargs=dict()):
         code = ast.parse(code)
         code = to_list_s_expr(code, descoper(code))
         code = s_exp_to_pair(code)
-        code = Renderer(**renderer_kwargs).render(code)
+        code = Renderer(**renderer_kwargs, nil_as_word=True).render(code)
         return code
 
 

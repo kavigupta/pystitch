@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="imperative_stitch",
-    version="3.6.2",
+    version="3.6.4",
     author="Kavi Gupta, Matt Bowers",
     author_email="imperative-stitch@kavigupta.org",
     description="Imperative version of stitch.",
@@ -18,5 +18,5 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.9",
-    install_requires=["s-exp-parser==1.2.0", "datasets==2.10.1", "ast_scope>=0.3.1"],
+    install_requires=["s-exp-parser==1.3.1", "datasets==2.10.1", "ast_scope>=0.3.1"],
 )
