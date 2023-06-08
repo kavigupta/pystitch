@@ -1,4 +1,6 @@
 
+Require Import Frap.
+
 Section programs.
 
 Variable var : Set.
@@ -40,8 +42,8 @@ Inductive continuation :=
 
 Inductive exec_p : environment -> prog -> environment -> list effect -> continuation -> Prop :=
   | exec_p_e
-    : forall env_1 env_2 effs e,
-      (exists x, exec_e env_1 e x effs) -> equal_env env_1 env_2 -> exec_p env_1 (prog_e e) env_2 effs normal
+    : forall env_1 env_2 effs e x,
+      (exec_e env_1 e x effs -> equal_env env_1 env_2 -> exec_p env_1 (prog_e e) env_2 effs normal
   | exec_p_a
     : forall env_1 env_2 effs v e,
       (exists x, exec_e env_1 e x effs /\ env_2 = cons (v, x) env_1) -> exec_p env_1 (prog_a v e) env_2 effs normal
@@ -69,19 +71,47 @@ Inductive exec_p : environment -> prog -> environment -> list effect -> continua
 Hypothesis exec_e_deterministic : forall {env e x_a effs_a x_b effs_b},
   exec_e env e x_a effs_a -> exec_e env e x_b effs_b -> x_a = x_b /\ effs_a = effs_b.
 
-Theorem exec_p_deterministic : forall {p env_1 env_2a effs_a env_2b effs_b c_a c_b},
-  exec_p env_1 p env_2a effs_a c_a -> exec_p env_1 p env_2b effs_b c_b -> equal_env env_2a env_2b /\ effs_a = effs_b /\ c_a = c_b.
+(* Lifted from the Coq standard library: *)
+Inductive Permutation {A} : list A -> list A -> Prop :=
+| perm_nil :
+    Permutation [] []
+| perm_skip : forall x l l',
+    Permutation l l' -> Permutation (x::l) (x::l')
+| perm_swap : forall x y l,
+    Permutation (y::x::l) (x::y::l)
+| perm_trans : forall l l' l'',
+    Permutation l l' -> Permutation l' l'' -> Permutation l l''.
 
-  induction p; intros; inversion H; inversion H0; subst.
+Theorem Permutation_length : forall A (ls1 ls2 : list A),
+    Permutation ls1 ls2 -> length ls1 = length ls2.
+Proof.
+  induct 1.
+  simplify; equality.
+  simplify; equality.
+  simplify; equality.
+  simplify; equality.
+Qed.
+
+Theorem exec_p_deterministic : forall {p env_1 env_2a effs_a c_a},
+  exec_p env_1 p env_2a effs_a c_a -> forall env_2b effs_b c_b, exec_p env_1 p env_2b effs_b c_b -> equal_env env_2a env_2b /\ effs_a = effs_b /\ c_a = c_b.
+  
+  induct 2.
+  admit. admit.
+  all: intros.
+  all: invert H; invert H0.
   all: repeat match goal with
     | [H: exists _, _ |- _] => destruct H
     | [H: _ /\ _ |- _] => destruct H
     end.
+
+
   all: repeat match goal with
     | [H1: exec_e _ _ _ _, H2: exec_e _ _ _ _ |- _] => destruct (exec_e_deterministic H2 H1); clear H1 H2
     end.
   all: unfold equal_env in *.
   all: subst.
+  all: try solve [subst; repeat split; auto].
+  Check exec_e_deterministic.
   all: try (destruct (truthy x2)).
   all: repeat match goal with
      | [
