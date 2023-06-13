@@ -133,6 +133,20 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_while_then_end(self):
+        code = """
+        def f():
+            while True:
+                x = 2
+        """
+        expected = """
+        def f():
+            # x_2 = phi(x_1, x_3)
+            while True:
+                x_3 = 2
+        """
+        self.assert_ssa(code, expected)
+
     def test_uninitialized(self):
         code = """
         def f(x):
