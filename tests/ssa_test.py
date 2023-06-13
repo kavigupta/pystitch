@@ -262,7 +262,7 @@ class SSATest(unittest.TestCase):
         def f(z_1):
             # x_2 = phi(x_1, x_3)
             # y_2 = phi(y_1, y_3)
-            for x_3_x_3, y_3_y_3 in z_1:
+            for x_3, y_3 in z_1:
                 pass
         """
         self.assert_ssa(code, expected)
@@ -298,3 +298,48 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_arguments_simple(self):
+        code = """
+        def f(x, y, z, *abc,  a=2, b=3, **kwargs):
+            return x
+        """
+        expected = """
+        def f(x_1, y_1, z_1, *abc_1, a_1=2, b_1=3, **kwargs_1):
+            return x_1
+        """
+        self.assert_ssa(code, expected)
+
+    def test_arguments_positional(self):
+        code = """
+        def f(x, y, /, z):
+            return x
+        """
+        expected = """
+        def f(x_1, y_1, /, z_1):
+            return x_1
+        """
+        self.assert_ssa(code, expected)
+
+    def test_arguments_simple_types(self):
+        code = """
+        def f(x: int, y: str):
+            return x
+        """
+        expected = """
+        def f(x_1: int, y_1: str):
+            
+            return x_1
+        """
+        self.assert_ssa(code, expected)
+
+    def test_arguments_complex_types(self):
+        code = """
+        def f(x: List[int], y: Dict[str, int], z: Set[int], *abc: List[int],  a: List[int]=2, b: List[int]=3, **kwargs: List[int]):
+            return x
+        """
+        expected = """
+        def f(x_1: List[int], y_1: Dict[str, int], z_1: Set[int], *abc_1: List[int], a_1: List[int]=2, b_1: List[int]=3, **kwargs_1: List[int]):
+            
+            return x_1
+        """
+        self.assert_ssa(code, expected)

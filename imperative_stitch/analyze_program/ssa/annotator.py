@@ -186,9 +186,9 @@ def run_ssa(scope_info, entry_point):
 
 def get_name_for_write(node):
     if isinstance(node, tuple) and node[0] == "write":
-        node = node[2]
-    if isinstance(node, ast.Tuple):
-        return [x for xs in node.elts for x in get_name_for_write(xs)]
+        if isinstance(node[1], str):
+            return get_name_for_write(node[2])
+        return get_name_for_write(node[1])
     if isinstance(node, ast.Name):
         name = node.id
     elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
