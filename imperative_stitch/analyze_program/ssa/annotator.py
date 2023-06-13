@@ -37,8 +37,8 @@ class FunctionSSAAnnotator:
             self.function_arguments = []
             self.function_argument_symbols = []
         else:
-            self.function_symbols = function_scope.variables.all_symbols
-            self.function_arguments = function_scope.variables.arguments
+            self.function_symbols = sorted(function_scope.variables.all_symbols, key=str)
+            self.function_arguments = sorted(function_scope.variables.arguments, key=lambda x: x.arg)
             self.function_argument_symbols = [x.arg for x in self.function_arguments]
 
         self._mapping = SSAVariableIntermediateMapping()
@@ -71,9 +71,7 @@ class FunctionSSAAnnotator:
         while self._queue:
             self._process(self._queue.pop(0))
         annotations = self.collect_annotations()
-        ordered_cfns = sorted(
-            self._start, key=lambda x: self.node_order.get(x.instruction.node, -1)
-        )
+        ordered_cfns = self.sort_cfns(self._start.keys())
 
         ordered_values = self._mapping.initials() + [
             v
@@ -103,15 +101,27 @@ class FunctionSSAAnnotator:
         for cfn in self._start:
             s, e = self._start[cfn], self._end[cfn]
             for astn in cfn.instruction.get_reads():
-                if isinstance(astn, tuple) and astn[0] == "read":
-                    astn = astn[1]
+                astn = get_nodes_for_reads(astn)
                 if astn.id in s:
                     annotations[astn].append(s[astn.id])
-            for write in cfn.instruction.get_writes():
-                for astn, name in get_name_for_write(write):
-                    if name in e:
-                        annotations[astn].append(e[name])
+            for astn, name in self.get_writes_for(cfn):
+                if name in e:
+                    annotations[astn].append(e[name])
         return dict(annotations.items())
+
+    def get_reads_for(self, cfn):
+        result = []
+        for astn in cfn.instruction.get_reads():
+            result.append(get_nodes_for_reads(astn))
+        result = self.sort_nodes(result)
+        return result
+
+    def get_writes_for(self, cfn):
+        result = []
+        for write in cfn.instruction.get_writes():
+            result.extend(get_nodes_for_write(write))
+        result = sorted(result, key=lambda x: self.node_order.get(x[0], -1))
+        return result
 
     def _process(self, cfn):
         """
@@ -139,18 +149,22 @@ class FunctionSSAAnnotator:
         new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
         if cfn not in self._end or new_end != self._end[cfn]:
             self._end[cfn] = new_end
-            self._queue.extend(
-                sorted(cfn.next, key=lambda x: self.node_order[x.instruction.node])
-            )
+            self._queue.extend(self.sort_cfns(cfn.next))
 
     def prev_ends(self, cfn):
         """
         Returns the end variables for each of the parents of `cfn`.
         """
-        result = [self._end.get(parent, {}) for parent in cfn.prev]
+        result = [self._end.get(parent, {}) for parent in self.sort_cfns(cfn.prev)]
         if cfn == self.first_cfn:
             result.append(self._arg_node)
         return result
+
+    def sort_cfns(self, cfns):
+        return sorted(cfns, key=lambda x: self.node_order.get(x.instruction.node, -1))
+
+    def sort_nodes(self, nodes):
+        return sorted(nodes, key=lambda x: self.node_order.get(x, -1))
 
     def _ending_variables(self, cfn, start_variables, current_end):
         """
@@ -158,7 +172,7 @@ class FunctionSSAAnnotator:
         """
         end_variables = start_variables.copy()
         for write in cfn.instruction.get_writes():
-            for _, x in get_name_for_write(write):
+            for _, x in get_nodes_for_write(write):
                 end_variables[x] = self._mapping.fresh_variable_if_needed(
                     x, DefinedIn(cfn), current_end.get(x, None)
                 )
@@ -184,17 +198,23 @@ def run_ssa(scope_info, entry_point):
     return annot.run()
 
 
-def get_name_for_write(node):
+def get_nodes_for_reads(astn):
+    if isinstance(astn, tuple) and astn[0] == "read":
+        astn = astn[1]
+    return astn
+
+
+def get_nodes_for_write(node):
     if isinstance(node, tuple) and node[0] == "write":
         if isinstance(node[1], str):
-            return get_name_for_write(node[2])
-        return get_name_for_write(node[1])
+            return get_nodes_for_write(node[2])
+        return get_nodes_for_write(node[1])
     if isinstance(node, ast.Name):
         name = node.id
     elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         name = node.name
     elif isinstance(node, ast.For):
-        return get_name_for_write(node.target)
+        return get_nodes_for_write(node.target)
     elif isinstance(node, ast.ExceptHandler):
         name = node.name
     else:
