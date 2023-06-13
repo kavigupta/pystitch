@@ -14,9 +14,15 @@ setuptools.setup(
     url="https://github.com/kavigupta/imperative-stitch",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.9",
-    install_requires=["s-exp-parser==1.3.1", "datasets==2.10.1", "ast_scope>=0.3.1"],
+    python_requires=">=3.8",
+    install_requires=[
+        "s-exp-parser==1.3.1",
+        "datasets==2.10.1",
+        "ast_scope>=0.4.0",
+        # my fork of python-graphs
+        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/master.zip",
+    ],
 )
