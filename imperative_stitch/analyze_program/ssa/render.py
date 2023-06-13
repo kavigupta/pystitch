@@ -19,14 +19,21 @@ class RenameVariablesInTree(NonMutatingNodeTransformer):
     def visit_arg(self, astn):
         return self.create_new_element(astn)
 
+    def visit_FunctionDef(self, astn):
+        astn = self.create_new_element(astn)
+        astn = super().generic_visit(astn)
+        return astn
+
     def create_new_element(self, astn):
         # generalize the above two
         if astn in self.renamed_variables:
-            astn_copy = copy.deepcopy(astn)
+            astn_copy = copy.copy(astn)
             if isinstance(astn, ast.Name):
                 astn_copy.id = self.renamed_variables[astn]
             elif isinstance(astn, ast.arg):
                 astn_copy.arg = self.renamed_variables[astn]
+            elif isinstance(astn, ast.FunctionDef):
+                astn_copy.name = self.renamed_variables[astn]
             else:
                 raise ValueError(f"Unsupported node {astn}")
             return astn_copy
