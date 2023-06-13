@@ -21,9 +21,14 @@ class FunctionSSAAnnotator:
 
         self.function_astn = entry_point.node
         function_scope = scope_info.function_scope_for(self.function_astn)
-        self.function_symbols = function_scope.variables.all_symbols
-        self.function_arguments = function_scope.variables.all_arguments
-        self.function_argument_symbols = [x.arg for x in self.function_arguments]
+        if function_scope is None:
+            self.function_symbols = []
+            self.function_arguments = []
+            self.function_argument_symbols = []
+        else:
+            self.function_symbols = function_scope.variables.all_symbols
+            self.function_arguments = function_scope.variables.all_arguments
+            self.function_argument_symbols = [x.arg for x in self.function_arguments]
 
         self._mapping = SSAVariableIntermediateMapping()
         self._start = {}

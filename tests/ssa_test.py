@@ -234,3 +234,15 @@ class SSATest(unittest.TestCase):
             x_3
         """
         self.assert_ssa(code, expected)
+
+    def test_undefined_variable_referenced(self):
+        code = """
+        def f():
+            return x
+        """
+        expected = """
+        def f():
+            return x
+        """
+        self.assert_ssa(code, expected)
+
