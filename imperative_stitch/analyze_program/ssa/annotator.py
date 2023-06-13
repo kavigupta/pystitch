@@ -96,10 +96,10 @@ class FunctionSSAAnnotator:
                     astn = astn[1]
                 if astn.id in s:
                     annotations[astn].append(s[astn.id])
-            for astn in cfn.instruction.get_writes():
-                astn, name = get_name_for_write(astn)
-                if name in e:
-                    annotations[astn].append(e[name])
+            for write in cfn.instruction.get_writes():
+                for astn, name in get_name_for_write(write):
+                    if name in e:
+                        annotations[astn].append(e[name])
         return dict(annotations.items())
 
     def _process(self, cfn):
@@ -146,11 +146,11 @@ class FunctionSSAAnnotator:
         Compute the end variables for `cfn` given the start variables and the current end variables.
         """
         end_variables = start_variables.copy()
-        for x in cfn.instruction.get_writes():
-            _, x = get_name_for_write(x)
-            end_variables[x] = self._mapping.fresh_variable_if_needed(
-                x, DefinedIn(cfn), current_end.get(x, None)
-            )
+        for write in cfn.instruction.get_writes():
+            for _, x in get_name_for_write(write):
+                end_variables[x] = self._mapping.fresh_variable_if_needed(
+                    x, DefinedIn(cfn), current_end.get(x, None)
+                )
         return end_variables
 
 
@@ -162,6 +162,8 @@ def run_ssa(scope_info, entry_point):
 def get_name_for_write(node):
     if isinstance(node, tuple) and node[0] == "write":
         node = node[2]
+    if isinstance(node, ast.Tuple):
+        return [x for xs in node.elts for x in get_name_for_write(xs)]
     if isinstance(node, ast.Name):
         name = node.id
     elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -170,4 +172,4 @@ def get_name_for_write(node):
         return get_name_for_write(node.target)
     else:
         raise Exception(f"Unexpected write: {node}")
-    return node, name
+    return [(node, name)]

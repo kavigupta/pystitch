@@ -114,5 +114,7 @@ class SSAVariableIntermediateMapping:
         result = {
             renaming_map[node]: origin.remap(renaming_map)
             for node, origin in self.parents_of.items()
+            # TODO not sure if this is needed, was added for multi-for
+            if node in renaming_map
         }
         return result

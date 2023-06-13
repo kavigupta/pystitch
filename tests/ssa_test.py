@@ -235,6 +235,22 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_for_multi(self):
+        # TODO I think this is also wrong for a similar reason
+        code = """
+        def f(z):
+            for x, y in z:
+                pass
+        """
+        expected = """
+        def f(z_1):
+            # x_2 = phi(x_1, x_3)
+            # y_2 = phi(y_1, y_3)
+            for x_3_x_3, y_3_y_3 in z_1:
+                pass
+        """
+        self.assert_ssa(code, expected)
+
     def test_undefined_variable_referenced(self):
         code = """
         def f():
