@@ -161,6 +161,8 @@ def get_name_for_write(node):
         name = node.id
     elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         name = node.name
+    elif isinstance(node, ast.For):
+        return get_name_for_write(node.target)
     else:
         raise Exception(f"Unexpected write: {node}")
     return node, name
