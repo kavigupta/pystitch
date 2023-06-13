@@ -267,3 +267,23 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_try_except(self):
+        code = """
+        def f():
+            try:
+                x = 2
+            except Exception as e:
+                pass
+            return e
+        """
+        expected = """
+        def f():
+            try:
+                x_2 = 2
+            except Exception as e_2:
+                pass
+            # e_3 = phi(e_1, e_2)
+            return e_3
+        """
+        self.assert_ssa(code, expected)
+

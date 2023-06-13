@@ -33,7 +33,7 @@ class FunctionSSAAnnotator:
             self.function_argument_symbols = []
         else:
             self.function_symbols = function_scope.variables.all_symbols
-            self.function_arguments = function_scope.variables.all_arguments
+            self.function_arguments = function_scope.variables.arguments
             self.function_argument_symbols = [x.arg for x in self.function_arguments]
 
         self._mapping = SSAVariableIntermediateMapping()
@@ -176,6 +176,8 @@ def get_name_for_write(node):
         name = node.name
     elif isinstance(node, ast.For):
         return get_name_for_write(node.target)
+    elif isinstance(node, ast.ExceptHandler):
+        name = node.name
     else:
         raise Exception(f"Unexpected write: {node}")
     return [(node, name)]
