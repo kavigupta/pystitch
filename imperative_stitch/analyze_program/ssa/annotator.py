@@ -38,6 +38,8 @@ class FunctionSSAAnnotator:
                 else Uninitialized(),
             )
 
+        self.node_order = get_node_order(self.function_astn)
+
     def run(self):
         """
         Run the SSA annotator.
@@ -52,9 +54,10 @@ class FunctionSSAAnnotator:
         while self._queue:
             self._process(self._queue.pop(0))
         annotations = self.collect_annotations()
+        ordered_cfns = sorted(
+            self._start, key=lambda x: self.node_order[x.instruction.node]
+        )
 
-        node_order = get_node_order(self.function_astn)
-        ordered_cfns = sorted(self._start, key=lambda x: node_order[x.instruction.node])
         ordered_values = self._mapping.initials() + [
             v
             for cfn in ordered_cfns
@@ -114,7 +117,9 @@ class FunctionSSAAnnotator:
         new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
         if cfn not in self._end or new_end != self._end[cfn]:
             self._end[cfn] = new_end
-            self._queue.extend(cfn.next)
+            self._queue.extend(
+                sorted(cfn.next, key=lambda x: self.node_order[x.instruction.node])
+            )
 
     def prev_ends(self, cfn):
         """
