@@ -37,8 +37,12 @@ class FunctionSSAAnnotator:
             self.function_arguments = []
             self.function_argument_symbols = []
         else:
-            self.function_symbols = sorted(function_scope.variables.all_symbols, key=str)
-            self.function_arguments = sorted(function_scope.variables.arguments, key=lambda x: x.arg)
+            self.function_symbols = sorted(
+                function_scope.variables.all_symbols, key=str
+            )
+            self.function_arguments = sorted(
+                function_scope.variables.arguments, key=lambda x: x.arg
+            )
             self.function_argument_symbols = [x.arg for x in self.function_arguments]
 
         self._mapping = SSAVariableIntermediateMapping()
