@@ -111,10 +111,12 @@ class SSAVariableIntermediateMapping:
         """
         Export the parents of each variable using the renaming map.
         """
-        result = {
-            renaming_map[node]: origin.remap(renaming_map)
-            for node, origin in self.parents_of.items()
-            # TODO not sure if this is needed, was added for multi-for
-            if node in renaming_map
-        }
+        result = {}
+        for node, origin in self.parents_of.items():
+            if node in renaming_map:
+                result[renaming_map[node]] = origin.remap(renaming_map)
+            else:
+                raise Exception(
+                    f"Node {node} (with name {self.original_symbol_of[node]!r} origin {self.parents_of[node]}) not in renaming map {renaming_map}"
+                )
         return result
