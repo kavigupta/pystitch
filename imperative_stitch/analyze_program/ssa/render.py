@@ -38,7 +38,7 @@ def rename_to_ssa(annotations, astn):
     Copy the given tree, renaming variables according to the given annotations.
     """
     return RenameVariablesInTree(
-        {k: f"{sym}_{id}" for k, (sym, id) in annotations.items()}
+        {k: compute_modified_name(name) for k, name in annotations.items()}
     ).visit(astn)
 
 
@@ -49,7 +49,13 @@ def render_phi_map(phi_map):
     Only phi nodes are rendered.
     """
     return {
-        f"{sym}_{id}": "phi(" + ", ".join(f"{sym}_{id}" for sym, id in v.parents) + ")"
-        for (sym, id), v in phi_map.items()
+        compute_modified_name([name]): "phi("
+        + ", ".join(compute_modified_name([(sym, id)]) for sym, id in v.parents)
+        + ")"
+        for name, v in phi_map.items()
         if isinstance(v, Phi)
     }
+
+
+def compute_modified_name(sym_ids):
+    return "_".join(f"{sym}_{id}" for sym, id in sym_ids)

@@ -1,4 +1,5 @@
 import ast
+from collections import defaultdict
 
 from .ivm import Argument, DefinedIn, Phi, SSAVariableIntermediateMapping, Uninitialized
 from .renamer import get_node_order, name_vars
@@ -72,24 +73,28 @@ class FunctionSSAAnnotator:
             }
             for x in [self._start, self._end]
         ]
-        annotations = {node: remapping[var] for node, var in annotations.items()}
+        annotations = {
+            node: [remapping[var] for var in vars] for node, vars in annotations.items()
+        }
 
         return start, end, self._mapping.export_parents(remapping), annotations
 
     def collect_annotations(self):
-        annotations = {}
+        annotations = defaultdict(list)
         argument_to_var = self._mapping.arguments_map()
         for argument in self.function_arguments:
-            annotations[argument] = argument_to_var[argument.arg]
+            annotations[argument].append(argument_to_var[argument.arg])
         for cfn in self._start:
             s, e = self._start[cfn], self._end[cfn]
             for astn in cfn.instruction.get_reads():
+                if isinstance(astn, tuple) and astn[0] == "read":
+                    astn = astn[1]
                 if astn.id in s:
-                    annotations[astn] = s[astn.id]
+                    annotations[astn].append(s[astn.id])
             for astn in cfn.instruction.get_writes():
                 if astn.id in e:
-                    annotations[astn] = e[astn.id]
-        return annotations
+                    annotations[astn].append(e[astn.id])
+        return dict(annotations.items())
 
     def _process(self, cfn):
         """
