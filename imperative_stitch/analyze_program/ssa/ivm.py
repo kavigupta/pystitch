@@ -115,8 +115,4 @@ class SSAVariableIntermediateMapping:
         for node, origin in self.parents_of.items():
             if node in renaming_map:
                 result[renaming_map[node]] = origin.remap(renaming_map)
-            else:
-                raise Exception(
-                    f"Node {node} (with name {self.original_symbol_of[node]!r} origin {self.parents_of[node]}) not in renaming map {renaming_map}"
-                )
         return result
