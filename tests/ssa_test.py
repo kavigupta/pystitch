@@ -346,6 +346,17 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_arguments_complex_type_single(self):
+        code = """
+        def f(x: List[int]):
+            return x
+        """
+        expected = """
+        def f(x_1: List[int]):
+            return x_1
+        """
+        self.assert_ssa(code, expected)
+
     def test_arguments_complex_types(self):
         code = """
         def f(x: List[int], y: Dict[str, int], z: Set[int], *abc: List[int],  a: List[int]=2, b: List[int]=3, **kwargs: List[int]):
