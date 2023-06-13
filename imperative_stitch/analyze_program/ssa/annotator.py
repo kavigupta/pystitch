@@ -16,7 +16,7 @@ class FunctionSSAAnnotator:
 
     def __init__(self, scope_info, entry_point):
         [first_block] = entry_point.next
-        first_cfn = first_block.control_flow_nodes[0]
+        self.first_cfn = first_block.control_flow_nodes[0]
 
         self.function_astn = entry_point.node
         function_scope = scope_info.function_scope_for(self.function_astn)
@@ -27,7 +27,16 @@ class FunctionSSAAnnotator:
         self._mapping = SSAVariableIntermediateMapping()
         self._start = {}
         self._end = {}
-        self._queue = [first_cfn]
+        self._queue = []
+
+        self._arg_node = {}
+        for sym in self.function_symbols:
+            self._arg_node[sym] = self._mapping.fresh_variable(
+                sym,
+                Argument()
+                if sym in self.function_argument_symbols
+                else Uninitialized(),
+            )
 
     def run(self):
         """
@@ -39,6 +48,7 @@ class FunctionSSAAnnotator:
             phi_map: A mapping from variable to its origin.
             annotations: A mapping from node to its variable.
         """
+        self._queue.append(self.first_cfn)
         while self._queue:
             self._process(self._queue.pop(0))
         annotations = self.collect_annotations()
@@ -86,42 +96,34 @@ class FunctionSSAAnnotator:
             add its children to the queue if the `end` variables for
             `cfn` changed.
         """
-        if cfn.prev == set():
-            # will only ever be run once since there's no parents
-            assert cfn not in self._start and cfn not in self._end
-            self._start[cfn] = {}
-            for sym in self.function_symbols:
-                self._start[cfn][sym] = self._mapping.fresh_variable(
-                    sym,
-                    Argument()
-                    if sym in self.function_argument_symbols
-                    else Uninitialized(),
+        # recompute since a parent was updated
+        old_start = self._start.get(cfn, {})
+        self._start[cfn] = {}
+        for sym in self.function_symbols:
+            parent_vars = set()
+            for parent_end in self.prev_ends(cfn):
+                if sym in parent_end:
+                    parent_vars.add(parent_end[sym])
+            parent_vars = sorted(parent_vars)
+            if len(parent_vars) == 1:
+                [self._start[cfn][sym]] = parent_vars
+            else:
+                self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
+                    sym, Phi(parent_vars), old_start.get(sym, None)
                 )
-            self._end[cfn] = self._ending_variables(cfn, self._start[cfn], {})
+        new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
+        if cfn not in self._end or new_end != self._end[cfn]:
+            self._end[cfn] = new_end
             self._queue.extend(cfn.next)
-        else:
-            # recompute since a parent was updated
-            old_start = self._start.get(cfn, {})
-            self._start[cfn] = {}
-            for sym in self.function_symbols:
-                parent_vars = set()
-                for parent in cfn.prev:
-                    parent_end = self._end.get(parent, {})
-                    if sym in parent_end:
-                        parent_vars.add(parent_end[sym])
-                parent_vars = sorted(parent_vars)
-                if len(parent_vars) == 1:
-                    [self._start[cfn][sym]] = parent_vars
-                else:
-                    self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
-                        sym, Phi(parent_vars), old_start.get(sym, None)
-                    )
-            new_end = self._ending_variables(
-                cfn, self._start[cfn], self._end.get(cfn, {})
-            )
-            if cfn not in self._end or new_end != self._end[cfn]:
-                self._end[cfn] = new_end
-                self._queue.extend(cfn.next)
+
+    def prev_ends(self, cfn):
+        """
+        Returns the end variables for each of the parents of `cfn`.
+        """
+        result = [self._end.get(parent, {}) for parent in cfn.prev]
+        if cfn == self.first_cfn:
+            result.append(self._arg_node)
+        return result
 
     def _ending_variables(self, cfn, start_variables, current_end):
         """
