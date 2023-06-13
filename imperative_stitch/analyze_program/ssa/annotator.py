@@ -1,6 +1,10 @@
 import ast
 from collections import defaultdict
 
+from imperative_stitch.analyze_program.ssa.banned_component import (
+    BannedComponentVisitor,
+)
+
 from .ivm import Argument, DefinedIn, Phi, SSAVariableIntermediateMapping, Uninitialized
 from .renamer import get_node_order, name_vars
 
@@ -16,10 +20,12 @@ class FunctionSSAAnnotator:
     """
 
     def __init__(self, scope_info, entry_point):
+        self.function_astn = entry_point.node
+        BannedComponentVisitor().visit(self.function_astn)
+
         [first_block] = entry_point.next
         self.first_cfn = first_block.control_flow_nodes[0]
 
-        self.function_astn = entry_point.node
         function_scope = scope_info.function_scope_for(self.function_astn)
         if function_scope is None:
             self.function_symbols = []

@@ -8,6 +8,7 @@ from python_graphs import control_flow, program_utils
 from parameterized import parameterized
 
 from imperative_stitch.analyze_program.ssa import run_ssa, rename_to_ssa
+from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 from imperative_stitch.analyze_program.ssa.render import render_phi_map
 from tests.parse_test import small_set_examples
 
@@ -24,7 +25,11 @@ def run_ssa_on_multiple_functions(code):
     for entry_point in g.get_enter_blocks():
         print(entry_point)
         print(ast.unparse(entry_point.node))
-        run_ssa_on_info(tree, scope_info, entry_point)
+        try:
+            run_ssa_on_info(tree, scope_info, entry_point)
+        except BannedComponentError:
+            # don't error on this, just skip it
+            pass
 
 
 def get_ssa(code):
