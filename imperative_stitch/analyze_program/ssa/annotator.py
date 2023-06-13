@@ -175,11 +175,10 @@ class FunctionSSAAnnotator:
         Compute the end variables for `cfn` given the start variables and the current end variables.
         """
         end_variables = start_variables.copy()
-        for write in cfn.instruction.get_writes():
-            for _, x in get_nodes_for_write(write):
-                end_variables[x] = self._mapping.fresh_variable_if_needed(
-                    x, DefinedIn(cfn), current_end.get(x, None)
-                )
+        for _, x in self.get_writes_for(cfn):
+            end_variables[x] = self._mapping.fresh_variable_if_needed(
+                x, DefinedIn(cfn), current_end.get(x, None)
+            )
         return end_variables
 
 
