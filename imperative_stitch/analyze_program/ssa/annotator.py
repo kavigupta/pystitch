@@ -1,6 +1,8 @@
 import ast
 from collections import defaultdict
 
+from python_graphs.instruction import Instruction
+
 from imperative_stitch.analyze_program.ssa.banned_component import (
     BannedComponentVisitor,
 )
@@ -24,7 +26,10 @@ class FunctionSSAAnnotator:
         BannedComponentVisitor().visit(self.function_astn)
 
         [first_block] = entry_point.next
-        self.first_cfn = first_block.control_flow_nodes[0]
+        if first_block.control_flow_nodes:
+            self.first_cfn = first_block.control_flow_nodes[0]
+        else:
+            self.first_cfn = NoControlFlowNode()
 
         function_scope = scope_info.function_scope_for(self.function_astn)
         if function_scope is None:
@@ -67,7 +72,7 @@ class FunctionSSAAnnotator:
             self._process(self._queue.pop(0))
         annotations = self.collect_annotations()
         ordered_cfns = sorted(
-            self._start, key=lambda x: self.node_order[x.instruction.node]
+            self._start, key=lambda x: self.node_order.get(x.instruction.node, -1)
         )
 
         ordered_values = self._mapping.initials() + [
@@ -158,6 +163,20 @@ class FunctionSSAAnnotator:
                     x, DefinedIn(cfn), current_end.get(x, None)
                 )
         return end_variables
+
+
+class NoControlFlowNode:
+    @property
+    def prev(self):
+        return []
+
+    @property
+    def next(self):
+        return []
+
+    @property
+    def instruction(self):
+        return Instruction(ast.Pass())
 
 
 def run_ssa(scope_info, entry_point):

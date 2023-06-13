@@ -57,6 +57,17 @@ class SSATest(unittest.TestCase):
         self.assertEqual(ast.unparse(ast.parse(expected)), actual)
         self.assertEqual(phi_map, expected_phi_map)
 
+    def test_empty(self):
+        code = """
+        def f(x):
+            pass
+        """
+        expected = """
+        def f(x_1):
+            pass
+        """
+        self.assert_ssa(code, expected)
+
     def test_simple(self):
         code = """
         def f(x):
