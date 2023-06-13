@@ -22,7 +22,7 @@ setuptools.setup(
         "s-exp-parser==1.3.1",
         "datasets==2.10.1",
         "ast_scope>=0.4.0",
-        # my fork of python-graphs
-        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/master.zip",
+        # my fork of python-graphs, update this to the latest commit hash
+        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/5eb4c7e30622b6cd24973431d2678209d48bd1ed.zip",
     ],
 )
