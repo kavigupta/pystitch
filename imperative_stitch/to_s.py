@@ -3,6 +3,7 @@ import base64
 
 import attr
 import ast_scope
+from imperative_stitch.utils.ast_utils import field_is_body
 
 from imperative_stitch.utils.recursion import recursionlimit
 from s_expression_parser import Pair, nil, Renderer, parse, ParserConfig
@@ -21,15 +22,6 @@ class Symbol:
 
     def render(self):
         return f"&{self.name}:{self.scope}"
-
-
-def field_is_body(t, f):
-    assert isinstance(t, type)
-    if t == ast.IfExp:
-        return False  # not body of statements
-    if t == ast.Lambda:
-        return False  # not body of statements
-    return f in {"body", "orelse", "finalbody"}
 
 
 def is_the_symbol(node, f):
