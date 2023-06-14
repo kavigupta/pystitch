@@ -61,6 +61,7 @@ class FunctionSSAAnnotator:
             )
 
         self.node_order = get_node_order(self.function_astn)
+        self.prev_nodes_of = compute_prev_nodes(self.first_cfn)
 
     def run(self):
         """
@@ -167,13 +168,19 @@ class FunctionSSAAnnotator:
         """
         Returns the end variables for each of the parents of `cfn`.
         """
-        result = [self._end.get(parent, {}) for parent in self.sort_cfns(cfn.prev)]
-        if cfn == self.first_cfn:
-            result.append(self._arg_node)
+        result = [
+            self._end.get(parent, {}) if parent is not None else self._arg_node
+            for parent in self.sort_cfns(self.prev_nodes_of[cfn])
+        ]
         return result
 
     def sort_cfns(self, cfns):
-        return sorted(cfns, key=lambda x: self.node_order.get(x.instruction.node, -1))
+        return sorted(
+            cfns,
+            key=lambda x: -1000
+            if x is None
+            else self.node_order.get(x.instruction.node, -1),
+        )
 
     def sort_nodes(self, nodes):
         return sorted(nodes, key=lambda x: self.node_order.get(x, -1))
@@ -190,6 +197,12 @@ class FunctionSSAAnnotator:
         return end_variables
 
 
+class NoBlock:
+    @property
+    def exits_from_middle(self):
+        return set()
+
+
 class NoControlFlowNode:
     @property
     def prev(self):
@@ -202,6 +215,10 @@ class NoControlFlowNode:
     @property
     def instruction(self):
         return Instruction(ast.Pass())
+
+    @property
+    def block(self):
+        return NoBlock()
 
 
 def run_ssa(scope_info, entry_point):
@@ -231,6 +248,47 @@ def get_nodes_for_write(node):
     else:
         raise Exception(f"Unexpected write: {node}")
     return [(node, name)]
+
+
+def compute_prev_nodes(first_cfn):
+    result = defaultdict(set)
+    # prev of first is None
+    result[first_cfn].add(None)
+    seen = set()
+    fringe = [first_cfn]
+    while fringe:
+        cfn = fringe.pop()
+        if cfn in seen:
+            continue
+        seen.add(cfn)
+        for next_cfn in cfn.next:
+            result[next_cfn].add(cfn)
+            fringe.append(next_cfn)
+        # exceptions
+        if cannot_cause_exception(cfn):
+            continue
+        cfb = cfn.block
+        # exception can happen in the middle, so prev can also be the root of the exception
+        exception_causers = {cfn} | set(cfn.prev)
+        if cfn is first_cfn:
+            exception_causers.add(None)
+        exception_targets = {
+            exc_cfn
+            for exc_cfb in cfb.exits_from_middle
+            for exc_cfn in exc_cfb.control_flow_nodes
+        }
+        for exc_causer in exception_causers:
+            for exc_target in exception_targets:
+                result[exc_target].add(exc_causer)
+    return result
+
+
+def cannot_cause_exception(cfn):
+    """
+    Returns True if the control flow node `cfn` cannot cause an exception.
+    """
+    # TODO implement this
+    return False
 
 
 def get_all_cfns(cfn):

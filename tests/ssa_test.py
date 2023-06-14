@@ -418,18 +418,30 @@ class SSATest(unittest.TestCase):
         def f():
             try:
                 x = 2
+                x, y
+                y = 3
+                x, y
             except Exception as e:
+                x, y
                 pass
-            return e
+            return e, x, y
         """
         expected = """
         def f():
             try:
                 x_2 = 2
+                x_2, y_1
+                y_2 = 3
+                x_2, y_2
             except Exception as e_2:
+                # x_3 = phi(x_1, x_2)
+                # y_3 = phi(y_1, y_2)
+                x_3, y_3
                 pass
             # e_3 = phi(e_1, e_2)
-            return e_3
+            # x_4 = phi(x_2, x_3)
+            # y_4 = phi(y_2, y_3)
+            return e_3, x_4, y_4
         """
         self.assert_ssa(code, expected)
 
