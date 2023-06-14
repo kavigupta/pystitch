@@ -1,5 +1,7 @@
 import ast
 from collections import defaultdict
+import itertools
+import numpy as np
 
 from python_graphs.instruction import Instruction
 
@@ -70,11 +72,13 @@ class FunctionSSAAnnotator:
             phi_map: A mapping from variable to its origin.
             annotations: A mapping from node to its variable.
         """
-        all_cfns = self.sort_cfns(get_all_cfns(self.first_cfn))
         while True:
             start, end = self._start.copy(), self._end.copy()
-            for cfn in all_cfns:
-                self._process(cfn)
+            queue = [self.first_cfn]
+            while queue:
+                cfn = queue.pop()
+                if self._process(cfn):
+                    queue.extend(self.sort_cfns(cfn.next))
             if start == self._start and end == self._end:
                 break
         annotations = self.collect_annotations()
@@ -156,6 +160,8 @@ class FunctionSSAAnnotator:
         new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
         if cfn not in self._end or new_end != self._end[cfn]:
             self._end[cfn] = new_end
+            return True
+        return False
 
     def prev_ends(self, cfn):
         """

@@ -6,6 +6,7 @@ import unittest
 import ast_scope
 from python_graphs import control_flow, program_utils
 from parameterized import parameterized
+import timeout_decorator
 
 from imperative_stitch.analyze_program.ssa import run_ssa, rename_to_ssa
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
@@ -39,6 +40,7 @@ def get_ssa(code):
     return tree, scope_info, g
 
 
+@timeout_decorator.timeout(10)
 def run_ssa_on_info(tree, scope_info, entry_point):
     _, _, phi_map, annotations = run_ssa(scope_info, entry_point)
     text = ast.unparse(rename_to_ssa(annotations, tree))
@@ -55,7 +57,7 @@ class SSATest(unittest.TestCase):
         }
         actual, phi_map = run_ssa_on_single_function(code)
         self.assertEqual(ast.unparse(ast.parse(expected)), actual)
-        self.assertEqual(phi_map, expected_phi_map)
+        self.assertEqual(expected_phi_map, phi_map)
 
     def test_empty(self):
         code = """
@@ -159,6 +161,8 @@ class SSATest(unittest.TestCase):
             # u_3 = phi(u_1, u_2)
             print
             # x_2 = phi(x_1, x_3)
+            # f_4 = phi(f_3, f_4)
+            # u_4 = phi(u_3, u_4)
             while True:
                 if 2:
                     2
@@ -345,7 +349,6 @@ class SSATest(unittest.TestCase):
         def f(z_1):
             # x_2 = phi(x_1, x_3)
             # y_2 = phi(y_1, y_3)
-            # z_2 = phi(z_1, z_2)
             for x_3, y_3 in z_1:
                 pass
         """
@@ -438,3 +441,9 @@ class SSATest(unittest.TestCase):
             return x_1
         """
         self.assert_ssa(code, expected)
+
+
+class SSARealisticTest(unittest.TestCase):
+    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    def test_realistic(self, i):
+        run_ssa_on_multiple_functions(small_set_examples()[i])
