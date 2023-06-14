@@ -322,7 +322,6 @@ class SSATest(unittest.TestCase):
         self.assert_ssa(code, expected)
 
     def test_for(self):
-        # TODO this is wrong because of an underlying issue in python-graphs
         code = """
         def f():
             for x in range(10):
@@ -334,12 +333,61 @@ class SSATest(unittest.TestCase):
             # x_2 = phi(x_1, x_3)
             for x_3 in range(10):
                 x_3
-            x_3
+            # x_4 = phi(x_1, x_3)
+            x_4
+        """
+        self.assert_ssa(code, expected)
+
+    def test_for_else_without_break(self):
+        code = """
+        def f():
+            for x in range(10):
+                x
+            else:
+                x = 4
+            return x
+        """
+        expected = """
+        def f():
+            # x_2 = phi(x_1, x_3)
+            for x_3 in range(10):
+                x_3
+            else:
+                # x_4 = phi(x_1, x_3)
+                x_5 = 4
+            return x_5
+        """
+        self.assert_ssa(code, expected)
+
+    def test_for_else_with_break(self):
+        code = """
+        def f():
+            for x in range(10):
+                x
+                if x > 5:
+                    x = 7
+                    break
+            else:
+                x = 4
+            return x
+        """
+        expected = """
+        def f():
+            # x_2 = phi(x_1, x_3)
+            for x_3 in range(10):
+                x_3
+                if x_3 > 5:
+                    x_4 = 7
+                    break
+            else:
+                # x_5 = phi(x_1, x_3)
+                x_6 = 4
+            # x_7 = phi(x_4, x_6)
+            return x_7
         """
         self.assert_ssa(code, expected)
 
     def test_for_multi(self):
-        # TODO I think this is also wrong for a similar reason
         code = """
         def f(z):
             for x, y in z:
