@@ -97,6 +97,75 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_if_followed_by_if(self):
+        code = """
+        def f(x):
+            if x > 0:
+                x = x + 1
+            if x > 1:
+                x = x + 1
+            return x
+        """
+        expected = """
+        def f(x_1):
+            if x_1 > 0:
+                x_2 = x_1 + 1
+            # x_3 = phi(x_1, x_2)
+            if x_3 > 1:
+                x_4 = x_3 + 1
+            # x_5 = phi(x_3, x_4)
+            return x_5
+        """
+        self.assert_ssa(code, expected)
+
+    def test_if_followed_by_while(self):
+        code = """
+        def f(x):
+            if x > 0:
+                x = x + 1
+            while x > 1:
+                x = x + 1
+            return x
+        """
+        expected = """
+        def f(x_1):
+            if x_1 > 0:
+                x_2 = x_1 + 1
+            # x_3 = phi(x_1, x_2, x_4)
+            while x_3 > 1:
+                x_4 = x_3 + 1
+            return x_3
+        """
+        self.assert_ssa(code, expected)
+
+    def test_complex_control_flow(self):
+        code = """
+        def main():
+            if True:
+                f = 2
+                u = f
+            print
+            while True:
+                if 2:
+                    2
+                x = 2
+        """
+        expected = """
+        def main():
+            if True:
+                f_2 = 2
+                u_2 = f_2
+            # f_3 = phi(f_1, f_2)
+            # u_3 = phi(u_1, u_2)
+            print
+            # x_2 = phi(x_1, x_3)
+            while True:
+                if 2:
+                    2
+                x_3 = 2
+        """
+        self.assert_ssa(code, expected)
+
     def test_if_else(self):
         code = """
         def f(x):
@@ -276,6 +345,7 @@ class SSATest(unittest.TestCase):
         def f(z_1):
             # x_2 = phi(x_1, x_3)
             # y_2 = phi(y_1, y_3)
+            # z_2 = phi(z_1, z_2)
             for x_3, y_3 in z_1:
                 pass
         """

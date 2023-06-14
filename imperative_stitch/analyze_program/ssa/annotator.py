@@ -48,7 +48,6 @@ class FunctionSSAAnnotator:
         self._mapping = SSAVariableIntermediateMapping()
         self._start = {}
         self._end = {}
-        self._queue = []
 
         self._arg_node = {}
         for sym in self.function_symbols:
@@ -71,9 +70,13 @@ class FunctionSSAAnnotator:
             phi_map: A mapping from variable to its origin.
             annotations: A mapping from node to its variable.
         """
-        self._queue.append(self.first_cfn)
-        while self._queue:
-            self._process(self._queue.pop(0))
+        all_cfns = self.sort_cfns(get_all_cfns(self.first_cfn))
+        while True:
+            start, end = self._start.copy(), self._end.copy()
+            for cfn in all_cfns:
+                self._process(cfn)
+            if start == self._start and end == self._end:
+                break
         annotations = self.collect_annotations()
         ordered_cfns = self.sort_cfns(self._start.keys())
 
@@ -153,7 +156,6 @@ class FunctionSSAAnnotator:
         new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
         if cfn not in self._end or new_end != self._end[cfn]:
             self._end[cfn] = new_end
-            self._queue.extend(self.sort_cfns(cfn.next))
 
     def prev_ends(self, cfn):
         """
@@ -223,3 +225,15 @@ def get_nodes_for_write(node):
     else:
         raise Exception(f"Unexpected write: {node}")
     return [(node, name)]
+
+
+def get_all_cfns(cfn):
+    result = {cfn}
+    fringe = [cfn]
+    while fringe:
+        cfn = fringe.pop()
+        for next_cfn in cfn.next:
+            if next_cfn not in result:
+                result.add(next_cfn)
+                fringe.append(next_cfn)
+    return result

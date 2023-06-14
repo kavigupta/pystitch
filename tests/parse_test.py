@@ -9,6 +9,7 @@ import tqdm.auto as tqdm
 
 from imperative_stitch.to_s import python_to_s_exp, s_exp_to_python
 
+
 @lru_cache(None)
 def small_set_examples():
     with open("data/small_set.json") as f:
