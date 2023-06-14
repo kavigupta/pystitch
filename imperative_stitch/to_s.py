@@ -42,6 +42,8 @@ def is_the_symbol(node, f):
         return f == "name"
     if x == "arg":
         return f == "arg"
+    if x == "ExceptHandler":
+        return f == "name" and node.name is not None
     if x == "alias":
         if node.asname is None:
             return f == "name"
