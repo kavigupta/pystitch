@@ -1,16 +1,11 @@
 import ast
 from collections import defaultdict
-import itertools
-import numpy as np
 
-from python_graphs.instruction import Instruction
 
-from imperative_stitch.analyze_program.ssa.banned_component import (
-    BannedComponentVisitor,
-)
+from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
 
 from .ivm import Argument, DefinedIn, Phi, SSAVariableIntermediateMapping, Uninitialized
-from .renamer import get_node_order, name_vars
+from .renamer import name_vars
 
 
 class FunctionSSAAnnotator:
@@ -23,17 +18,11 @@ class FunctionSSAAnnotator:
         _end: A mapping from name to variable at the outlet of that node
     """
 
-    def __init__(self, scope_info, entry_point):
-        self.function_astn = entry_point.node
-        BannedComponentVisitor().visit(self.function_astn)
+    def __init__(self, scope_info, per_function_cfg: PerFunctionCFG):
 
-        [first_block] = entry_point.next
-        if first_block.control_flow_nodes:
-            self.first_cfn = first_block.control_flow_nodes[0]
-        else:
-            self.first_cfn = NoControlFlowNode()
+        self.graph = per_function_cfg
 
-        function_scope = scope_info.function_scope_for(self.function_astn)
+        function_scope = scope_info.function_scope_for(self.graph.function_astn)
         if function_scope is None:
             self.function_symbols = []
             self.function_arguments = []
@@ -60,9 +49,6 @@ class FunctionSSAAnnotator:
                 else Uninitialized(),
             )
 
-        self.node_order = get_node_order(self.function_astn)
-        self.prev_nodes_of = compute_prev_nodes(self.first_cfn)
-
     def run(self):
         """
         Run the SSA annotator.
@@ -75,15 +61,15 @@ class FunctionSSAAnnotator:
         """
         while True:
             start, end = self._start.copy(), self._end.copy()
-            queue = [self.first_cfn]
+            queue = [self.graph.first_cfn]
             while queue:
                 cfn = queue.pop()
                 if self._process(cfn):
-                    queue.extend(self.sort_cfns(cfn.next))
+                    queue.extend(self.graph.sort_by_cfn_key(cfn.next))
             if start == self._start and end == self._end:
                 break
         annotations = self.collect_annotations()
-        ordered_cfns = self.sort_cfns(self._start.keys())
+        ordered_cfns = self.graph.sort_by_cfn_key(self._start.keys())
 
         ordered_values = self._mapping.initials() + [
             v
@@ -125,14 +111,14 @@ class FunctionSSAAnnotator:
         result = []
         for astn in cfn.instruction.get_reads():
             result.append(get_nodes_for_reads(astn))
-        result = self.sort_nodes(result)
+        result = self.graph.sort_by_astn_key(result, lambda x: x)
         return result
 
     def get_writes_for(self, cfn):
         result = []
         for write in cfn.instruction.get_writes():
             result.extend(get_nodes_for_write(write))
-        result = sorted(result, key=lambda x: self.node_order.get(x[0], -1))
+        result = self.graph.sort_by_astn_key(result, lambda x: x[0])
         return result
 
     def _process(self, cfn):
@@ -170,20 +156,9 @@ class FunctionSSAAnnotator:
         """
         result = [
             self._end.get(parent, {}) if parent is not None else self._arg_node
-            for parent in self.sort_cfns(self.prev_nodes_of[cfn])
+            for parent in self.graph.sort_by_cfn_key(self.graph.prev_cfns_of[cfn])
         ]
         return result
-
-    def sort_cfns(self, cfns):
-        return sorted(
-            cfns,
-            key=lambda x: -1000
-            if x is None
-            else self.node_order.get(x.instruction.node, -1),
-        )
-
-    def sort_nodes(self, nodes):
-        return sorted(nodes, key=lambda x: self.node_order.get(x, -1))
 
     def _ending_variables(self, cfn, start_variables, current_end):
         """
@@ -197,32 +172,8 @@ class FunctionSSAAnnotator:
         return end_variables
 
 
-class NoBlock:
-    @property
-    def exits_from_middle(self):
-        return set()
-
-
-class NoControlFlowNode:
-    @property
-    def prev(self):
-        return []
-
-    @property
-    def next(self):
-        return []
-
-    @property
-    def instruction(self):
-        return Instruction(ast.Pass())
-
-    @property
-    def block(self):
-        return NoBlock()
-
-
-def run_ssa(scope_info, entry_point):
-    annot = FunctionSSAAnnotator(scope_info, entry_point)
+def run_ssa(scope_info, per_function_cfg: PerFunctionCFG):
+    annot = FunctionSSAAnnotator(scope_info, per_function_cfg)
     return annot.run()
 
 
@@ -248,47 +199,6 @@ def get_nodes_for_write(node):
     else:
         raise Exception(f"Unexpected write: {node}")
     return [(node, name)]
-
-
-def compute_prev_nodes(first_cfn):
-    result = defaultdict(set)
-    # prev of first is None
-    result[first_cfn].add(None)
-    seen = set()
-    fringe = [first_cfn]
-    while fringe:
-        cfn = fringe.pop()
-        if cfn in seen:
-            continue
-        seen.add(cfn)
-        for next_cfn in cfn.next:
-            result[next_cfn].add(cfn)
-            fringe.append(next_cfn)
-        # exceptions
-        if cannot_cause_exception(cfn):
-            continue
-        cfb = cfn.block
-        # exception can happen in the middle, so prev can also be the root of the exception
-        exception_causers = {cfn} | set(cfn.prev)
-        if cfn is first_cfn:
-            exception_causers.add(None)
-        exception_targets = {
-            exc_cfn
-            for exc_cfb in cfb.exits_from_middle
-            for exc_cfn in exc_cfb.control_flow_nodes
-        }
-        for exc_causer in exception_causers:
-            for exc_target in exception_targets:
-                result[exc_target].add(exc_causer)
-    return result
-
-
-def cannot_cause_exception(cfn):
-    """
-    Returns True if the control flow node `cfn` cannot cause an exception.
-    """
-    # TODO implement this
-    return False
 
 
 def get_all_cfns(cfn):

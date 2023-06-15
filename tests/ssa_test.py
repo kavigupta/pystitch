@@ -11,6 +11,7 @@ import timeout_decorator
 from imperative_stitch.analyze_program.ssa import run_ssa, rename_to_ssa
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 from imperative_stitch.analyze_program.ssa.render import render_phi_map
+from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
 from tests.parse_test import small_set_examples
 
 
@@ -42,7 +43,7 @@ def get_ssa(code):
 
 @timeout_decorator.timeout(10)
 def run_ssa_on_info(tree, scope_info, entry_point):
-    _, _, phi_map, annotations = run_ssa(scope_info, entry_point)
+    _, _, phi_map, annotations = run_ssa(scope_info, PerFunctionCFG(entry_point))
     text = ast.unparse(rename_to_ssa(annotations, tree))
     phi_map = render_phi_map(phi_map)
     return text, phi_map
