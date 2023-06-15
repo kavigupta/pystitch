@@ -3,6 +3,10 @@ import ast
 from dataclasses import dataclass
 from functools import cached_property
 
+from python_graphs import control_flow
+
+from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
+
 
 @dataclass
 class ExtractionSite:
@@ -23,3 +27,16 @@ class ExtractionSite:
         Returns all the nodes in the extraction site.
         """
         return {node for stmt in self.statements() for node in ast.walk(stmt)}
+
+    def locate_entry_point(self, tree):
+        """
+        Locate the entry point of the extraction site in the tree.
+        """
+        g = control_flow.get_control_flow_graph(tree)
+        entry_points = list(g.get_enter_blocks())
+        for entry_point in entry_points:
+            pfcfg = PerFunctionCFG(entry_point)
+            if self.node not in pfcfg.astn_order:
+                continue
+            return pfcfg
+        raise RuntimeError("Not found in given tree")
