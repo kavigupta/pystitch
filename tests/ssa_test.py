@@ -334,8 +334,7 @@ class SSATest(unittest.TestCase):
             # x_2 = phi(x_1, x_3)
             for x_3 in range(10):
                 x_3
-            # x_4 = phi(x_1, x_3)
-            x_4
+            x_2
         """
         self.assert_ssa(code, expected)
 
@@ -354,9 +353,8 @@ class SSATest(unittest.TestCase):
             for x_3 in range(10):
                 x_3
             else:
-                # x_4 = phi(x_1, x_3)
-                x_5 = 4
-            return x_5
+                x_4 = 4
+            return x_4
         """
         self.assert_ssa(code, expected)
 
@@ -381,10 +379,9 @@ class SSATest(unittest.TestCase):
                     x_4 = 7
                     break
             else:
-                # x_5 = phi(x_1, x_3)
-                x_6 = 4
-            # x_7 = phi(x_4, x_6)
-            return x_7
+                x_5 = 4
+            # x_6 = phi(x_4, x_5)
+            return x_6
         """
         self.assert_ssa(code, expected)
 
