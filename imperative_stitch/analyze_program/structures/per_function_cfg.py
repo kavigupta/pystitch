@@ -4,9 +4,6 @@ from collections import defaultdict
 from python_graphs.control_flow import BasicBlock
 from python_graphs.instruction import Instruction
 
-from ..ssa.banned_component import BannedComponentVisitor
-from ..ssa.renamer import get_node_order
-
 
 class PerFunctionCFG:
     """
@@ -25,6 +22,9 @@ class PerFunctionCFG:
     """
 
     def __init__(self, entry_point: BasicBlock):
+        from ..ssa.banned_component import BannedComponentVisitor
+        from ..ssa.renamer import get_node_order
+
         self.function_astn = entry_point.node
         BannedComponentVisitor().visit(self.function_astn)
         self.entry_point = entry_point
@@ -77,7 +77,12 @@ class PerFunctionCFG:
             A tuple of (entry, exit) control flow nodes.
         """
         entry_nodes = accessible_cfns(self.prev_cfns_of, cfns)
-        entry_nodes = {y for x in entry_nodes for y in x.next if y in cfns}
+        entry_nodes = {
+            y
+            for x in entry_nodes
+            for y in (x.next if x is not None else {self.first_cfn})
+            if y in cfns
+        }
         exit_nodes = accessible_cfns(self.next_cfns_of, cfns)
         return entry_nodes, exit_nodes
 
