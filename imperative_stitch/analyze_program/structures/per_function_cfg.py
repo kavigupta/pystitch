@@ -66,6 +66,21 @@ class PerFunctionCFG:
         """
         return self.sort_by_astn_key(items, lambda x: key(x).instruction.node)
 
+    def entry_and_exit_cfns(self, cfns):
+        """
+        Returns the entry and exit control flow nodes of the given control flow nodes.
+
+        Args:
+            cfns: A list of control flow nodes.
+
+        Returns:
+            A tuple of (entry, exit) control flow nodes.
+        """
+        entry_nodes = accessible_cfns(self.prev_cfns_of, cfns)
+        entry_nodes = {y for x in entry_nodes for y in x.next if y in cfns}
+        exit_nodes = accessible_cfns(self.next_cfns_of, cfns)
+        return entry_nodes, exit_nodes
+
 
 class NoControlFlowNode:
     """
@@ -78,6 +93,10 @@ class NoControlFlowNode:
 
     @property
     def next(self):
+        return []
+
+    @property
+    def next_from_end(self):
         return []
 
     @property
@@ -101,16 +120,16 @@ class NoBlock:
 
 def compute_full_graph(first_cfn):
     """
-    Compute the full graph of the control flow nodes, including exceptions.
+    Compute the full graph of the control flow nodes, including caught exceptions.
 
     Args:
         first_cfn: The first control flow node of the function.
 
     Returns:
         prev: A mapping from control flow node to its predecessors. first_cfn -> None is added.
-            Includes exceptions.
+            Includes caught exceptions.
         next: A mapping from control flow node to its successors.
-            Includes exceptions.
+            Includes caught exceptions.
     """
     prev = defaultdict(set)
     next = defaultdict(set)
@@ -127,6 +146,14 @@ def compute_full_graph(first_cfn):
             prev[next_cfn].add(cfn)
             next[cfn].add(next_cfn)
             fringe.append(next_cfn)
+        for next_cfn in cfn.next_from_end:
+            if next_cfn == "<raise>":
+                # we do not handle uncaught exceptions
+                # since these cross function boundaries anyway
+                # so don't affect the extraction operation
+                continue
+            assert next_cfn in cfn.next or next_cfn == "<return>", next_cfn
+            next[cfn].add(next_cfn)
         # exceptions
         if cannot_cause_exception(cfn):
             continue
@@ -153,3 +180,15 @@ def cannot_cause_exception(cfn):
     """
     # TODO implement this
     return False
+
+
+def accessible_cfns(transition, cfns):
+    """
+    Returns the control flow nodes that are outside cfns and are immediately reachable
+        from transitions as defined in `transition`.
+
+    Args:
+        transition: dict[cfn, set[cfn]] A mapping from control flow node to its successors.
+    """
+    accessible = {next_cfn for cfn in cfns for next_cfn in transition[cfn]}
+    return accessible - cfns
