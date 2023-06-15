@@ -24,28 +24,44 @@ class Origin(ABC):
         """
         pass
 
+    @abstractmethod
+    def initialized(self):
+        """
+        Whether this is an initialized value.
+        """
+        pass
 
-@dataclass
+
+@dataclass(eq=True, frozen=True)
 class Uninitialized(Origin):
     def initial(self):
         return True
 
+    def initialized(self):
+        return False
 
-@dataclass
+
+@dataclass(eq=True, frozen=True)
 class Argument(Origin):
     def initial(self):
         return True
 
+    def initialized(self):
+        return True
 
-@dataclass
+
+@dataclass(eq=True, frozen=True)
 class DefinedIn(Origin):
     site: AST
 
     def initial(self):
         return False
 
+    def initialized(self):
+        return True
 
-@dataclass
+
+@dataclass(eq=True, frozen=True)
 class Phi(Origin):
     parents: list
 
@@ -57,6 +73,9 @@ class Phi(Origin):
 
     def initial(self):
         return False
+
+    def initialized(self):
+        raise ValueError("Phi nodes can't be determined to be initialized or not")
 
 
 class SSAVariableIntermediateMapping:
