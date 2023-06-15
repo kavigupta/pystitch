@@ -4,10 +4,8 @@ from collections import defaultdict
 from python_graphs.control_flow import BasicBlock
 from python_graphs.instruction import Instruction
 
-from imperative_stitch.analyze_program.ssa.banned_component import (
-    BannedComponentVisitor,
-)
-from imperative_stitch.analyze_program.ssa.renamer import get_node_order
+from ..ssa.banned_component import BannedComponentVisitor
+from ..ssa.renamer import get_node_order
 
 
 class PerFunctionCFG:

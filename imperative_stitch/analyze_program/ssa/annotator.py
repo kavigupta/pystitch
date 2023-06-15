@@ -2,7 +2,7 @@ import ast
 from collections import defaultdict
 
 
-from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
+from ..structures.per_function_cfg import PerFunctionCFG
 
 from .ivm import Argument, DefinedIn, Phi, SSAVariableIntermediateMapping, Uninitialized
 from .renamer import name_vars
