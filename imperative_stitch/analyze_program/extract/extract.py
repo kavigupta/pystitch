@@ -3,6 +3,7 @@ import ast
 import ast_scope
 
 from .errors import (
+    MultipleExits,
     NonInitializedInputs,
     NonInitializedOutputs,
     UnexpectedControlFlowException,
@@ -16,7 +17,7 @@ def extraction_entry_exit(pfcfg, nodes):
     entrys, exits = pfcfg.entry_and_exit_cfns(set(nodes))
     [entry] = entrys
     if len(exits) > 1:
-        raise NotImplementedError("Multiple exits not supported")
+        raise MultipleExits
     if len(exits) == 0:
         # every path raises an exception, we don't have to do anything special
         exit = None
@@ -217,7 +218,7 @@ def do_extract(site, tree, *, extract_name):
     if exit is not None:
         new_pfcfg = site.locate_entry_point(tree)
         [call_cfn] = [
-            cfn for cfn in new_pfcfg.next_cfns_of if cfn.instruction.node == call
+            cfn for cfn in new_pfcfg.next_cfns_of if cfn is not None and cfn.instruction.node == call
         ]
         print(call_cfn)
         print(new_pfcfg.next_cfns_of)

@@ -2,6 +2,7 @@ import ast
 from textwrap import dedent
 import unittest
 from imperative_stitch.analyze_program.extract.errors import (
+    MultipleExits,
     NonInitializedInputs,
     NonInitializedOutputs,
 )
@@ -199,6 +200,33 @@ class ExtractTest(unittest.TestCase):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_conditional_early_return(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            if x > 0:
+                return x
+            x += 1
+            __end_extract__
+            x += y
+            return x
+        """
+        self.assertEqual(self.run_extract(code), MultipleExits())
+
+    def test_conditional_break(self):
+        code = """
+        def f(x, y):
+            for _ in range(10):
+                __start_extract__
+                if x > 0:
+                    break
+                x += 1
+                __end_extract__
+            x += y
+            return x
+        """
+        self.assertEqual(self.run_extract(code), MultipleExits())
+
     def test_undefined_input(self):
         code = """
         def f(x):
@@ -242,4 +270,34 @@ class ExtractTest(unittest.TestCase):
             BannedComponentError(
                 "nonlocal statements cannot be used because we do not support them yet"
             ),
+        )
+
+    def test_within_try(self):
+        code = """
+        def f(x):
+            try:
+                __start_extract__
+                x = h(x)
+                x = g(x)
+                __end_extract__
+            except:
+                pass
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            try:
+                x = __f0(x)
+            except:
+                pass
+            return x
+        """
+        post_extracted = """
+        def __f0(x):
+            x = h(x)
+            x = g(x)
+            return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
         )
