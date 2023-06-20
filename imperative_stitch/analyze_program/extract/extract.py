@@ -104,15 +104,16 @@ def create_target(variables, ctx):
         )
 
 
-def create_return_nodes(variables):
+def create_return_from_function(variables):
     if not variables:
-        return []
-    return [ast.Return(value=create_target(variables, ast.Load()))]
+        return ast.Return()
+    return ast.Return(value=create_target(variables, ast.Load()))
 
 
 def create_function_definition(extract_name, site, input_variables, output_variables):
     body = site.statements()[:]
-    body += create_return_nodes(output_variables)
+    return_from_function = create_return_from_function(output_variables)
+    body += [return_from_function]
     func_def = ast.FunctionDef(
         name=extract_name,
         args=ast.arguments(
@@ -125,6 +126,22 @@ def create_function_definition(extract_name, site, input_variables, output_varia
         decorator_list=[],
     )
     func_def = ast.fix_missing_locations(func_def)
+    func_def = remove_unnecessary_returns(func_def)
+    return func_def
+
+
+def remove_unnecessary_returns(func_def):
+    """
+    Remove unnecessary returns from the function definition.
+    """
+    # TODO this is a bit hacky, we should probably do this in a more principled way
+    # using the CFG information
+    if not func_def.body:
+        return func_def
+    if not isinstance(func_def.body[-1], ast.Return):
+        return func_def
+    if func_def.body[-1].value is None:
+        func_def.body.pop()
     return func_def
 
 
