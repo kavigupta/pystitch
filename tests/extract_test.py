@@ -5,6 +5,7 @@ from imperative_stitch.analyze_program.extract.errors import (
     NonInitializedInputs,
     NonInitializedOutputs,
 )
+from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 
 from imperative_stitch.data import parse_extract_pragma
 from imperative_stitch.analyze_program.extract import do_extract
@@ -25,7 +26,7 @@ class ExtractTest(unittest.TestCase):
         code = ast.unparse(tree)
         try:
             func_def, undo = do_extract(site, tree, extract_name="__f0")
-        except NotApplicable as e:
+        except (NotApplicable, BannedComponentError) as e:
             # ensure that the code is not changed
             self.assertEqual(code, ast.unparse(tree))
             return e
@@ -223,3 +224,22 @@ class ExtractTest(unittest.TestCase):
             return x
         """
         self.assertEqual(self.run_extract(code), NonInitializedOutputs())
+
+    def test_nonlocal(self):
+        code = """
+        def f(x):
+            def g():
+                nonlocal x
+                x = x + 1
+                return x
+            __start_extract__
+            y = g()
+            __end_extract__
+            return y
+        """
+        self.assertEqual(
+            self.run_extract(code),
+            BannedComponentError(
+                "nonlocal statements cannot be used because we do not support them yet"
+            ),
+        )

@@ -2,7 +2,8 @@ import ast
 
 
 class BannedComponentError(Exception):
-    pass
+    def __eq__(self, other):
+        return isinstance(other, BannedComponentError) and self.args == other.args
 
 
 class BannedComponentVisitor(ast.NodeVisitor):
@@ -14,4 +15,9 @@ class BannedComponentVisitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         raise BannedComponentError(
             "inner classes cannot be used because we do not support them yet"
+        )
+
+    def visit_Nonlocal(self, node):
+        raise BannedComponentError(
+            "nonlocal statements cannot be used because we do not support them yet"
         )
