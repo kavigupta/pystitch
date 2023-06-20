@@ -9,6 +9,7 @@ import tqdm.auto as tqdm
 from s_expression_parser import parse, ParserConfig, Pair
 
 from imperative_stitch.to_s import pair_to_s_exp, python_to_s_exp, s_exp_to_python
+from imperative_stitch.utils.recursion import recursionlimit
 
 
 @lru_cache(None)
@@ -33,9 +34,10 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def check(self, test_code):
         test_code = self.canonicalize(test_code)
         s_exp = python_to_s_exp(test_code, renderer_kwargs=dict(columns=80))
-        print(s_exp)
-        [s_exp_parsed] = parse(s_exp, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-        s_exp_parsed = pair_to_s_exp(s_exp_parsed)
+        # print(s_exp)
+        with recursionlimit(max(1500, len(s_exp))):
+            [s_exp_parsed] = parse(s_exp, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+            s_exp_parsed = pair_to_s_exp(s_exp_parsed)
         print(repr(s_exp_parsed))
         self.assert_valid_s_exp(s_exp_parsed)
         modified = s_exp_to_python(s_exp)
