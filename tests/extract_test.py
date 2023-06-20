@@ -1,11 +1,16 @@
 import ast
+import copy
 from textwrap import dedent
 import unittest
+import numpy as np
+from parameterized import parameterized
+
 from imperative_stitch.analyze_program.extract.errors import (
     MultipleExits,
     NonInitializedInputs,
     NonInitializedOutputs,
 )
+from imperative_stitch.analyze_program.extract.extraction_site import ExtractionSite
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 
 from imperative_stitch.data import parse_extract_pragma
@@ -15,6 +20,9 @@ from imperative_stitch.analyze_program.extract import (
     remove_unnecessary_returns,
 )
 from imperative_stitch.analyze_program.extract import NotApplicable
+from imperative_stitch.utils.ast_utils import field_is_body
+from tests.parse_test import small_set_examples
+from python_graphs import control_flow
 
 
 def canonicalize(code):
@@ -204,10 +212,13 @@ class RemoveUnnecessaryReturnsTest(unittest.TestCase):
         self.assertCode(pre_remove, post_remove)
 
 
-class ExtractTest(unittest.TestCase):
+class GenericExtractTest(unittest.TestCase):
     def run_extract(self, code):
         code = canonicalize(code)
         tree, [site] = parse_extract_pragma(code)
+        return self.run_extract_from_tree(tree, site)
+
+    def run_extract_from_tree(self, tree, site):
         # without pragmas
         code = ast.unparse(tree)
         try:
@@ -222,6 +233,8 @@ class ExtractTest(unittest.TestCase):
         self.assertEqual(code, ast.unparse(tree), "undo")
         return post_extract, extracted
 
+
+class ExtractTest(GenericExtractTest):
     def assertCodes(self, expected, actual):
         post_extract, extracted = actual
         expected_post_extract, expected_extracted = expected
@@ -665,3 +678,41 @@ class ExtractTest(unittest.TestCase):
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
+
+
+class ExtractRealisticTest(GenericExtractTest):
+    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    def test_realistic(self, i):
+        rng = np.random.RandomState(i)
+        code = small_set_examples()[i]
+        tree = ast.parse(code)
+        g = control_flow.get_control_flow_graph(tree)
+        print(code)
+        for entry_point in g.get_enter_blocks():
+            print(entry_point)
+            if not entry_point.node.body:
+                continue
+            code = self.sample_site(rng, copy.deepcopy(entry_point.node))
+            print(code)
+            try:
+                self.run_extract(code)
+            except BannedComponentError:
+                # don't error on this, just skip it
+                pass
+
+    def sample_site(self, rng, tree):
+        nodes = list(ast.walk(tree))
+        fields = [
+            (n, f)
+            for n in nodes
+            for f in n._fields
+            if field_is_body(type(n), f) and len(getattr(n, f)) > 0
+        ]
+        node, field = fields[rng.choice(len(fields))]
+        length = len(getattr(node, field))
+        start = rng.randint(length)
+        end = rng.randint(start + 1, length + 1)
+        body = getattr(node, field)
+        body.insert(start, ast.Expr(ast.Name("__start_extract__")))
+        body.insert(end + 1, ast.Expr(ast.Name("__end_extract__")))
+        return ast.unparse(tree)
