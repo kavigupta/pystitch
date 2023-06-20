@@ -1,4 +1,5 @@
 import ast
+import copy
 
 import ast_scope
 
@@ -122,7 +123,7 @@ def create_return_from_function(variables):
 
 
 def create_function_definition(extract_name, site, input_variables, output_variables):
-    body = site.statements()[:]
+    body = copy.deepcopy(site.statements())
     return_from_function = create_return_from_function(output_variables)
     body += [return_from_function]
     func_def = ast.FunctionDef(
@@ -275,22 +276,35 @@ def do_extract(site, tree, *, extract_name):
     func_def, call, exit = compute_extract_asts(
         scope_info, pfcfg, site, extract_name=extract_name
     )
-    prev = site.node.body[site.start : site.end]
-    site.node.body[site.start : site.end] = [call]
 
-    def undo():
-        site.node.body[site.start : site.start + 1] = prev
-
-    if exit is not None:
-        new_pfcfg = site.locate_entry_point(tree)
-        [call_cfn] = [
-            cfn for cfn in new_pfcfg.next_cfns_of if cfn is not None and cfn.instruction.node == call
-        ]
-        print(call_cfn)
-        print(new_pfcfg.next_cfns_of)
-        [exit_cfn] = new_pfcfg.next_cfns_of[call_cfn]
-        if exit_cfn != exit and exit_cfn.instruction.node != exit.instruction.node:
-            undo()
-            raise UnexpectedControlFlowException
+    for calls in [call], [call, ast.Break()], [call, ast.Continue()]:
+        success, undo = attempt_to_mutate(site, tree, calls, exit)
+        if success:
+            break
+    else:
+        raise UnexpectedControlFlowException
 
     return func_def, undo
+
+
+def attempt_to_mutate(site, tree, calls, exit):
+    """ """
+    prev = site.node.body[site.start : site.end]
+    site.node.body[site.start : site.end] = calls
+
+    def undo():
+        site.node.body[site.start : site.start + len(calls)] = prev
+
+    if exit is None:
+        return True, undo
+    new_pfcfg = site.locate_entry_point(tree)
+    [call_cfn] = [
+        cfn
+        for cfn in new_pfcfg.next_cfns_of
+        if cfn is not None and cfn.instruction.node == calls[0]
+    ]
+    [exit_cfn] = new_pfcfg.next_cfns_of[call_cfn]
+    if exit_cfn != exit and exit_cfn.instruction.node != exit.instruction.node:
+        undo()
+        return False, None
+    return True, undo

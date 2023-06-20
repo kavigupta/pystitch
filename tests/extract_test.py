@@ -219,7 +219,7 @@ class ExtractTest(unittest.TestCase):
 
         post_extract, extracted = ast.unparse(tree), ast.unparse(func_def)
         undo()
-        self.assertEqual(code, ast.unparse(tree))
+        self.assertEqual(code, ast.unparse(tree), "undo")
         return post_extract, extracted
 
     def assertCodes(self, expected, actual):
@@ -506,6 +506,161 @@ class ExtractTest(unittest.TestCase):
             x = h(x)
             x = g(x)
             return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_always_breaks(self):
+        code = """
+        def f(x):
+            while True:
+                __start_extract__
+                x = x + 1
+                break
+                __end_extract__
+                x = x + 2
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            while True:
+                x = __f0(x)
+                break
+                x = x + 2
+            return x
+        """
+        post_extracted = """
+        def __f0(x):
+            x = x + 1
+            return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_always_continues(self):
+        code = """
+        def f(x):
+            while True:
+                __start_extract__
+                x = x + 1
+                continue
+                __end_extract__
+                x = x + 2
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            while True:
+                x = __f0(x)
+                continue
+                x = x + 2
+            return x
+        """
+        post_extracted = """
+        def __f0(x):
+            x = x + 1
+            return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_always_breaks_in_if(self):
+        code = """
+        def f(x):
+            while True:
+                __start_extract__
+                if x > 0:
+                    break
+                else:
+                    x = x + 1
+                    break
+                __end_extract__
+                x = x + 2
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            while True:
+                x = __f0(x)
+                break
+                x = x + 2
+            return x
+        """
+        post_extracted = """
+        def __f0(x):
+            if x > 0:
+                return x
+            else:
+                x = x + 1
+                return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_always_continues_in_if(self):
+        code = """
+        def f(x):
+            while True:
+                __start_extract__
+                if x > 0:
+                    continue
+                else:
+                    x = x + 1
+                    continue
+                __end_extract__
+                x = x + 2
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            while True:
+                x = __f0(x)
+                continue
+                x = x + 2
+            return x
+        """
+        post_extracted = """
+        def __f0(x):
+            if x > 0:
+                return x
+            else:
+                x = x + 1
+                return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_normal_control_flow_if_autocontinue_anyway(self):
+        code = """
+        def f(x):
+            while True:
+                __start_extract__
+                if x > 0:
+                    continue
+                else:
+                    x = x + 1
+                    continue
+                __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            while True:
+                x = __f0(x)
+            return x
+        """
+        post_extracted = """
+        def __f0(x):
+            if x > 0:
+                return x
+            else:
+                x = x + 1
+                return x
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
