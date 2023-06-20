@@ -142,7 +142,9 @@ class FunctionSSAAnnotator:
                 [self._start[cfn][sym]] = parent_vars
             else:
                 self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
-                    sym, Phi(parent_vars), old_start.get(sym, None)
+                    sym,
+                    Phi(cfn.instruction.node, tuple(parent_vars)),
+                    old_start.get(sym, None),
                 )
         new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
         if cfn not in self._end or new_end != self._end[cfn]:

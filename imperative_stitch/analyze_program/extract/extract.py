@@ -50,8 +50,7 @@ def compute_ultimate_origins(origin_of):
             seen.add(to_process)
             if isinstance(origin_of[to_process], Phi):
                 fringe.extend(origin_of[to_process].parents)
-            else:
-                ultimate_origins[var].add(origin_of[to_process])
+            ultimate_origins[var].add(origin_of[to_process])
     return ultimate_origins
 
 
@@ -59,12 +58,17 @@ def variables_in_nodes(nodes, annotations):
     return {alias for x in nodes if x in annotations for alias in annotations[x]}
 
 
-def is_defined_in_node_set(ultimate_origin_of_var, extracted_nodes):
-    for origin in ultimate_origin_of_var:
-        if isinstance(origin, DefinedIn):
-            if origin.site in extracted_nodes:
-                return True
-    return False
+def is_origin_defined_in_node_set(origin, node_set):
+    if isinstance(origin, DefinedIn):
+        return node_set(origin.site)
+    elif isinstance(origin, Phi):
+        return node_set(origin.node)
+    else:
+        return node_set("<<function def>>")
+
+
+def traces_an_origin_to_node_set(origins, node_set):
+    return any(is_origin_defined_in_node_set(origin, node_set) for origin in origins)
 
 
 def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes):
@@ -73,7 +77,9 @@ def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes
         [
             x[0]
             for x in variables_in
-            if not is_defined_in_node_set(ultimate_origins[x], extracted_nodes)
+            if traces_an_origin_to_node_set(
+                ultimate_origins[x], lambda x: x not in extracted_nodes
+            )
         ]
     )
 
@@ -85,11 +91,13 @@ def compute_output_variables(
         set(pfcfg.astn_order) - site.all_nodes, annotations
     )
     return sorted(
-        [
+        {
             x[0]
             for x in variables_out
-            if is_defined_in_node_set(ultimate_origins[x], extracted_nodes)
-        ]
+            if traces_an_origin_to_node_set(
+                ultimate_origins[x], lambda x: x in extracted_nodes
+            )
+        }
     )
 
 

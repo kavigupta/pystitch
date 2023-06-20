@@ -63,19 +63,20 @@ class DefinedIn(Origin):
 
 @dataclass(eq=True, frozen=True)
 class Phi(Origin):
-    parents: list
+    node: AST
+    parents: tuple
 
     def replaceable_without_propagating(self, other):
         return isinstance(other, Phi)
 
     def remap(self, renaming_map):
-        return Phi(sorted({renaming_map[x] for x in self.parents}))
+        return Phi(self.node, tuple(sorted({renaming_map[x] for x in self.parents})))
 
     def initial(self):
         return False
 
     def initialized(self):
-        raise ValueError("Phi nodes can't be determined to be initialized or not")
+        return True
 
 
 class SSAVariableIntermediateMapping:

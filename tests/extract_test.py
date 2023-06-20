@@ -294,6 +294,30 @@ class ExtractTest(unittest.TestCase):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_only_affects_loop(self):
+        code = """
+        def f(x):
+            while True:
+                __start_extract__
+                x = x + 1
+                __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            while True:
+                x = __f0(x)
+            return x
+        """
+        post_extracted = """
+        def __f0(x):
+            x = x + 1
+            return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_mutiple_returns(self):
         code = """
         def f(x, y):

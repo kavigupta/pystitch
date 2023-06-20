@@ -171,6 +171,26 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_continue(self):
+        code = """
+        def f(x):
+            while True:
+                x = x + 1
+                continue
+                x = x + 2
+            return x
+        """
+        expected = """
+        def f(x_1):
+            # x_2 = phi(x_1, x_3)
+            while True:
+                x_3 = x_2 + 1
+                continue
+                x = x + 2
+            return x_2
+        """
+        self.assert_ssa(code, expected)
+
     def test_if_else(self):
         code = """
         def f(x):
