@@ -66,7 +66,7 @@ def to_list_s_expr(x, descoper, is_body=False):
                 )
         return result
     if isinstance(x, list):
-        return [to_list_s_expr(x, descoper) for x in x]
+        return [list] + [to_list_s_expr(x, descoper) for x in x]
     if x is None or x is Ellipsis or isinstance(x, (int, float, complex, str, bytes)):
         return x
     raise ValueError(f"Unsupported node {x}")
@@ -83,6 +83,8 @@ def to_python(x, is_body=False):
             return [to_python(x)]
     if isinstance(x, list):
         if x and isinstance(x[0], type):
+            if x[0] is list:
+                return [to_python(x) for x in x[1:]]
             t, *x = x
             f = t._fields
             assert len(x) == len(f)
@@ -135,6 +137,8 @@ def s_exp_to_pair(x):
 
 
 def pair_to_s_exp(x):
+    if x == "list":
+        return list
     if x is nil or x == "nil":
         return []
     if isinstance(x, Pair):
