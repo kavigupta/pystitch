@@ -4,9 +4,11 @@ from dataclasses import dataclass
 class NotApplicable(Exception):
     pass
 
+
 @dataclass
 class MultipleExits(NotApplicable):
     pass
+
 
 @dataclass
 class NonInitializedInputs(NotApplicable):
