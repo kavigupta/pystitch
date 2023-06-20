@@ -1,14 +1,20 @@
+from dataclasses import dataclass
+
+
 class NotApplicable(Exception):
     pass
 
 
+@dataclass
 class NonInitializedInputs(NotApplicable):
     pass
 
 
+@dataclass
 class NonInitializedOutputs(NotApplicable):
     pass
 
 
+@dataclass
 class UnexpectedControlFlowException(NotApplicable):
     pass
