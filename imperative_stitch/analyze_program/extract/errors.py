@@ -19,7 +19,3 @@ class NonInitializedInputs(NotApplicable):
 class NonInitializedOutputs(NotApplicable):
     pass
 
-
-@dataclass
-class UnexpectedControlFlowException(NotApplicable):
-    pass

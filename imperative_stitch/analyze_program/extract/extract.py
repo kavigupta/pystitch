@@ -8,8 +8,7 @@ from python_graphs import control_flow
 from .errors import (
     MultipleExits,
     NonInitializedInputs,
-    NonInitializedOutputs,
-    UnexpectedControlFlowException,
+    NonInitializedOutputs
 )
 from .loop import replace_break_and_continue
 
@@ -282,7 +281,7 @@ def do_extract(site, tree, *, extract_name):
         if success:
             break
     else:
-        raise UnexpectedControlFlowException
+        raise AssertionError("Weird and unexpected control flow")
 
     return func_def, undo
 
