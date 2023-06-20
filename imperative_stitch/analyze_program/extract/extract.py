@@ -5,11 +5,7 @@ import ast_scope
 
 from python_graphs import control_flow
 
-from .errors import (
-    MultipleExits,
-    NonInitializedInputs,
-    NonInitializedOutputs
-)
+from .errors import MultipleExits, NonInitializedInputs, NonInitializedOutputs
 from .loop import replace_break_and_continue
 
 from ..ssa.annotator import run_ssa

@@ -18,4 +18,3 @@ class NonInitializedInputs(NotApplicable):
 @dataclass
 class NonInitializedOutputs(NotApplicable):
     pass
-

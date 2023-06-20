@@ -18,6 +18,7 @@ def small_set_examples():
         contents = json.load(f)
     return contents
 
+
 class ParseUnparseInverseTest(unittest.TestCase):
     def canonicalize(self, python_code):
         return ast.unparse(ast.parse(python_code))
@@ -25,18 +26,21 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def assert_valid_s_exp(self, s_exp):
         if not isinstance(s_exp, list):
             return
-        self.assertTrue(isinstance(s_exp[0], type) or s_exp[0] in {"semi", "empty"}, repr(s_exp[0]))
+        self.assertTrue(
+            isinstance(s_exp[0], type) or s_exp[0] in {"semi", "empty"}, repr(s_exp[0])
+        )
         # self.assertTrue(len(s_exp) > 1, repr(s_exp))
         for y in s_exp[1:]:
             self.assert_valid_s_exp(y)
-
 
     def check(self, test_code):
         test_code = self.canonicalize(test_code)
         s_exp = python_to_s_exp(test_code, renderer_kwargs=dict(columns=80))
         # print(s_exp)
         with recursionlimit(max(1500, len(s_exp))):
-            [s_exp_parsed] = parse(s_exp, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+            [s_exp_parsed] = parse(
+                s_exp, ParserConfig(prefix_symbols=[], dots_are_cons=False)
+            )
             s_exp_parsed = pair_to_s_exp(s_exp_parsed)
         print(repr(s_exp_parsed))
         self.assert_valid_s_exp(s_exp_parsed)
