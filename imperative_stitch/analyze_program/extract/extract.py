@@ -2,12 +2,15 @@ import ast
 
 import ast_scope
 
+from python_graphs import control_flow
+
 from .errors import (
     MultipleExits,
     NonInitializedInputs,
     NonInitializedOutputs,
     UnexpectedControlFlowException,
 )
+from .loop import replace_break_and_continue
 
 from ..ssa.annotator import run_ssa
 from ..ssa.ivm import DefinedIn, Phi
@@ -126,23 +129,61 @@ def create_function_definition(extract_name, site, input_variables, output_varia
         decorator_list=[],
     )
     func_def = ast.fix_missing_locations(func_def)
+    _, _, func_def = replace_break_and_continue(func_def, return_from_function)
     func_def = remove_unnecessary_returns(func_def)
     return func_def
 
 
+def last_return_removable(func_def):
+    """
+    Can we remove the last return statement from the function definition?
+    """
+    if not func_def.body:
+        return False
+    if not isinstance(func_def.body[-1], ast.Return):
+        return False
+    if func_def.body[-1].value is None:
+        return True
+    if len(func_def.body) == 1:
+        return False
+    module_def = ast.parse(ast.unparse(func_def))
+    func_def = module_def.body[0]
+    g = control_flow.get_control_flow_graph(module_def)
+    [cfn] = [
+        cfn
+        for cfn in g.get_control_flow_nodes()
+        if cfn.instruction.node == func_def.body[-1]
+    ]
+    if cfn.prev == set():
+        return True
+    return False
+
+
+def remove_unnecessary_returns_one_step(func_def):
+    """
+    Remove the last return from the function definition if unnecessary.
+
+    Returns:
+        func_def: The function definition with the last return removed.
+        changed: True if the function definition was changed.
+    """
+    if not last_return_removable(func_def):
+        return func_def, False
+    func_def.body.pop()
+    if not func_def.body:
+        func_def.body.append(ast.Pass())
+    return func_def, True
+
+
 def remove_unnecessary_returns(func_def):
     """
-    Remove unnecessary returns from the function definition.
+    Remove unnecessary returns from the function definition, if they appear
+        at the end of the function.
     """
-    # TODO this is a bit hacky, we should probably do this in a more principled way
-    # using the CFG information
-    if not func_def.body:
-        return func_def
-    if not isinstance(func_def.body[-1], ast.Return):
-        return func_def
-    if func_def.body[-1].value is None:
-        func_def.body.pop()
-    return func_def
+    while True:
+        func_def, changed = remove_unnecessary_returns_one_step(func_def)
+        if not changed:
+            return func_def
 
 
 def create_function_call(extract_name, input_variables, output_variables, is_return):
