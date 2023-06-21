@@ -1,11 +1,13 @@
 import ast
 import ast_scope
 
+from imperative_stitch.utils.ast_utils import ast_nodes_in_order
+
 
 def get_name_and_scope_each(func_def):
-    args = {x for x in ast.walk(func_def.args)}
+    args = {x for x in ast_nodes_in_order(func_def.args)}
     annotation = ast_scope.annotate(func_def)
-    nodes = [x for x in ast.walk(func_def) if x in annotation]
+    nodes = [x for x in ast_nodes_in_order(func_def) if x in annotation]
     node_to_name_and_scope = {}
     name_and_scope_ordering = {}
     for i, node in enumerate(nodes):

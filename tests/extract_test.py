@@ -20,7 +20,7 @@ from imperative_stitch.analyze_program.extract import (
     remove_unnecessary_returns,
 )
 from imperative_stitch.analyze_program.extract import NotApplicable
-from imperative_stitch.utils.ast_utils import field_is_body
+from imperative_stitch.utils.ast_utils import ast_nodes_in_order, field_is_body
 from tests.parse_test import small_set_examples
 from python_graphs import control_flow
 
@@ -860,7 +860,7 @@ class ExtractRealisticTest(GenericExtractTest):
                 pass
 
     def sample_site(self, rng, tree):
-        nodes = list(ast.walk(tree))
+        nodes = list(ast_nodes_in_order(tree))
         fields = [
             (n, f)
             for n in nodes
