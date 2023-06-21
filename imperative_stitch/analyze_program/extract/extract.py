@@ -198,6 +198,8 @@ def create_function_call(extract_name, input_variables, output_variables, is_ret
     )
     if is_return:
         call = ast.Return(value=call)
+    elif not output_variables:
+        call = ast.Expr(value=call)
     else:
         call = ast.Assign(
             targets=[

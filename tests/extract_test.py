@@ -275,6 +275,35 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_no_return(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            print(x, y)
+            print(x ** 2)
+            __end_extract__
+            z = x + y
+            if z > 0:
+                x += 1
+            return x, y
+        """
+        post_extract_expected = """
+        def f(x, y):
+            __f0(x, y)
+            z = x + y
+            if z > 0:
+                x += 1
+            return x, y
+        """
+        post_extracted = """
+        def __f0(x, y):
+            print(x, y)
+            print(x ** 2)
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_basic_in_loop(self):
         code = """
         def f(xs, ys):
