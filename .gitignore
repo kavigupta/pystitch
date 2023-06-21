@@ -3,3 +3,4 @@
 *.ipynb_checkpoints
 *.egg-info
 Untitled.ipynb
+__test__.py
