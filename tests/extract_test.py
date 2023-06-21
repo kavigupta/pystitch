@@ -283,12 +283,12 @@ class ExtractTest(GenericExtractTest):
             return x, y
         """
         post_extracted = """
-        def __f0(x, y):
-            x, y = y, x
-            z = x + y
-            if z > 0:
-                x += 1
-            return x, y
+        def __f0(__0, __1):
+            __0, __1 = __1, __0
+            __2 = __0 + __1
+            if __2 > 0:
+                __0 += 1
+            return __0, __1
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -315,9 +315,9 @@ class ExtractTest(GenericExtractTest):
             return x, y
         """
         post_extracted = """
-        def __f0(x, y):
-            print(x, y)
-            print(x ** 2)
+        def __f0(__0, __1):
+            print(__0, __1)
+            print(__0 ** 2)
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -345,11 +345,11 @@ class ExtractTest(GenericExtractTest):
             return zs
         """
         post_extracted = """
-        def __f0(x, y):
-            x2y2 = x ** 2 + y ** 2
-            r = x2y2 ** 0.5
-            z = x + r
-            return z
+        def __f0(__1, __2):
+            __0 = __1 ** 2 + __2 ** 2
+            __3 = __0 ** 0.5
+            __4 = __1 + __3
+            return __4
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -371,9 +371,9 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x):
-            x = x + 1
-            return x
+        def __f0(__0):
+            __0 = __0 + 1
+            return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -394,11 +394,11 @@ class ExtractTest(GenericExtractTest):
             return __f0(x, y)
         """
         post_extracted = """
-        def __f0(x, y):
-            if x > 0:
-                return x
+        def __f0(__0, __1):
+            if __0 > 0:
+                return __0
             else:
-                return y
+                return __1
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -419,11 +419,11 @@ class ExtractTest(GenericExtractTest):
             return __f0(x, y)
         """
         post_extracted = """
-        def __f0(x, y):
-            if x > 0:
-                return x
-            y += 1
-            return y
+        def __f0(__0, __1):
+            if __0 > 0:
+                return __0
+            __1 += 1
+            return __1
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -443,9 +443,9 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x, y):
-            x += y
-            return x
+        def __f0(__0, __1):
+            __0 += __1
+            return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -463,8 +463,8 @@ class ExtractTest(GenericExtractTest):
             return __f0(y)
         """
         post_extracted = """
-        def __f0(y):
-            x = y
+        def __f0(__1):
+            __0 = __1
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -486,9 +486,9 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x, y):
-            x += y
-            return x
+        def __f0(__0, __1):
+            __0 += __1
+            return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -514,9 +514,9 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x, y):
-            x += y
-            return x
+        def __f0(__0, __1):
+            __0 += __1
+            return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -615,10 +615,10 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x):
-            x = h(x)
-            x = g(x)
-            return x
+        def __f0(__0):
+            __0 = h(__0)
+            __0 = g(__0)
+            return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -671,9 +671,9 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x):
-            x = x + 1
-            return x
+        def __f0(__0):
+            __0 = __0 + 1
+            return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -699,9 +699,9 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x):
-            x = x + 1
-            return x
+        def __f0(__0):
+            __0 = __0 + 1
+            return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -730,12 +730,12 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x):
-            if x > 0:
-                return x
+        def __f0(__0):
+            if __0 > 0:
+                return __0
             else:
-                x = x + 1
-                return x
+                __0 = __0 + 1
+                return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -764,12 +764,12 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x):
-            if x > 0:
-                return x
+        def __f0(__0):
+            if __0 > 0:
+                return __0
             else:
-                x = x + 1
-                return x
+                __0 = __0 + 1
+                return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -795,12 +795,12 @@ class ExtractTest(GenericExtractTest):
             return x
         """
         post_extracted = """
-        def __f0(x):
-            if x > 0:
-                return x
+        def __f0(__0):
+            if __0 > 0:
+                return __0
             else:
-                x = x + 1
-                return x
+                __0 = __0 + 1
+                return __0
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -821,10 +821,10 @@ class ExtractTest(GenericExtractTest):
             return x, y
         """
         post_extracted = """
-        def __f0(y, x):
-            y = y + 1
-            x = x + 1
-            return y, x
+        def __f0(__0, __1):
+            __0 = __0 + 1
+            __1 = __1 + 1
+            return __0, __1
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
