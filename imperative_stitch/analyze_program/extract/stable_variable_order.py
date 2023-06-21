@@ -10,15 +10,16 @@ def get_name_and_scope_each(func_def):
     nodes = [x for x in ast_nodes_in_order(func_def) if x in annotation]
     node_to_name_and_scope = {}
     name_and_scope_ordering = {}
-    for i, node in enumerate(nodes):
-        if isinstance(node, ast.arg):
-            continue
+    for i, node in enumerate(
+        [x for x in nodes if x not in args] + [x for x in nodes if x in args]
+    ):
         scope = annotation[node]
+        if not isinstance(scope, ast_scope.scope.FunctionScope):
+            continue
         name = scope.variables.node_to_symbol[node]
         node_to_name_and_scope[node] = (name, scope)
-        if node not in args:
-            if (name, scope) not in name_and_scope_ordering:
-                name_and_scope_ordering[(name, scope)] = i
+        if (name, scope) not in name_and_scope_ordering:
+            name_and_scope_ordering[(name, scope)] = i
     return (
         node_to_name_and_scope,
         name_and_scope_ordering,
