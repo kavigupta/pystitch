@@ -291,11 +291,11 @@ def do_extract(site, tree, *, extract_name):
 
 def attempt_to_mutate(site, tree, calls, exit):
     """ """
-    prev = site.node.body[site.start : site.end]
-    site.node.body[site.start : site.end] = calls
+    prev = site.containing_sequence[site.start : site.end]
+    site.containing_sequence[site.start : site.end] = calls
 
     def undo():
-        site.node.body[site.start : site.start + len(calls)] = prev
+        site.containing_sequence[site.start : site.start + len(calls)] = prev
 
     if exit is None:
         return True, undo

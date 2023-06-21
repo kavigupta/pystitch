@@ -470,6 +470,58 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_inside_if(self):
+        code = """
+        def f(x, y):
+            if x > 0:
+                __start_extract__
+                x += y
+                __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x, y):
+            if x > 0:
+                x = __f0(x, y)
+            return x
+        """
+        post_extracted = """
+        def __f0(x, y):
+            x += y
+            return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_inside_else(self):
+        code = """
+        def f(x, y):
+            if x > 0:
+                x += y
+            else:
+                __start_extract__
+                x += y
+                __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x, y):
+            if x > 0:
+                x += y
+            else:
+                x = __f0(x, y)
+            return x
+        """
+        post_extracted = """
+        def __f0(x, y):
+            x += y
+            return x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_conditional_early_return(self):
         code = """
         def f(x, y):
