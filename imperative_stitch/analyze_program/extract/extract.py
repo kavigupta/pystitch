@@ -7,7 +7,7 @@ from python_graphs import control_flow
 
 from .errors import MultipleExits, NonInitializedInputs, NonInitializedOutputs
 from .loop import replace_break_and_continue
-
+from .stable_variable_order import canonicalize_variable_order
 from ..ssa.annotator import run_ssa
 from ..ssa.ivm import DefinedIn, Phi
 
@@ -242,6 +242,14 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
         start[exit], output_variables, ultimate_origins
     ):
         raise NonInitializedOutputs
+    func_def = create_function_definition(
+        extract_name, site, input_variables, output_variables
+    )
+    input_variables, output_variables = canonicalize_variable_order(
+        func_def,
+        input_variables,
+        output_variables,
+    )
     func_def = create_function_definition(
         extract_name, site, input_variables, output_variables
     )

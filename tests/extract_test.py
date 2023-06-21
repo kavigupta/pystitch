@@ -806,6 +806,30 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_extract_y_then_x(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            y = y + 1
+            x = x + 1
+            __end_extract__
+            return x, y
+        """
+        post_extract_expected = """
+        def f(x, y):
+            y, x = __f0(y, x)
+            return x, y
+        """
+        post_extracted = """
+        def __f0(y, x):
+            y = y + 1
+            x = x + 1
+            return y, x
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class ExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):

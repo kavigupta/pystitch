@@ -21,7 +21,7 @@ setuptools.setup(
     install_requires=[
         "s-exp-parser==1.3.1",
         "datasets==2.10.1",
-        "ast_scope>=0.4.0",
+        "ast_scope>=0.4.1",
         # my fork of python-graphs, update this to the latest commit hash
         "python-graphs @ https://github.com/kavigupta/python-graphs/archive/05b38f8401392570c31580c51ee13e9b532f9e05.zip",
     ],
