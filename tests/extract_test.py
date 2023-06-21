@@ -624,6 +624,33 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_within_try_with_raise(self):
+        code = """
+        def f(x):
+            try:
+                __start_extract__
+                raise RuntimeError
+                __end_extract__
+            except:
+                pass
+            return x
+        """
+        post_extract_expected = """
+        def f(x):
+            try:
+                __f0()
+            except:
+                pass
+            return x
+        """
+        post_extracted = """
+        def __f0():
+            raise RuntimeError
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_always_breaks(self):
         code = """
         def f(x):
