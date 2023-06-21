@@ -15,9 +15,11 @@ class PerFunctionCFG:
         first_cfn: The first control flow node of the function.
         astn_order: A mapping from AST node to its preorder index in the AST
             Useful for determinism.
-        prev_cfns_of: A mapping from control flow node to its predecessors.
-            Includes exceptions.
-        next_cfns_of: A mapping from control flow node to its successors.
+        prev_cfns_of: dict[cfn, set[(tag, cfn)]
+            A mapping from control flow node to its predecessors.
+            Includes exceptions. Tagged with "normal" or "exception".
+        next_cfns_of: dict[cfn, set[(tag, cfn)]
+            A mapping from control flow node to its successors.
             Includes exceptions.
     """
 
@@ -79,7 +81,7 @@ class PerFunctionCFG:
         entry_nodes = accessible_cfns(self.prev_cfns_of, cfns)
         entry_nodes = {
             y
-            for x in entry_nodes
+            for _, x in entry_nodes
             for y in (x.next if x is not None else {self.first_cfn})
             if y in cfns
         }
@@ -139,7 +141,7 @@ def compute_full_graph(first_cfn):
     prev = defaultdict(set)
     next = defaultdict(set)
     # prev of first is None
-    prev[first_cfn].add(None)
+    prev[first_cfn].add(("normal", None))
     seen = set()
     fringe = [first_cfn]
     while fringe:
@@ -147,9 +149,15 @@ def compute_full_graph(first_cfn):
         if cfn in seen:
             continue
         seen.add(cfn)
+        # if the current node is an exception then this is an exception
+        # transition
+        if isinstance(cfn.instruction.node, ast.Raise):
+            tag = "exception"
+        else:
+            tag = "normal"
         for next_cfn in cfn.next:
-            prev[next_cfn].add(cfn)
-            next[cfn].add(next_cfn)
+            prev[next_cfn].add((tag, cfn))
+            next[cfn].add((tag, next_cfn))
             fringe.append(next_cfn)
         for next_cfn in cfn.next_from_end:
             if next_cfn == "<raise>":
@@ -158,7 +166,7 @@ def compute_full_graph(first_cfn):
                 # so don't affect the extraction operation
                 continue
             assert next_cfn in cfn.next or next_cfn == "<return>", next_cfn
-            next[cfn].add(next_cfn)
+            next[cfn].add((tag, next_cfn))
         # exceptions
         if cannot_cause_exception(cfn):
             continue
@@ -174,8 +182,8 @@ def compute_full_graph(first_cfn):
         }
         for exc_causer in exception_causers:
             for exc_target in exception_targets:
-                prev[exc_target].add(exc_causer)
-                next[exc_causer].add(exc_target)
+                prev[exc_target].add(("exception", exc_causer))
+                next[exc_causer].add(("exception", exc_target))
     return prev, next
 
 
@@ -193,7 +201,15 @@ def accessible_cfns(transition, cfns):
         from transitions as defined in `transition`.
 
     Args:
-        transition: dict[cfn, set[cfn]] A mapping from control flow node to its successors.
+        transition: dict[cfn, set[(tag, cfn)]] A mapping from control flow node to its successors.
+
+    Returns:
+        set[(tag, cfn)] The control flow nodes that are outside cfns and are immediately reachable
     """
-    accessible = {next_cfn for cfn in cfns for next_cfn in transition[cfn]}
-    return accessible - cfns
+    accessible = {
+        (tag, next_cfn)
+        for cfn in cfns
+        for tag, next_cfn in transition[cfn]
+        if next_cfn not in cfns
+    }
+    return accessible

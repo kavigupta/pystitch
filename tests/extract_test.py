@@ -632,7 +632,7 @@ class ExtractTest(GenericExtractTest):
                 raise RuntimeError
                 __end_extract__
             except:
-                pass
+                y = 2
             return x
         """
         post_extract_expected = """
@@ -640,7 +640,7 @@ class ExtractTest(GenericExtractTest):
             try:
                 __f0()
             except:
-                pass
+                y = 2
             return x
         """
         post_extracted = """

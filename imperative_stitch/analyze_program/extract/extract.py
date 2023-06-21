@@ -14,6 +14,7 @@ from ..ssa.ivm import DefinedIn, Phi
 
 def extraction_entry_exit(pfcfg, nodes):
     entrys, exits = pfcfg.entry_and_exit_cfns(set(nodes))
+    exits = [x for tag, x in exits if tag != "exception"]
     if not entrys:
         assert not exits
         return None, None
@@ -305,7 +306,10 @@ def attempt_to_mutate(site, tree, calls, exit):
         for cfn in new_pfcfg.next_cfns_of
         if cfn is not None and cfn.instruction.node == calls[0]
     ]
-    [exit_cfn] = new_pfcfg.next_cfns_of[call_cfn]
+    call_exits = [
+        x for tag, x in new_pfcfg.next_cfns_of[call_cfn] if tag != "exception"
+    ]
+    [exit_cfn] = call_exits
     if exit_cfn != exit and exit_cfn.instruction.node != exit.instruction.node:
         undo()
         return False, None

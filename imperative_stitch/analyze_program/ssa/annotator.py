@@ -158,7 +158,9 @@ class FunctionSSAAnnotator:
         """
         result = [
             self._end.get(parent, {}) if parent is not None else self._arg_node
-            for parent in self.graph.sort_by_cfn_key(self.graph.prev_cfns_of[cfn])
+            for parent in self.graph.sort_by_cfn_key(
+                [x for _, x in self.graph.prev_cfns_of[cfn]]
+            )
         ]
         return result
 
