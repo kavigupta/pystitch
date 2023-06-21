@@ -247,6 +247,25 @@ class ExtractTest(GenericExtractTest):
             canonicalize(expected_extracted), canonicalize(extracted), "extracted"
         )
 
+    def test_pass(self):
+        code = """
+        def f(x):
+            __start_extract__
+            pass
+            __end_extract__
+        """
+        post_extract_expected = """
+        def f(x):
+            __f0()
+        """
+        post_extracted = """
+        def __f0():
+            pass
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_basic(self):
         code = """
         def f(x, y):

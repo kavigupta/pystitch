@@ -14,6 +14,9 @@ from ..ssa.ivm import DefinedIn, Phi
 
 def extraction_entry_exit(pfcfg, nodes):
     entrys, exits = pfcfg.entry_and_exit_cfns(set(nodes))
+    if not entrys:
+        assert not exits
+        return None, None
     [entry] = entrys
     if len(exits) > 1:
         raise MultipleExits
@@ -230,7 +233,9 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
             pfcfg, site, annotations, ultimate_origins, extracted_nodes
         )
 
-    if not all_initialized(start[entry], input_variables, ultimate_origins):
+    if entry is not None and not all_initialized(
+        start[entry], input_variables, ultimate_origins
+    ):
         raise NonInitializedInputs
     if output_variables and not all_initialized(
         start[exit], output_variables, ultimate_origins
