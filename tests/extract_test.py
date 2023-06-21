@@ -808,6 +808,14 @@ class ExtractTest(GenericExtractTest):
 
 
 class ExtractRealisticTest(GenericExtractTest):
+    def test_temporary(self):
+        try:
+            with open("__test__.py") as f:
+                code = f.read()
+        except FileNotFoundError:
+            return
+        self.run_extract(code)
+
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
     def test_realistic(self, i):
         rng = np.random.RandomState(i)
