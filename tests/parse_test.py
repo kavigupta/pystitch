@@ -24,12 +24,12 @@ class ParseUnparseInverseTest(unittest.TestCase):
         return ast.unparse(ast.parse(python_code))
 
     def assert_valid_s_exp(self, s_exp):
-        if not isinstance(s_exp, list):
+        if not isinstance(s_exp, list) or not s_exp:
             return
         self.assertTrue(
-            isinstance(s_exp[0], type) or s_exp[0] in {"semi", "empty"}, repr(s_exp[0])
+            isinstance(s_exp[0], type) or s_exp[0] in {"semi"}, repr(s_exp[0])
         )
-        # self.assertTrue(len(s_exp) > 1, repr(s_exp))
+        self.assertTrue(len(s_exp) > 1, repr(s_exp))
         for y in s_exp[1:]:
             self.assert_valid_s_exp(y)
 
@@ -72,6 +72,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
     def test_realistic(self, i):
         try:
+            print(small_set_examples()[i])
             self.check(small_set_examples()[i])
         except Exception as e:
             self.assertFalse(f"Error: {e}")

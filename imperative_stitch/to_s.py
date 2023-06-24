@@ -47,13 +47,15 @@ def to_list_s_expr(x, descoper, is_body=False):
     if is_body:
         assert isinstance(x, list), str(x)
         if not x:
-            return ["empty"]
+            return []
         x = [to_list_s_expr(x, descoper) for x in x]
         result = x.pop()
         while x:
             result = ["semi", x.pop(), result]
         return result
     if isinstance(x, ast.AST):
+        if not x._fields:
+            return type(x)
         result = [type(x)]
         for f in x._fields:
             el = getattr(x, f)
@@ -65,6 +67,8 @@ def to_list_s_expr(x, descoper, is_body=False):
                     to_list_s_expr(el, descoper, is_body=field_is_body(type(x), f))
                 )
         return result
+    if x == []:
+        return []
     if isinstance(x, list):
         return [list] + [to_list_s_expr(x, descoper) for x in x]
     if x is None or x is Ellipsis or isinstance(x, (int, float, complex, str, bytes)):
@@ -74,7 +78,7 @@ def to_list_s_expr(x, descoper, is_body=False):
 
 def to_python(x, is_body=False):
     if is_body:
-        if x == ["empty"]:
+        if x == []:
             return []
         elif isinstance(x, list) and x[0] == "semi":
             _, first, second = x
@@ -104,12 +108,14 @@ def list_to_pair(x):
 
 
 def s_exp_to_pair(x):
+    if x == []:
+        return nil
     if isinstance(x, list):
         x = [s_exp_to_pair(x) for x in x]
         return list_to_pair(x)
     if isinstance(x, type):
         return x.__name__
-    if x in {"semi", "empty"}:
+    if x in {"semi"}:
         return x
     if x is True or x is False or x is None or x is Ellipsis:
         return str(x)
@@ -150,7 +156,7 @@ def pair_to_s_exp(x):
         return Ellipsis
     if x in {"True", "False", "None"}:
         return ast.literal_eval(x)
-    if x in {"semi", "empty"}:
+    if x in {"semi"}:
         return x
     if x.startswith("i"):
         return int(x[1:])
@@ -169,7 +175,10 @@ def pair_to_s_exp(x):
         )
     if x.startswith("b"):
         return base64.b64decode(x[1:].encode("utf-8"))
-    return getattr(ast, x)
+    typ = getattr(ast, x)
+    if typ._fields:
+        return typ
+    return typ()
 
 
 def python_to_s_exp(code, renderer_kwargs=dict()):
