@@ -4,6 +4,8 @@ from collections import defaultdict
 from python_graphs.control_flow import BasicBlock
 from python_graphs.instruction import Instruction
 
+from imperative_stitch.analyze_program.extract.errors import MultipleExits
+
 
 class PerFunctionCFG:
     """
@@ -87,6 +89,33 @@ class PerFunctionCFG:
         }
         exit_nodes = accessible_cfns(self.next_cfns_of, cfns)
         return entry_nodes, exit_nodes
+
+    def extraction_entry_exit(self, nodes):
+        """
+        Compute the entry and exit of an extraction site.
+
+        Args:
+            nodes: The nodes in the extraction site.
+
+        Returns:
+            A tuple of (entry, exit) control flow nodes.
+            Returns (None, None) if the extraction site is empty,
+                or (entry, None) if the extraction site always raises an exception.
+        """
+        entrys, exits = self.entry_and_exit_cfns(set(nodes))
+        exits = [x for tag, x in exits if tag != "exception"]
+        if not entrys:
+            assert not exits
+            return None, None
+        [entry] = entrys
+        if len(exits) > 1:
+            raise MultipleExits
+        if len(exits) == 0:
+            # every path raises an exception, we don't have to do anything special
+            exit = None
+        else:
+            [exit] = exits
+        return entry, exit
 
 
 class NoControlFlowNode:

@@ -10,28 +10,11 @@ from imperative_stitch.analyze_program.extract.input_output_variables import (
     compute_output_variables,
 )
 
-from .errors import MultipleExits, NonInitializedInputs, NonInitializedOutputs
+from .errors import NonInitializedInputs, NonInitializedOutputs
 from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
 from ..ssa.ivm import compute_ultimate_origins
-
-
-def extraction_entry_exit(pfcfg, nodes):
-    entrys, exits = pfcfg.entry_and_exit_cfns(set(nodes))
-    exits = [x for tag, x in exits if tag != "exception"]
-    if not entrys:
-        assert not exits
-        return None, None
-    [entry] = entrys
-    if len(exits) > 1:
-        raise MultipleExits
-    if len(exits) == 0:
-        # every path raises an exception, we don't have to do anything special
-        exit = None
-    else:
-        [exit] = exits
-    return entry, exit
 
 
 def all_initialized(lookup, vars, ultimate_origins):
@@ -197,7 +180,7 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
     """
     start, _, mapping, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    entry, exit = extraction_entry_exit(pfcfg, extracted_nodes)
+    entry, exit = pfcfg.extraction_entry_exit(extracted_nodes)
     ultimate_origins = compute_ultimate_origins(mapping)
     input_variables = compute_input_variables(
         site, annotations, ultimate_origins, extracted_nodes
