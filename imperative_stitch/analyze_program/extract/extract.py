@@ -177,6 +177,26 @@ def create_function_call(extract_name, input_variables, output_variables, is_ret
 def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
     """
     Returns the function definition and the function call for the extraction.
+
+    Arguments
+    ---------
+    scope_info: ScopeInfo
+        The scope information of the program.
+    pfcfg: PerFunctionCFG
+        The per-function control flow graph for the relevant function
+    site: ExtractionSite
+        The extraction site.
+    extract_name: str
+        The name of the extracted function.
+
+    Returns
+    -------
+    func_def: AST
+        The function definition of the extracted function.
+    call: AST
+        The function call of the extracted function.
+    exit:
+        The exit node of the extraction site.
     """
     start, _, mapping, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
@@ -258,7 +278,31 @@ def do_extract(site, tree, *, extract_name):
 
 
 def attempt_to_mutate(site, tree, calls, exit):
-    """ """
+    """
+    Attempt to mutate the AST to replace the extraction site with the given calls code.
+
+    Checks that the exit of the extraction site is the same as the exit of the calls code.
+
+    Arguments
+    ---------
+    site: ExtractionSite
+        The extraction site.
+    tree: AST
+        The AST of the whole program.
+    calls: list[AST]
+        The code to replace the extraction site with.
+    exit: ControlFlowNode
+        The exit of the extraction site.
+
+    Returns
+    -------
+    success: bool
+        True if the mutation was successful, i.e., the exit of the extraction site is the
+            same as the exit of the calls code.
+    undo: () -> None
+        A function that undoes the mutation, or None if the mutation was unsuccessful (in
+            which case the AST is not mutated)
+    """
     prev = site.containing_sequence[site.start : site.end]
     site.containing_sequence[site.start : site.end] = calls
 
