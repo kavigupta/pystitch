@@ -153,6 +153,28 @@ def remove_unnecessary_returns(func_def):
 
 
 def create_function_call(extract_name, input_variables, output_variables, is_return):
+    """
+    Create the function call for the extracted function. Can be either a return
+        statement (if the extracted site returns a value), an assignment (if the
+        extracted site has output variables), or an expression (if the extracted
+        site has no output variables and does not return a value).
+
+    Arguments
+    ---------
+    extract_name: str
+        The name of the extracted function to create.
+    input_variables: list[str]
+        The input variables of the extracted function.
+    output_variables: list[str]
+        The output variables of the extracted function.
+    is_return: bool
+        True if the extracted site returns a value.
+
+    Returns
+    -------
+    call: AST
+        The function call.
+    """
     call = ast.Call(
         func=ast.Name(id=extract_name, ctx=ast.Load()),
         args=[ast.Name(id=x, ctx=ast.Load()) for x in input_variables],
