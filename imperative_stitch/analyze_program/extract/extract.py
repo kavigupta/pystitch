@@ -5,6 +5,11 @@ import ast_scope
 
 from python_graphs import control_flow
 
+from imperative_stitch.analyze_program.extract.input_output_variables import (
+    compute_input_variables,
+    compute_output_variables,
+)
+
 from .errors import MultipleExits, NonInitializedInputs, NonInitializedOutputs
 from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
@@ -52,53 +57,6 @@ def compute_ultimate_origins(origin_of):
                 fringe.extend(origin_of[to_process].parents)
             ultimate_origins[var].add(origin_of[to_process])
     return ultimate_origins
-
-
-def variables_in_nodes(nodes, annotations):
-    return {alias for x in nodes if x in annotations for alias in annotations[x]}
-
-
-def is_origin_defined_in_node_set(origin, node_set):
-    if isinstance(origin, DefinedIn):
-        return node_set(origin.site)
-    elif isinstance(origin, Phi):
-        return node_set(origin.node)
-    else:
-        return node_set("<<function def>>")
-
-
-def traces_an_origin_to_node_set(origins, node_set):
-    return any(is_origin_defined_in_node_set(origin, node_set) for origin in origins)
-
-
-def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes):
-    variables_in = variables_in_nodes(site.all_nodes, annotations)
-    return sorted(
-        [
-            x[0]
-            for x in variables_in
-            if traces_an_origin_to_node_set(
-                ultimate_origins[x], lambda x: x not in extracted_nodes
-            )
-        ]
-    )
-
-
-def compute_output_variables(
-    pfcfg, site, annotations, ultimate_origins, extracted_nodes
-):
-    variables_out = variables_in_nodes(
-        set(pfcfg.astn_order) - site.all_nodes, annotations
-    )
-    return sorted(
-        {
-            x[0]
-            for x in variables_out
-            if traces_an_origin_to_node_set(
-                ultimate_origins[x], lambda x: x in extracted_nodes
-            )
-        }
-    )
 
 
 def all_initialized(lookup, vars, ultimate_origins):
