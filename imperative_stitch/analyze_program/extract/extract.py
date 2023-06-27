@@ -18,26 +18,88 @@ from ..ssa.ivm import compute_ultimate_origins
 
 
 def all_initialized(lookup, vars, ultimate_origins):
+    """
+    Whether all the variables are initialized in their ultimate origin
+
+    Arguments
+    ---------
+    lookup: dict[str, (str, int)]
+        A mapping from variable to its SSA entry.
+    vars: list[str]
+        The variables to check.
+    ultimate_origins: dict[(str, int), origin]
+        A mapping from SSA entry to its ultimate origin.
+
+    Returns
+    -------
+    bool
+        True if all the variables are initialized in their ultimate origin.
+    """
     vars = [lookup[v] for v in vars]
     return all(all(x.initialized() for x in ultimate_origins[var]) for var in vars)
 
 
 def create_target(variables, ctx):
+    """
+    Create a target from a list of variables.
+
+    Arguments
+    ---------
+    variables: list[str]
+        The variables to create a target from.
+    ctx: AST
+        The context of the target, either ast.Load() or ast.Store().
+
+    Returns
+    -------
+    target: AST
+        The target. Either an ast.Name or an ast.Tuple.
+    """
     if len(variables) == 1:
         return ast.Name(id=variables[0], ctx=ctx)
     else:
-        return ast.Tuple(
-            elts=[ast.Name(id=x, ctx=ctx) for x in variables], ctx=ctx
-        )
+        return ast.Tuple(elts=[ast.Name(id=x, ctx=ctx) for x in variables], ctx=ctx)
 
 
 def create_return_from_function(variables):
+    """
+    Create a return statement from a list of variables.
+
+    Arguments
+    ---------
+    variables: list[str]
+        The variables to create a return statement from.
+
+    Returns
+    -------
+    return: AST
+        The return statement.
+    """
     if not variables:
         return ast.Return()
     return ast.Return(value=create_target(variables, ast.Load()))
 
 
 def create_function_definition(extract_name, site, input_variables, output_variables):
+    """
+    Create a function definition for the extracted function.
+
+    Arguments
+    ---------
+    extract_name: str
+        The name of the extracted function.
+    site: ExtractionSite
+        The extraction site.
+    input_variables: list[str]
+        The input variables of the extracted function.
+    output_variables: list[str]
+        The output variables of the extracted function.
+
+    Returns
+    -------
+    func_def: AST
+        The function definition.
+    """
     body = copy.deepcopy(site.statements())
     return_from_function = create_return_from_function(output_variables)
     body += [return_from_function]
