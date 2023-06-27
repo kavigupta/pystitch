@@ -37,7 +37,10 @@ class ExtractionSite:
         """
         Locate the entry point of the extraction site in the tree.
         """
-        from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
+        from imperative_stitch.analyze_program.structures.per_function_cfg import (
+            PerFunctionCFG,
+        )
+
         g = control_flow.get_control_flow_graph(tree)
         entry_points = list(g.get_enter_blocks())
         for entry_point in entry_points:

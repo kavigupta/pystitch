@@ -4,8 +4,6 @@ from collections import defaultdict
 from python_graphs.control_flow import BasicBlock
 from python_graphs.instruction import Instruction
 
-from imperative_stitch.analyze_program.extract.errors import MultipleExits
-
 
 class PerFunctionCFG:
     """
@@ -102,6 +100,8 @@ class PerFunctionCFG:
             Returns (None, None) if the extraction site is empty,
                 or (entry, None) if the extraction site always raises an exception.
         """
+        from imperative_stitch.analyze_program.extract.errors import MultipleExits
+
         entrys, exits = self.entry_and_exit_cfns(set(nodes))
         exits = [x for tag, x in exits if tag != "exception"]
         if not entrys:
