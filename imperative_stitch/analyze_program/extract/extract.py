@@ -5,7 +5,7 @@ import ast_scope
 
 from python_graphs import control_flow
 
-from imperative_stitch.analyze_program.extract.input_output_variables import (
+from .input_output_variables import (
     compute_input_variables,
     compute_output_variables,
 )
