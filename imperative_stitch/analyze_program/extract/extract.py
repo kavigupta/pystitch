@@ -27,7 +27,7 @@ def create_target(variables, ctx):
         return ast.Name(id=variables[0], ctx=ctx)
     else:
         return ast.Tuple(
-            elts=[ast.Name(id=x, ctx=ast.Load()) for x in variables], ctx=ctx
+            elts=[ast.Name(id=x, ctx=ctx) for x in variables], ctx=ctx
         )
 
 
