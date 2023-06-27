@@ -14,7 +14,7 @@ from .errors import MultipleExits, NonInitializedInputs, NonInitializedOutputs
 from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
-from ..ssa.ivm import DefinedIn, Phi
+from ..ssa.ivm import compute_ultimate_origins
 
 
 def extraction_entry_exit(pfcfg, nodes):
@@ -32,31 +32,6 @@ def extraction_entry_exit(pfcfg, nodes):
     else:
         [exit] = exits
     return entry, exit
-
-
-def compute_ultimate_origins(origin_of):
-    """
-    For each variable list all the variables that are the ultimate origin of it.
-
-    An ultimate origin is either the origin of a variable or, if the variable's origin
-        is a Phi node, the ultimate origin of one of the variables that the Phi node
-        depends on.
-    """
-    # TODO there's probably a faster way to do this but this is fast enough for now
-    ultimate_origins = {}
-    for var in origin_of:
-        ultimate_origins[var] = set()
-        seen = set()
-        fringe = [var]
-        while fringe:
-            to_process = fringe.pop()
-            if to_process in seen:
-                continue
-            seen.add(to_process)
-            if isinstance(origin_of[to_process], Phi):
-                fringe.extend(origin_of[to_process].parents)
-            ultimate_origins[var].add(origin_of[to_process])
-    return ultimate_origins
 
 
 def all_initialized(lookup, vars, ultimate_origins):
