@@ -580,6 +580,23 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+
+    def test_with_sub_lambda_same_line(self):
+        code = """
+        def f():
+            x = 1
+            x = lambda: x
+            return x_3
+        """
+        expected = """
+        def f():
+            x_2 = 1
+            # x_4 = gamma(x_2; x_3)
+            x_3 = lambda: x_4
+            return x_3
+        """
+        self.assert_ssa(code, expected)
+
     def test_with_comprehensions(self):
         code = """
         def f():
