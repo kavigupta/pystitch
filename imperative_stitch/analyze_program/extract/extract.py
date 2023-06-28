@@ -242,9 +242,17 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
 
     metavariables = extract_metavariables(scope_info, site, annotations, mapping)
 
+    undos = []
+
+    undo_metavariables = metavariables.act(pfcfg.function_astn)
+    undos += [undo_metavariables]
+
+    pfcfg = pfcfg.refresh()
+
     input_variables = compute_input_variables(
         site, annotations, ultimate_origins, extracted_nodes
     )
+
     if exit is None or exit == "<return>":
         output_variables = []
     else:
@@ -252,27 +260,28 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
             pfcfg, site, annotations, ultimate_origins, extracted_nodes
         )
 
-    if entry is not None and not all_initialized(
-        start[entry], input_variables, ultimate_origins
-    ):
-        raise NonInitializedInputs
-    if output_variables and not all_initialized(
-        start[exit], output_variables, ultimate_origins
-    ):
-        raise NonInitializedOutputs
-    if invalid_closure_over_variable_modified_in_non_extracted_code(
-        site, annotations, extracted_nodes, mapping
-    ):
-        raise ClosureOverVariableModifiedInNonExtractedCode
+    try:
+        if entry is not None and not all_initialized(
+            start[entry], input_variables, ultimate_origins
+        ):
+            raise NonInitializedInputs
+        if output_variables and not all_initialized(
+            start[exit], output_variables, ultimate_origins
+        ):
+            raise NonInitializedOutputs
+        if invalid_closure_over_variable_modified_in_non_extracted_code(
+            site, annotations, extracted_nodes, mapping
+        ):
+            raise ClosureOverVariableModifiedInNonExtractedCode
+    except:
+        for undo in undos[::-1]:
+            undo()
+        raise
 
-    undos = []
     func_def, undo_replace = create_function_definition(
         extract_name, site, input_variables, output_variables, metavariables
     )
     undos += [undo_replace]
-
-    undo_metavariables = metavariables.act(func_def)
-    undos += [undo_metavariables]
 
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
