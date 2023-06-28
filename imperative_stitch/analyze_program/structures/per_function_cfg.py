@@ -37,6 +37,11 @@ class PerFunctionCFG:
             self.first_cfn = NoControlFlowNode()
         self.astn_order = get_node_order(self.function_astn)
         self.prev_cfns_of, self.next_cfns_of = compute_full_graph(self.first_cfn)
+        self.astn_to_cfn = {
+            astn: cfn
+            for cfn in self.prev_cfns_of.keys()
+            for astn in get_node_order(cfn.instruction.node)
+        }
 
     def sort_by_astn_key(self, items, key=lambda x: x):
         """
