@@ -21,3 +21,8 @@ class BannedComponentVisitor(ast.NodeVisitor):
         raise BannedComponentError(
             "nonlocal statements cannot be used because we do not support them yet"
         )
+
+    def visit_NamedExpr(self, node):
+        raise BannedComponentError(
+            "walrus statements cannot be used because we do not support them yet"
+        )
