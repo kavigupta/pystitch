@@ -973,6 +973,54 @@ class ExtractTest(GenericExtractTest):
         )
 
 
+class RewriteTest(GenericExtractTest):
+    def test_basic_rewrite(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            z = x ** 2 + {__metavariable__, y ** 2}
+            __end_extract__
+            return z
+        """
+        post_extract_expected = """
+        def f(x, y):
+            z = __f0(x, lambda: y ** 2)
+            return z
+        """
+        post_extracted = """
+        def __f0(__1, __m1):
+            __0 = __1 ** 2 + __m1()
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_rewrite_capturing_a_variable(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = x ** 7
+            z = {__metavariable__, y ** 7 - y}
+            __end_extract__
+            return z
+        """
+        post_extract_expected = """
+        def f(x):
+            z = __f0(x, lambda y: y ** 7 - y)
+            return z
+        """
+        post_extracted = """
+        def __f0(__1, __m1):
+            __0 = __1 ** 7
+            __2 = __m1(__0)
+            return __2
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+
 class ExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):
         try:
