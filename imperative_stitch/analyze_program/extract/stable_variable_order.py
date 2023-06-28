@@ -5,7 +5,7 @@ import ast_scope
 from imperative_stitch.utils.ast_utils import ast_nodes_in_order, name_field
 
 
-def get_name_and_scope_each(func_def):
+def get_name_and_scope_each(func_def, do_not_rename):
     args = {x for x in ast_nodes_in_order(func_def.args)}
     annotation = ast_scope.annotate(func_def)
     nodes = [x for x in ast_nodes_in_order(func_def) if x in annotation]
@@ -18,6 +18,8 @@ def get_name_and_scope_each(func_def):
         if not isinstance(scope, ast_scope.scope.FunctionScope):
             continue
         name = scope.variables.node_to_symbol[node]
+        if name in do_not_rename:
+            continue
         node_to_name_and_scope[node] = (name, scope)
         if (name, scope) not in name_and_scope_ordering:
             name_and_scope_ordering[(name, scope)] = i
@@ -28,8 +30,10 @@ def get_name_and_scope_each(func_def):
     )
 
 
-def canonicalize_variable_order(func_def, input_variables, output_variables):
-    _, name_and_scope_ordering, scope = get_name_and_scope_each(func_def)
+def canonicalize_variable_order(
+    func_def, input_variables, output_variables, do_not_rename
+):
+    _, name_and_scope_ordering, scope = get_name_and_scope_each(func_def, do_not_rename)
     var_order = lambda x: name_and_scope_ordering[(x, scope)]
     input_variables = sorted(input_variables, key=var_order)
     output_variables = sorted(output_variables, key=var_order)
@@ -50,8 +54,10 @@ class NameChanger(ast.NodeTransformer):
         return super().generic_visit(node)
 
 
-def canonicalize_names_in(func_def):
-    node_to_name, name_and_scope_ordering, _ = get_name_and_scope_each(func_def)
+def canonicalize_names_in(func_def, do_not_rename):
+    node_to_name, name_and_scope_ordering, _ = get_name_and_scope_each(
+        func_def, do_not_rename
+    )
     scopes = [x[1] for x in name_and_scope_ordering]
     scopes = sorted(set(scopes), key=lambda x: scopes.index(x))
     name_order_by_scope = {}
