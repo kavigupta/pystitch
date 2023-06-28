@@ -27,7 +27,9 @@ def name_field(x):
     if t == ast.ClassDef:
         return "name"
     if t == ast.alias:
-        return name_of_alias(x)
+        if x.asname is None:
+            return "name"
+        return "asname"
     raise Exception(f"Unexpected type: {t}")
 
 
@@ -44,3 +46,14 @@ def ast_nodes_in_order(node):
     visitor = AstNodesInOrder()
     visitor.visit(node)
     return visitor.nodes
+
+
+class ReplaceNodes(ast.NodeTransformer):
+    def __init__(self, node_map):
+        super().__init__()
+        self.node_map = node_map
+
+    def visit(self, node):
+        if node in self.node_map:
+            return self.node_map[node]
+        return super().visit(node)

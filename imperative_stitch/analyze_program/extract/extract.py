@@ -134,7 +134,7 @@ def create_function_definition(extract_name, site, input_variables, output_varia
     func_def: AST
         The function definition.
     """
-    body = copy.deepcopy(site.statements())
+    body = copy.copy(site.statements())
     return_from_function = create_return_from_function(output_variables)
     body += [return_from_function]
     func_def = ast.FunctionDef(
@@ -149,9 +149,9 @@ def create_function_definition(extract_name, site, input_variables, output_varia
         decorator_list=[],
     )
     func_def = ast.fix_missing_locations(func_def)
-    _, _, func_def = replace_break_and_continue(func_def, return_from_function)
+    _, _, func_def, undo = replace_break_and_continue(func_def, return_from_function)
     func_def = remove_unnecessary_returns(func_def)
-    return func_def
+    return func_def, undo
 
 
 def create_function_call(extract_name, input_variables, output_variables, is_return):
@@ -221,6 +221,8 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
         The function call of the extracted function.
     exit:
         The exit node of the extraction site.
+    undos:
+        A list of functions that undoes the extraction.
     """
     start, _, mapping, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
@@ -248,22 +250,28 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
         site, annotations, extracted_nodes, mapping
     ):
         raise ClosureOverVariableModifiedInNonExtractedCode
-    func_def = create_function_definition(
+
+    undos = []
+    func_def, undo_replace = create_function_definition(
         extract_name, site, input_variables, output_variables
     )
+    undos += [undo_replace]
+
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
         input_variables,
         output_variables,
     )
-    func_def = create_function_definition(
+    func_def, undo_replace = create_function_definition(
         extract_name, site, input_variables, output_variables
     )
-    func_def = canonicalize_names_in(func_def)
+    undos += [undo_replace]
+    func_def, undo_canonicalize = canonicalize_names_in(func_def)
+    undos += undo_canonicalize
     call = create_function_call(
         extract_name, input_variables, output_variables, is_return=exit == "<return>"
     )
-    return func_def, call, exit
+    return func_def, call, exit, undos
 
 
 def do_extract(site, tree, *, extract_name):
@@ -291,7 +299,7 @@ def do_extract(site, tree, *, extract_name):
     scope_info = ast_scope.annotate(tree)
 
     pfcfg = site.locate_entry_point(tree)
-    func_def, call, exit = compute_extract_asts(
+    func_def, call, exit, undos = compute_extract_asts(
         scope_info, pfcfg, site, extract_name=extract_name
     )
 
@@ -300,9 +308,16 @@ def do_extract(site, tree, *, extract_name):
         if success:
             break
     else:
+        for undo in undos[::-1]:
+            undo()
         raise AssertionError("Weird and unexpected control flow")
 
-    return func_def, undo
+    def full_undo():
+        undo()
+        for un in undos[::-1]:
+            un()
+
+    return func_def, full_undo
 
 
 def attempt_to_mutate(site, tree, calls, exit):

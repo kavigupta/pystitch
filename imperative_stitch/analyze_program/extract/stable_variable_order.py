@@ -1,4 +1,5 @@
 import ast
+import copy
 import ast_scope
 
 from imperative_stitch.utils.ast_utils import ast_nodes_in_order, name_field
@@ -38,10 +39,14 @@ def canonicalize_variable_order(func_def, input_variables, output_variables):
 class NameChanger(ast.NodeTransformer):
     def __init__(self, node_to_new_name):
         self.node_to_new_name = node_to_new_name
+        self.undos = []
 
     def generic_visit(self, node):
         if node in self.node_to_new_name:
-            setattr(node, name_field(node), self.node_to_new_name[node])
+            new_name = self.node_to_new_name[node]
+            old_name = getattr(node, name_field(node))
+            self.undos.append(lambda: setattr(node, name_field(node), old_name))
+            setattr(node, name_field(node), new_name)
         return super().generic_visit(node)
 
 
@@ -59,5 +64,6 @@ def canonicalize_names_in(func_def):
     node_to_new_name = {}
     for node, (name, scope) in node_to_name.items():
         node_to_new_name[node] = f"__{name_order_by_scope[scope][name]}"
-    func_def = NameChanger(node_to_new_name).visit(func_def)
-    return func_def
+    name_changer = NameChanger(node_to_new_name)
+    func_def = name_changer.visit(func_def)
+    return func_def, name_changer.undos

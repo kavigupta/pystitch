@@ -39,7 +39,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         assert isinstance(tree, ast.Module)
         assert len(tree.body) == 1
         tree = tree.body[0]
-        b, c, tree = replace_break_and_continue(
+        b, c, tree, _ = replace_break_and_continue(
             tree, ast.Expr(ast.Name("__replaced__"))
         )
         return b, c, ast.unparse(tree)
