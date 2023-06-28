@@ -2,9 +2,16 @@ import ast
 from collections import defaultdict
 
 
-from ..structures.per_function_cfg import PerFunctionCFG
+from ..structures.per_function_cfg import PerFunctionCFG, eventually_accessible_cfns
 
-from .ivm import Argument, DefinedIn, Phi, SSAVariableIntermediateMapping, Uninitialized
+from .ivm import (
+    Argument,
+    DefinedIn,
+    Gamma,
+    Phi,
+    SSAVariableIntermediateMapping,
+    Uninitialized,
+)
 from .renamer import name_vars
 from .compute_node_to_containing import compute_enclosed_variables
 
@@ -86,7 +93,9 @@ class FunctionSSAAnnotator:
         for node in immediately_executed:
             annotations[node] = [self._start[self.graph.astn_to_cfn[node]][node.id]]
 
-        # TODO handle closed
+        for node in closed:
+            annotations[node] = [self.add_gamma(node)]
+            ordered_values += annotations[node]
 
         remapping = name_vars(self._mapping.original_symbol_of, ordered_values)
         start, end = [
@@ -101,6 +110,26 @@ class FunctionSSAAnnotator:
         }
 
         return start, end, self._mapping.export_parents(remapping), annotations
+
+    def add_gamma(self, node):
+        """
+        Add a gamma parent to the IVM and return the handle for the given node.
+        """
+        cfn = self.graph.astn_to_cfn[node]
+        cfns = eventually_accessible_cfns(self.graph.next_cfns_of, {cfn})
+        cfns = [x for x in cfns if x in self._start]
+        cfns = self.graph.sort_by_cfn_key(cfns)
+        downstream = [
+            x
+            for cfn in cfns
+            for x in [self._start[cfn][node.id], self._end[cfn][node.id]]
+        ]
+        current = self._start[cfn][node.id]
+        downstream = tuple(sorted(set(downstream) - {current}))
+        fresh_var = self._mapping.fresh_variable(
+            node.id, Gamma(node, current, downstream)
+        )
+        return fresh_var
 
     def collect_annotations(self):
         annotations = defaultdict(list)

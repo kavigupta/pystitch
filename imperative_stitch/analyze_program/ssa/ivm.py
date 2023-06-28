@@ -79,6 +79,29 @@ class Phi(Origin):
         return True
 
 
+@dataclass(eq=True, frozen=True)
+class Gamma(Origin):
+    node: AST
+    current: int
+    downstreams: tuple
+
+    def replaceable_without_propagating(self, other):
+        raise NotImplementedError
+
+    def remap(self, renaming_map):
+        return Gamma(
+            self.node,
+            renaming_map[self.current],
+            tuple(sorted({renaming_map[x] for x in self.downstreams})),
+        )
+
+    def initial(self):
+        return False
+
+    def initialized(self):
+        return True
+
+
 class SSAVariableIntermediateMapping:
     """
     A mapping from identifiers to an Origin object

@@ -2,7 +2,7 @@ from _ast import AST
 import ast
 import copy
 
-from imperative_stitch.analyze_program.ssa.ivm import Phi
+from imperative_stitch.analyze_program.ssa.ivm import Gamma, Phi
 from imperative_stitch.utils.non_mutating_node_transformer import (
     NonMutatingNodeTransformer,
 )
@@ -51,15 +51,27 @@ def render_phi_map(phi_map):
     """
     Render the phi map as a mapping from variable to its origin.
 
-    Only phi nodes are rendered.
+    Only phi and gamma nodes are rendered.
     """
-    return {
-        compute_modified_name([name]): "phi("
-        + ", ".join(compute_modified_name([(sym, id)]) for sym, id in v.parents)
-        + ")"
-        for name, v in phi_map.items()
-        if isinstance(v, Phi)
-    }
+    result = {}
+    for name, v in phi_map.items():
+        if isinstance(v, Phi):
+            result[compute_modified_name([name])] = (
+                "phi("
+                + ", ".join(compute_modified_name([(sym, id)]) for sym, id in v.parents)
+                + ")"
+            )
+        elif isinstance(v, Gamma):
+            out = "gamma("
+            out += compute_modified_name([v.current])
+            if v.downstreams:
+                out += "; "
+                out += ", ".join(
+                    compute_modified_name([(sym, id)]) for sym, id in v.downstreams
+                )
+            out += ")"
+            result[compute_modified_name([name])] = out
+    return result
 
 
 def compute_modified_name(sym_ids):

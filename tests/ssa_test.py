@@ -543,7 +543,6 @@ class SSATest(unittest.TestCase):
         self.assert_ssa(code, expected)
 
     def test_with_sub_lambda(self):
-        # TODO handle contained variables
         code = """
         def f():
             x = 2
@@ -554,14 +553,34 @@ class SSATest(unittest.TestCase):
         expected = """
         def f():
             x_2 = 2
-            g_2 = lambda: x
+            # x_3 = gamma(x_2)
+            g_2 = lambda: x_3
             h_2 = lambda x: x
             return g_2
         """
         self.assert_ssa(code, expected)
 
+    def test_with_sub_lambda_several(self):
+        code = """
+        def f():
+            x = 1
+            x = 2
+            g = lambda: x
+            x = 3
+            return g
+        """
+        expected = """
+        def f():
+            x_2 = 1
+            x_3 = 2
+            # x_5 = gamma(x_3; x_4)
+            g_2 = lambda: x_5
+            x_4 = 3
+            return g_2
+        """
+        self.assert_ssa(code, expected)
+
     def test_with_comprehensions(self):
-        # TODO handle contained variables
         code = """
         def f():
             x = 2
@@ -582,7 +601,8 @@ class SSATest(unittest.TestCase):
             [x_2 for _ in range(2)]
             {x_2 for _ in range(2)}
             {x_2 : 1 for _ in range(2)}
-            (x for _ in range(2))
+            # x_3 = gamma(x_2)
+            (x_3 for _ in range(2))
 
             [x for x in range(2)]
             {x for x in range(2)}

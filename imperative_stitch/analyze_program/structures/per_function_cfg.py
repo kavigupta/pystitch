@@ -247,3 +247,25 @@ def accessible_cfns(transition, cfns):
         if next_cfn not in cfns
     }
     return accessible
+
+
+def eventually_accessible_cfns(transition, cfns):
+    """
+    Returns the control flow nodes that are are eventually reachable
+        from transitions as defined in `transition`.
+
+    Args:
+        transition: dict[cfn, set[(tag, cfn)]] A mapping from control flow node to its successors.
+
+    Returns:
+        set[cfn] The control flow nodes that are eventually reachable
+    """
+    fringe = list(cfns)
+    seen = set()
+    while fringe:
+        cfn = fringe.pop()
+        if cfn in seen:
+            continue
+        seen.add(cfn)
+        fringe.extend(next_cfn for _, next_cfn in transition[cfn])
+    return seen
