@@ -580,7 +580,6 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
-
     def test_with_sub_lambda_same_line(self):
         code = """
         def f():
