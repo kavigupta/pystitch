@@ -6,6 +6,7 @@ from ..structures.per_function_cfg import PerFunctionCFG
 
 from .ivm import Argument, DefinedIn, Phi, SSAVariableIntermediateMapping, Uninitialized
 from .renamer import name_vars
+from .compute_node_to_containing import compute_enclosed_variables
 
 
 class FunctionSSAAnnotator:
@@ -20,6 +21,7 @@ class FunctionSSAAnnotator:
 
     def __init__(self, scope_info, per_function_cfg: PerFunctionCFG):
 
+        self.scope_info = scope_info
         self.graph = per_function_cfg
 
         function_scope = scope_info.function_scope_for(self.graph.function_astn)
@@ -76,6 +78,15 @@ class FunctionSSAAnnotator:
             for cfn in ordered_cfns
             for v in [*self._start[cfn].values(), *self._end[cfn].values()]
         ]
+
+        immediately_executed, closed = compute_enclosed_variables(
+            self.scope_info, self.graph, annotations
+        )
+
+        for node in immediately_executed:
+            annotations[node] = [self._start[self.graph.astn_to_cfn[node]][node.id]]
+
+        # TODO handle closed
 
         remapping = name_vars(self._mapping.original_symbol_of, ordered_values)
         start, end = [

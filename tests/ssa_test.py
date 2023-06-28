@@ -579,9 +579,9 @@ class SSATest(unittest.TestCase):
         expected = """
         def f():
             x_2 = 2
-            [x for _ in range(2)]
-            {x for _ in range(2)}
-            {x : 1 for _ in range(2)}
+            [x_2 for _ in range(2)]
+            {x_2 for _ in range(2)}
+            {x_2 : 1 for _ in range(2)}
             (x for _ in range(2))
 
             [x for x in range(2)]
