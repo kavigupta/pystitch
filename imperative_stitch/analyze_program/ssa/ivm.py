@@ -186,3 +186,19 @@ def compute_ultimate_origins(origin_of):
                 fringe.append(origin_of[to_process].current)
             ultimate_origins[var].add(origin_of[to_process])
     return ultimate_origins
+
+
+def is_argument(ssa_id, origin_of):
+    """
+    Whether a node is an argument. Treats a Gamma node as an argument if it's current
+        value is an argument and it has no downstreams.
+
+    Args:
+        ssa_id: The id of the node to check.
+        origin_of: dictionary from ssa_id to Origin.
+    """
+    if isinstance(origin_of[ssa_id], Argument):
+        return True
+    if isinstance(origin_of[ssa_id], Gamma) and not origin_of[ssa_id].downstreams:
+        return is_argument(origin_of[ssa_id].current, origin_of)
+    return False
