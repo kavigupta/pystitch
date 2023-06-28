@@ -520,6 +520,79 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_with_sub_function(self):
+        # TODO handle contained variables
+        code = """
+        def f():
+            x = 2
+            def g():
+                return x
+            def h(x):
+                return x
+            return g
+        """
+        expected = """
+        def f():
+            x_2 = 2
+            def g_2():
+                return x
+            def h_2(x):
+                return x
+            return g_2
+        """
+        self.assert_ssa(code, expected)
+
+    def test_with_sub_lambda(self):
+        # TODO handle contained variables
+        code = """
+        def f():
+            x = 2
+            g = lambda: x
+            h = lambda x: x
+            return g
+        """
+        expected = """
+        def f():
+            x_2 = 2
+            g_2 = lambda: x
+            h_2 = lambda x: x
+            return g_2
+        """
+        self.assert_ssa(code, expected)
+
+    def test_with_comprehensions(self):
+        # TODO handle contained variables
+        code = """
+        def f():
+            x = 2
+            [x for _ in range(2)]
+            {x for _ in range(2)}
+            {x : 1 for _ in range(2)}
+            (x for _ in range(2))
+
+            [x for x in range(2)]
+            {x for x in range(2)}
+            {x : 1 for x in range(2)}
+            (x for x in range(2))
+            return x
+        """
+        expected = """
+        def f():
+            x_2 = 2
+            [x for _ in range(2)]
+            {x for _ in range(2)}
+            {x : 1 for _ in range(2)}
+            (x for _ in range(2))
+
+            [x for x in range(2)]
+            {x for x in range(2)}
+            {x : 1 for x in range(2)}
+            (x for x in range(2))
+
+            return x_2
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
