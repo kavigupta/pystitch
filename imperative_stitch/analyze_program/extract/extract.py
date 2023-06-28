@@ -70,7 +70,6 @@ def invalid_closure_over_variable_modified_in_non_extracted_code(
     origins = [
         mapping[down] for x in origins if isinstance(x, Gamma) for down in x.downstreams
     ]
-    print(origins)
     return traces_an_origin_to_node_set(origins, lambda x: x not in extracted_nodes)
 
 

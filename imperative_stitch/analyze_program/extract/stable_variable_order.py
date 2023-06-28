@@ -52,7 +52,6 @@ def canonicalize_names_in(func_def):
     for scope in scopes:
         names = [x[0] for x in name_and_scope_ordering if x[1] == scope]
         names = sorted(names, key=lambda x: name_and_scope_ordering[(x, scope)])
-        print(names)
         name_order_by_scope[scope] = {name: i for i, name in enumerate(names)}
     node_to_new_name = {}
     for node, (name, scope) in node_to_name.items():
