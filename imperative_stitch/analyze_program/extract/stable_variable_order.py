@@ -47,12 +47,15 @@ class NameChanger(ast.NodeTransformer):
 
 def canonicalize_names_in(func_def):
     node_to_name, name_and_scope_ordering, _ = get_name_and_scope_each(func_def)
-    scopes = {x[1] for x in name_and_scope_ordering}
+    scopes = [x[1] for x in name_and_scope_ordering]
+    scopes = sorted(set(scopes), key=lambda x: scopes.index(x))
     name_order_by_scope = {}
+    total = 0
     for scope in scopes:
         names = [x[0] for x in name_and_scope_ordering if x[1] == scope]
         names = sorted(names, key=lambda x: name_and_scope_ordering[(x, scope)])
-        name_order_by_scope[scope] = {name: i for i, name in enumerate(names)}
+        name_order_by_scope[scope] = {name: i + total for i, name in enumerate(names)}
+        total += len(names)
     node_to_new_name = {}
     for node, (name, scope) in node_to_name.items():
         node_to_new_name[node] = f"__{name_order_by_scope[scope][name]}"

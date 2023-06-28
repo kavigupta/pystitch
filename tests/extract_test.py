@@ -914,6 +914,29 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_not_in_scope_canonicalized_separately(self):
+        code = """
+        def f(y):
+            __start_extract__
+            x = sum(y)
+            lambda z: z
+            lambda y: y
+            __end_extract__
+        """
+        post_extract_expected = """
+        def f(y):
+            return __f0(y)
+        """
+        post_extracted = """
+        def __f0(__1):
+            __0 = sum(__1)
+            lambda __2: __2
+            lambda __3: __3
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_extract_with_lambda_reassign(self):
         code = """
         def f(x, y):
@@ -926,6 +949,27 @@ class ExtractTest(GenericExtractTest):
         """
         self.assertEqual(
             self.run_extract(code), ClosureOverVariableModifiedInNonExtractedCode()
+        )
+
+    def test_extract_with_called_lambda(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            x = x ** 3
+            y = lambda k: y ** (x - y) * (lambda x: x)(y) + k
+            __end_extract__
+        """
+        post_extract_expected = """
+        def f(x, y):
+            return __f0(x, y)
+        """
+        post_extracted = """
+        def __f0(__0, __1):
+            __0 = __0 ** 3
+            __1 = lambda __2: __1 ** (__0 - __1) * (lambda __3: __3)(__1) + __2
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
 
