@@ -890,6 +890,44 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), ClosureOverVariableModifiedInNonExtractedCode()
         )
 
+    def test_extract_with_lambda(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            y = y + 1
+            x = lambda: y
+            __end_extract__
+            return x, y
+        """
+        post_extract_expected = """
+        def f(x, y):
+            y, x = __f0(y)
+            return x, y
+        """
+        post_extracted = """
+        def __f0(__0):
+            __0 = __0 + 1
+            __1 = lambda: __0
+            return __0, __1
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_extract_with_lambda_reassign(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            y = y + 1
+            x = lambda: y
+            __end_extract__
+            y = 2
+            return x, y
+        """
+        self.assertEqual(
+            self.run_extract(code), ClosureOverVariableModifiedInNonExtractedCode()
+        )
+
 
 class ExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):

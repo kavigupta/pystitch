@@ -1,4 +1,4 @@
-from imperative_stitch.analyze_program.ssa.ivm import DefinedIn, Phi
+from imperative_stitch.analyze_program.ssa.ivm import DefinedIn, Gamma, Phi
 
 
 def is_origin_defined_in_node_set(origin, node_set):
@@ -20,6 +20,8 @@ def is_origin_defined_in_node_set(origin, node_set):
         return node_set(origin.site)
     elif isinstance(origin, Phi):
         return node_set(origin.node)
+    elif isinstance(origin, Gamma):
+        return False  # do not include anywhere
     else:
         return node_set("<<function def>>")
 
