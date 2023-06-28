@@ -18,3 +18,8 @@ class NonInitializedInputs(NotApplicable):
 @dataclass
 class NonInitializedOutputs(NotApplicable):
     pass
+
+
+@dataclass
+class ClosureOverVariableModifiedInNonExtractedCode(NotApplicable):
+    pass

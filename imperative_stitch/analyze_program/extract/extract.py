@@ -7,14 +7,19 @@ import ast_scope
 from .input_output_variables import (
     compute_input_variables,
     compute_output_variables,
+    traces_an_origin_to_node_set,
 )
 from .unused_return import remove_unnecessary_returns
 
-from .errors import NonInitializedInputs, NonInitializedOutputs
+from .errors import (
+    ClosureOverVariableModifiedInNonExtractedCode,
+    NonInitializedInputs,
+    NonInitializedOutputs,
+)
 from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
-from ..ssa.ivm import compute_ultimate_origins
+from ..ssa.ivm import Gamma, compute_ultimate_origins
 
 
 def all_initialized(lookup, vars, ultimate_origins):
@@ -37,6 +42,36 @@ def all_initialized(lookup, vars, ultimate_origins):
     """
     vars = [lookup[v] for v in vars]
     return all(all(x.initialized() for x in ultimate_origins[var]) for var in vars)
+
+
+def invalid_closure_over_variable_modified_in_non_extracted_code(
+    site, annotations, extracted_nodes, mapping
+):
+    """
+    Returns True if there is a closure over a variable that is modified in non-extracted
+
+    Arguments
+    ---------
+    site: ExtractionSite
+        The extraction site.
+    annotations: dict[AST, set[str]]
+        A mapping from node to the set of variables defined in the node.
+    extracted_nodes: set[AST]
+        The set of nodes in the extraction site.
+
+    Returns
+    -------
+    bool
+        Whether there is a Gamma node that is a closure over a variable that is modified
+    """
+    origins = [
+        mapping[k] for x in site.all_nodes if x in annotations for k in annotations[x]
+    ]
+    origins = [
+        mapping[down] for x in origins if isinstance(x, Gamma) for down in x.downstreams
+    ]
+    print(origins)
+    return traces_an_origin_to_node_set(origins, lambda x: x not in extracted_nodes)
 
 
 def create_target(variables, ctx):
@@ -210,6 +245,10 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
         start[exit], output_variables, ultimate_origins
     ):
         raise NonInitializedOutputs
+    if invalid_closure_over_variable_modified_in_non_extracted_code(
+        site, annotations, extracted_nodes, mapping
+    ):
+        raise ClosureOverVariableModifiedInNonExtractedCode
     func_def = create_function_definition(
         extract_name, site, input_variables, output_variables
     )

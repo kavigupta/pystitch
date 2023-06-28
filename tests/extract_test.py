@@ -6,6 +6,7 @@ import numpy as np
 from parameterized import parameterized
 
 from imperative_stitch.analyze_program.extract.errors import (
+    ClosureOverVariableModifiedInNonExtractedCode,
     MultipleExits,
     NonInitializedInputs,
     NonInitializedOutputs,
@@ -828,6 +829,65 @@ class ExtractTest(GenericExtractTest):
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_extract_lambda_not_redefined(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            x = lambda: y
+            __end_extract__
+            return x, y
+        """
+        post_extract_expected = """
+        def f(x, y):
+            x = __f0(y)
+            return x, y
+        """
+        post_extracted = """
+        def __f0(__1):
+            __0 = lambda: __1
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_extract_lambda_redefined_internally(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            x = lambda: y
+            y = 2
+            __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x, y):
+            x = __f0(y)
+            return x
+        """
+        post_extracted = """
+        def __f0(__1):
+            __0 = lambda: __1
+            __1 = 2
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_extract_lambda_redefined_externally(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            x = lambda: y
+            __end_extract__
+            y = 2
+            return x
+        """
+        self.assertEqual(
+            self.run_extract(code), ClosureOverVariableModifiedInNonExtractedCode()
         )
 
 

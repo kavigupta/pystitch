@@ -182,5 +182,7 @@ def compute_ultimate_origins(origin_of):
             seen.add(to_process)
             if isinstance(origin_of[to_process], Phi):
                 fringe.extend(origin_of[to_process].parents)
+            if isinstance(origin_of[to_process], Gamma):
+                fringe.append(origin_of[to_process].current)
             ultimate_origins[var].add(origin_of[to_process])
     return ultimate_origins
