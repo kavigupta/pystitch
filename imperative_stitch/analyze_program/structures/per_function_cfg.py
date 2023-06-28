@@ -27,6 +27,7 @@ class PerFunctionCFG:
         from ..ssa.banned_component import BannedComponentVisitor
         from ..ssa.renamer import get_node_order
 
+        self.entry_point = entry_point
         self.function_astn = entry_point.node
         BannedComponentVisitor().visit(self.function_astn)
         self.entry_point = entry_point
@@ -42,6 +43,12 @@ class PerFunctionCFG:
             for cfn in self.prev_cfns_of.keys()
             for astn in get_node_order(cfn.instruction.node)
         }
+
+    def refresh(self):
+        """
+        Returns a new PerFunctionCFG object for the same entry point
+        """
+        return PerFunctionCFG(self.entry_point)
 
     def sort_by_astn_key(self, items, key=lambda x: x):
         """
