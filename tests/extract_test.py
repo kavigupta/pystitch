@@ -234,8 +234,6 @@ class GenericExtractTest(unittest.TestCase):
         self.assertEqual(code, ast.unparse(tree), "undo")
         return post_extract, extracted
 
-
-class ExtractTest(GenericExtractTest):
     def assertCodes(self, expected, actual):
         post_extract, extracted = actual
         expected_post_extract, expected_extracted = expected
@@ -248,6 +246,8 @@ class ExtractTest(GenericExtractTest):
             canonicalize(expected_extracted), canonicalize(extracted), "extracted"
         )
 
+
+class ExtractTest(GenericExtractTest):
     def test_pass(self):
         code = """
         def f(x):
