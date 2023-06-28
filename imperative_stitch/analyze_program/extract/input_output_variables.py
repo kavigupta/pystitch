@@ -69,15 +69,17 @@ def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes
         A list of input variables, sorted by name.
     """
     variables_in = variables_in_nodes(site.all_nodes, annotations)
-    return sorted(
+    variables_in = sorted(
         [
-            x[0]
+            x
             for x in variables_in
             if traces_an_origin_to_node_set(
                 ultimate_origins[x], lambda x: x not in extracted_nodes
             )
         ]
     )
+    var_set = sorted(set(var for var, _ in variables_in))
+    return var_set
 
 
 def compute_output_variables(
