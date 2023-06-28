@@ -3,6 +3,10 @@ import copy
 
 import ast_scope
 
+from imperative_stitch.analyze_program.extract.metavariable import (
+    extract_metavariables,
+)
+
 
 from .input_output_variables import (
     compute_input_variables,
@@ -114,7 +118,9 @@ def create_return_from_function(variables):
     return ast.Return(value=create_target(variables, ast.Load()))
 
 
-def create_function_definition(extract_name, site, input_variables, output_variables):
+def create_function_definition(
+    extract_name, site, input_variables, output_variables, metavariables
+):
     """
     Create a function definition for the extracted function.
 
@@ -128,6 +134,8 @@ def create_function_definition(extract_name, site, input_variables, output_varia
         The input variables of the extracted function.
     output_variables: list[str]
         The output variables of the extracted function.
+    metavariables: MetaVariables
+        The metavariables of the extracted function.
 
     Returns
     -------
@@ -140,7 +148,7 @@ def create_function_definition(extract_name, site, input_variables, output_varia
     func_def = ast.FunctionDef(
         name=extract_name,
         args=ast.arguments(
-            args=[ast.arg(name) for name in input_variables],
+            args=[ast.arg(name) for name in input_variables + metavariables.names],
             kwonlyargs=[],
             posonlyargs=[],
             defaults=[],
@@ -154,7 +162,9 @@ def create_function_definition(extract_name, site, input_variables, output_varia
     return func_def, undo
 
 
-def create_function_call(extract_name, input_variables, output_variables, is_return):
+def create_function_call(
+    extract_name, input_variables, output_variables, metavariables, is_return
+):
     """
     Create the function call for the extracted function. Can be either a return
         statement (if the extracted site returns a value), an assignment (if the
@@ -179,7 +189,8 @@ def create_function_call(extract_name, input_variables, output_variables, is_ret
     """
     call = ast.Call(
         func=ast.Name(id=extract_name, ctx=ast.Load()),
-        args=[ast.Name(id=x, ctx=ast.Load()) for x in input_variables],
+        args=[ast.Name(id=x, ctx=ast.Load()) for x in input_variables]
+        + metavariables.parameters,
         keywords=[],
     )
     if is_return:
@@ -228,6 +239,9 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
     entry, exit = pfcfg.extraction_entry_exit(extracted_nodes)
     ultimate_origins = compute_ultimate_origins(mapping)
+
+    metavariables = extract_metavariables(scope_info, site, annotations, mapping)
+
     input_variables = compute_input_variables(
         site, annotations, ultimate_origins, extracted_nodes
     )
@@ -253,23 +267,31 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
 
     undos = []
     func_def, undo_replace = create_function_definition(
-        extract_name, site, input_variables, output_variables
+        extract_name, site, input_variables, output_variables, metavariables
     )
     undos += [undo_replace]
+
+    undo_metavariables = metavariables.act(func_def)
+    undos += [undo_metavariables]
 
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
         input_variables,
         output_variables,
+        metavariables.names,
     )
     func_def, undo_replace = create_function_definition(
-        extract_name, site, input_variables, output_variables
+        extract_name, site, input_variables, output_variables, metavariables
     )
     undos += [undo_replace]
-    func_def, undo_canonicalize = canonicalize_names_in(func_def)
+    func_def, undo_canonicalize = canonicalize_names_in(func_def, metavariables.names)
     undos += undo_canonicalize
     call = create_function_call(
-        extract_name, input_variables, output_variables, is_return=exit == "<return>"
+        extract_name,
+        input_variables,
+        output_variables,
+        metavariables,
+        is_return=exit == "<return>",
     )
     return func_def, call, exit, undos
 

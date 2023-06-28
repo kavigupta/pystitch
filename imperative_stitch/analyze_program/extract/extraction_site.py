@@ -12,6 +12,7 @@ class ExtractionSite:
     body_field: str
     start: int
     end: int  # exclusive
+    metavariables: list[ast.AST]
 
     @property
     def containing_sequence(self):
