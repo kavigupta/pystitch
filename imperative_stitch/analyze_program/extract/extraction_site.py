@@ -1,7 +1,6 @@
 from ast import AST
 import ast
 from dataclasses import dataclass
-from functools import cached_property
 
 from python_graphs import control_flow
 
@@ -27,7 +26,7 @@ class ExtractionSite:
         """
         return self.containing_sequence[self.start : self.end]
 
-    @cached_property
+    @property
     def all_nodes(self):
         """
         Returns all the nodes in the extraction site.
