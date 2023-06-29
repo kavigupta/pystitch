@@ -395,7 +395,18 @@ def attempt_to_mutate(site, tree, calls, exit):
         x for tag, x in new_pfcfg.next_cfns_of[call_cfn] if tag != "exception"
     ]
     [exit_cfn] = call_exits
-    if exit_cfn != exit and exit_cfn.instruction.node != exit.instruction.node:
+    if not same(exit_cfn, exit):
         undo()
         return False, None
     return True, undo
+
+
+def same(a, b):
+    if isinstance(a, str) and not isinstance(b, str):
+        return False
+    if isinstance(b, str) and not isinstance(a, str):
+        return False
+    assert type(a) == type(b)
+    if isinstance(a, str):
+        return a == b
+    return a.instruction.node == b.instruction.node
