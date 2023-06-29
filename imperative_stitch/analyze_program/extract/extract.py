@@ -240,7 +240,13 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
     entry, exit = pfcfg.extraction_entry_exit(extracted_nodes)
     ultimate_origins = compute_ultimate_origins(mapping)
 
-    metavariables = extract_metavariables(scope_info, site, annotations, mapping)
+    input_variables = compute_input_variables(
+        site, annotations, ultimate_origins, extracted_nodes, keep_ssa=True
+    )
+
+    metavariables = extract_metavariables(
+        scope_info, site, annotations, mapping, input_variables
+    )
 
     undos = []
 

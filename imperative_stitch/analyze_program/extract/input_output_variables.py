@@ -55,7 +55,9 @@ def variables_in_nodes(nodes, annotations):
     return {alias for x in nodes if x in annotations for alias in annotations[x]}
 
 
-def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes):
+def compute_input_variables(
+    site, annotations, ultimate_origins, extracted_nodes, keep_ssa=False
+):
     """
     Compute the input variables of an extraction site.
 
@@ -78,6 +80,8 @@ def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes
             )
         ]
     )
+    if keep_ssa:
+        return variables_in
     var_set = sorted(set(var for var, _ in variables_in))
     return var_set
 
