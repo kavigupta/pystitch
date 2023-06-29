@@ -1079,6 +1079,30 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_rewrite_inside_comprehension(self):
+        code = """
+        def f(x):
+            y = x ** 7
+            __start_extract__
+            z = [{__metavariable__, y ** 7 - x} for x in range(10)]
+            __end_extract__
+            return z
+        """
+        post_extract_expected = """
+        def f(x):
+            y = x ** 7
+            z = __f0(lambda x: y ** 7 - x)
+            return z
+        """
+        post_extracted = """
+        def __f0(__m1):
+            __0 = [__m1(__1) for __1 in range(10)]
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class ExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):
