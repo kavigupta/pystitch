@@ -242,16 +242,20 @@ class GenericExtractTest(unittest.TestCase):
         return post_extract, extracted
 
     def assertCodes(self, expected, actual):
+        self.maxDiff = None
         post_extract, extracted = actual
         expected_post_extract, expected_extracted = expected
-        self.assertEqual(
+
+        post_extract, extracted = canonicalize(post_extract), canonicalize(extracted)
+        expected_post_extract, expected_extracted = (
             canonicalize(expected_post_extract),
-            canonicalize(post_extract),
-            "post_extract",
+            canonicalize(expected_extracted),
         )
-        self.assertEqual(
-            canonicalize(expected_extracted), canonicalize(extracted), "extracted"
-        )
+
+        expected = expected_post_extract + "\n" + "=" * 80 + "\n" + expected_extracted
+        actual = post_extract + "\n" + "=" * 80 + "\n" + extracted
+
+        self.assertEqual(expected, actual)
 
 
 class ExtractTest(GenericExtractTest):
