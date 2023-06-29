@@ -21,7 +21,12 @@ from imperative_stitch.analyze_program.extract import (
     remove_unnecessary_returns,
 )
 from imperative_stitch.analyze_program.extract import NotApplicable
-from imperative_stitch.utils.ast_utils import ast_nodes_in_order, field_is_body
+from imperative_stitch.utils.ast_utils import (
+    ReplaceNodes,
+    ast_nodes_in_order,
+    field_is_body,
+)
+from imperative_stitch.utils.classify_nodes import compute_types_each
 from tests.parse_test import small_set_examples
 from python_graphs import control_flow
 
@@ -214,9 +219,11 @@ class RemoveUnnecessaryReturnsTest(unittest.TestCase):
 
 
 class GenericExtractTest(unittest.TestCase):
-    def run_extract(self, code):
+    def run_extract(self, code, num_metavariables=None):
         code = canonicalize(code)
         tree, [site] = parse_extract_pragma(code)
+        if num_metavariables is not None:
+            self.assertEqual(len(site.metavariables), num_metavariables)
         return self.run_extract_from_tree(tree, site)
 
     def run_extract_from_tree(self, tree, site):
@@ -1020,6 +1027,54 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_rewrite_capturing_a_closed_variable(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = x ** 7
+            z = lambda x: {__metavariable__, y ** 7 - x}
+            __end_extract__
+            return z
+        """
+        post_extract_expected = """
+        def f(x):
+            z = __f0(x, lambda y, x: y ** 7 - x)
+            return z
+        """
+        post_extracted = """
+        def __f0(__1, __m1):
+            __0 = __1 ** 7
+            __2 = lambda __3: __m1(__0, __3)
+            return __2
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_multiple_rewrites(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = x ** 7
+            z = lambda x: {__metavariable__, y ** 7} - {__metavariable__, x}
+            __end_extract__
+            return z
+        """
+        post_extract_expected = """
+        def f(x):
+            z = __f0(x, lambda y: y ** 7, lambda x: x)
+            return z
+        """
+        post_extracted = """
+        def __f0(__1, __m1, __m2):
+            __0 = __1 ** 7
+            __2 = lambda __3: __m1(__0) - __m2(__3)
+            return __2
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class ExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):
@@ -1041,10 +1096,10 @@ class ExtractRealisticTest(GenericExtractTest):
             print(entry_point)
             if not entry_point.node.body:
                 continue
-            code = self.sample_site(rng, copy.deepcopy(entry_point.node))
+            code, count = self.sample_site(rng, copy.deepcopy(entry_point.node))
             print(code)
             try:
-                self.run_extract(code)
+                self.run_extract(code, count)
             except BannedComponentError:
                 # don't error on this, just skip it
                 pass
@@ -1064,4 +1119,44 @@ class ExtractRealisticTest(GenericExtractTest):
         body = getattr(node, field)
         body.insert(start, ast.Expr(ast.Name("__start_extract__")))
         body.insert(end + 1, ast.Expr(ast.Name("__end_extract__")))
-        return ast.unparse(tree)
+        body[start + 1 : end + 1], count = self.manipulate(
+            body[start + 1 : end + 1], rng
+        )
+        return ast.unparse(tree), count
+
+    def manipulate(self, body, rng):
+        return body, 0
+
+
+class RewriteRealisticTest(ExtractRealisticTest):
+    def manipulate(self, body, rng):
+        expressions = list(x for x, tag in compute_types_each(body, "S") if tag == "E")
+        if not expressions:
+            return body, 0
+        count = rng.randint(1, min(5, len(expressions) + 1))
+        expressions = sample_non_overlapping(expressions, count, rng)
+        print([repr(ast.unparse(e)) for e in expressions])
+        replace = ReplaceNodes(
+            {
+                expr: ast.Set(elts=[ast.Name("__metavariable__"), expr])
+                for expr in expressions
+            }
+        )
+        body = [replace.visit(stmt) for stmt in body]
+        return body, len(expressions)
+
+
+def sample_non_overlapping(xs, count, rng):
+    result = []
+    while xs:
+        i = rng.randint(len(xs))
+        result.append(xs[i])
+        xs = xs[:i] + xs[i + 1 :]
+        if len(result) == count:
+            break
+        xs = [x for x in xs if not overlapping(x, result[-1])]
+    return result
+
+
+def overlapping(x, y):
+    return set(ast.walk(x)) & set(ast.walk(y))
