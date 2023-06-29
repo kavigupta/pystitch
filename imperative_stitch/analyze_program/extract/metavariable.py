@@ -1,6 +1,7 @@
 import ast
 
 from ast_scope.scope import GlobalScope, ErrorScope, FunctionScope, ClassScope
+from imperative_stitch.analyze_program.ssa.ivm import Gamma
 
 from imperative_stitch.utils.ast_utils import ReplaceNodes, ast_nodes_in_order
 
@@ -161,5 +162,5 @@ def is_argument(ssa_id, origin_of, input_variables):
     if ssa_id in input_variables:
         return True
     if isinstance(origin_of[ssa_id], Gamma) and not origin_of[ssa_id].downstreams:
-        return is_argument(origin_of[ssa_id].current, origin_of)
+        return is_argument(origin_of[ssa_id].current, origin_of, input_variables)
     return False
