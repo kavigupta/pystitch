@@ -546,16 +546,22 @@ class SSATest(unittest.TestCase):
         code = """
         def f():
             x = 2
+            y = 3
             g = lambda: x
             h = lambda x: x
+            i = lambda: y
+            y = 4
             return g
         """
         expected = """
         def f():
             x_2 = 2
-            # x_3 = gamma(x_2)
-            g_2 = lambda: x_3
+            y_2 = 3
+            g_2 = lambda: x_2
             h_2 = lambda x: x
+            # y_4 = gamma(y_2, y_3)
+            i_2 = lambda: y_4
+            y_3 = 4
             return g_2
         """
         self.assert_ssa(code, expected)
@@ -573,7 +579,7 @@ class SSATest(unittest.TestCase):
         def f():
             x_2 = 1
             x_3 = 2
-            # x_5 = gamma(x_3; x_4)
+            # x_5 = gamma(x_3, x_4)
             g_2 = lambda: x_5
             x_4 = 3
             return g_2
@@ -590,7 +596,7 @@ class SSATest(unittest.TestCase):
         expected = """
         def f():
             x_2 = 1
-            # x_4 = gamma(x_2; x_3)
+            # x_4 = gamma(x_2, x_3)
             x_3 = lambda: x_4
             return x_3
         """
@@ -604,6 +610,7 @@ class SSATest(unittest.TestCase):
             {x for _ in range(2)}
             {x : 1 for _ in range(2)}
             (x for _ in range(2))
+            x = 5
 
             [x for x in range(2)]
             {x for x in range(2)}
@@ -617,15 +624,16 @@ class SSATest(unittest.TestCase):
             [x_2 for _ in range(2)]
             {x_2 for _ in range(2)}
             {x_2 : 1 for _ in range(2)}
-            # x_3 = gamma(x_2)
-            (x_3 for _ in range(2))
+            # x_4 = gamma(x_2, x_3)
+            (x_4 for _ in range(2))
+            x_3 = 5
 
             [x for x in range(2)]
             {x for x in range(2)}
             {x : 1 for x in range(2)}
             (x for x in range(2))
 
-            return x_2
+            return x_3
         """
         self.assert_ssa(code, expected)
 

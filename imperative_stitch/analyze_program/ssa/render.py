@@ -62,15 +62,11 @@ def render_phi_map(phi_map):
                 + ")"
             )
         elif isinstance(v, Gamma):
-            out = "gamma("
-            out += compute_modified_name([v.current])
-            if v.downstreams:
-                out += "; "
-                out += ", ".join(
-                    compute_modified_name([(sym, id)]) for sym, id in v.downstreams
-                )
-            out += ")"
-            result[compute_modified_name([name])] = out
+            result[compute_modified_name([name])] = (
+                "gamma("
+                + ", ".join(compute_modified_name([(sym, id)]) for sym, id in v.closed)
+                + ")"
+            )
     return result
 
 

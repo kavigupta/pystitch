@@ -43,6 +43,7 @@ def variables_needed_to_extract(
         if node in node_to_ssa:
             [ssa] = node_to_ssa[node]
             if is_argument(ssa, ssa_to_origins, input_variables):
+                # TODO check for closed overness
                 continue
 
         if node.id in name_to_scope:
@@ -159,6 +160,7 @@ def is_argument(ssa_id, origin_of, input_variables):
         ssa_id: The id of the node to check.
         origin_of: dictionary from ssa_id to Origin.
     """
+    # TODO fix this to make it less unreasonable
     if ssa_id in input_variables:
         return True
     if isinstance(origin_of[ssa_id], Gamma) and not origin_of[ssa_id].downstreams:

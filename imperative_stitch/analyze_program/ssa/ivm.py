@@ -82,8 +82,7 @@ class Phi(Origin):
 @dataclass(eq=True, frozen=True)
 class Gamma(Origin):
     node: AST
-    current: int
-    downstreams: tuple
+    closed : tuple
 
     def replaceable_without_propagating(self, other):
         raise NotImplementedError
@@ -91,8 +90,7 @@ class Gamma(Origin):
     def remap(self, renaming_map):
         return Gamma(
             self.node,
-            renaming_map[self.current],
-            tuple(sorted({renaming_map[x] for x in self.downstreams})),
+            tuple(sorted({renaming_map[x] for x in self.closed})),
         )
 
     def initial(self):
@@ -182,7 +180,5 @@ def compute_ultimate_origins(origin_of):
             seen.add(to_process)
             if isinstance(origin_of[to_process], Phi):
                 fringe.extend(origin_of[to_process].parents)
-            if isinstance(origin_of[to_process], Gamma):
-                fringe.append(origin_of[to_process].current)
             ultimate_origins[var].add(origin_of[to_process])
     return ultimate_origins

@@ -119,15 +119,17 @@ class FunctionSSAAnnotator:
         cfns = eventually_accessible_cfns(self.graph.next_cfns_of, {cfn})
         cfns = [x for x in cfns if x in self._start]
         cfns = self.graph.sort_by_cfn_key(cfns)
-        downstream = [
+        closed = [
             x
             for cfn in cfns
             for x in [self._start[cfn][node.id], self._end[cfn][node.id]]
         ]
         current = self._start[cfn][node.id]
-        downstream = tuple(sorted(set(downstream) - {current}))
+        closed = tuple(sorted(set(closed)))
+        if closed == (current,):
+            return current
         fresh_var = self._mapping.fresh_variable(
-            node.id, Gamma(node, current, downstream)
+            node.id, Gamma(node, closed)
         )
         return fresh_var
 
