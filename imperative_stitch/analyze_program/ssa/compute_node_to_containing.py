@@ -120,6 +120,8 @@ def compute_enclosed_variables(scope_info, pcfg, already_annotated):
     immediately_executed, closed = [], []
 
     for node in closed_variables:
+        if node not in node_to_containing:
+            continue
         first, *stack = node_to_containing[node]
         assert first == pcfg.function_astn
         if not stack:
