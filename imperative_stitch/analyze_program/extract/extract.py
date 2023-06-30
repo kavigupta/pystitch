@@ -9,14 +9,12 @@ from imperative_stitch.analyze_program.extract.metavariable import (
 
 
 from .input_output_variables import (
-    compute_input_variables,
-    compute_output_variables,
-    traces_an_origin_to_node_set,
+    compute_variables,
 )
 from .unused_return import remove_unnecessary_returns
 
 from .errors import (
-    ClosureOverVariableModifiedInNonExtractedCode,
+    ClosureOverVariableModifiedInExtractedCode,
     NonInitializedInputs,
     NonInitializedOutputs,
 )
@@ -24,28 +22,6 @@ from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
 from ..ssa.ivm import Gamma, compute_ultimate_origins
-
-
-def all_initialized(lookup, vars, ultimate_origins):
-    """
-    Whether all the variables are initialized in their ultimate origin
-
-    Arguments
-    ---------
-    lookup: dict[str, (str, int)]
-        A mapping from variable to its SSA entry.
-    vars: list[str]
-        The variables to check.
-    ultimate_origins: dict[(str, int), origin]
-        A mapping from SSA entry to its ultimate origin.
-
-    Returns
-    -------
-    bool
-        True if all the variables are initialized in their ultimate origin.
-    """
-    vars = [lookup[v] for v in vars]
-    return all(all(x.initialized() for x in ultimate_origins[var]) for var in vars)
 
 
 def invalid_closure_over_variable_modified_in_non_extracted_code(
@@ -235,18 +211,15 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
     undos:
         A list of functions that undoes the extraction.
     """
-    start, _, mapping, annotations = run_ssa(scope_info, pfcfg)
+    start, _, _, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    entry, exit = pfcfg.extraction_entry_exit(extracted_nodes)
-    ultimate_origins = compute_ultimate_origins(mapping)
+    _, exit = pfcfg.extraction_entry_exit(extracted_nodes)
 
-    input_variables = compute_input_variables(
-        site, annotations, ultimate_origins, extracted_nodes, keep_ssa=True
-    )
+    vars = compute_variables(site, scope_info, pfcfg)
 
-    metavariables = extract_metavariables(
-        scope_info, site, annotations, mapping, input_variables
-    )
+    vars.raise_if_needed([])
+
+    metavariables = extract_metavariables(scope_info, site, annotations, vars)
 
     undos = []
 
@@ -255,44 +228,18 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
 
     pfcfg = pfcfg.refresh()
 
-    input_variables = compute_input_variables(
-        site, annotations, ultimate_origins, extracted_nodes
-    )
-
-    if exit is None or exit == "<return>":
-        output_variables = []
-    else:
-        output_variables = compute_output_variables(
-            pfcfg, site, annotations, ultimate_origins, extracted_nodes
-        )
-
-    try:
-        if entry is not None and not all_initialized(
-            start[entry], input_variables, ultimate_origins
-        ):
-            raise NonInitializedInputs
-        if output_variables and not all_initialized(
-            start[exit], output_variables, ultimate_origins
-        ):
-            raise NonInitializedOutputs
-        if invalid_closure_over_variable_modified_in_non_extracted_code(
-            site, annotations, extracted_nodes, mapping
-        ):
-            raise ClosureOverVariableModifiedInNonExtractedCode
-    except:
-        for undo in undos[::-1]:
-            undo()
-        raise
+    vars = compute_variables(site, scope_info, pfcfg, error_on_closed=True)
+    vars.raise_if_needed(undos)
 
     func_def, undo_replace = create_function_definition(
-        extract_name, site, input_variables, output_variables, metavariables
+        extract_name, site, vars.input_vars, vars.output_vars, metavariables
     )
     undos += [undo_replace]
 
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
-        input_variables,
-        output_variables,
+        vars.input_vars,
+        vars.output_vars,
         metavariables.names,
     )
     func_def, undo_replace = create_function_definition(

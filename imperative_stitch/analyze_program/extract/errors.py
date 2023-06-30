@@ -21,5 +21,10 @@ class NonInitializedOutputs(NotApplicable):
 
 
 @dataclass
-class ClosureOverVariableModifiedInNonExtractedCode(NotApplicable):
+class ClosureOverVariableModifiedInExtractedCode(NotApplicable):
+    pass
+
+
+@dataclass
+class ClosedVariablePassedDirectly(NotApplicable):
     pass

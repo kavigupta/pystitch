@@ -6,9 +6,7 @@ from imperative_stitch.analyze_program.ssa.ivm import Gamma
 from imperative_stitch.utils.ast_utils import ReplaceNodes, ast_nodes_in_order
 
 
-def variables_needed_to_extract(
-    scope_info, extract_node, node_to_ssa, ssa_to_origins, input_variables
-):
+def variables_needed_to_extract(scope_info, extract_node, node_to_ssa, variables):
     """
     Compute the variables needed to be passed in to extract the given node.
         These are the variables that are used in the extract_node, but are not
@@ -20,8 +18,7 @@ def variables_needed_to_extract(
         scope_info (dict): A dictionary mapping AST nodes to their scope.
         extract_node (ast.AST): The node to extract.
         node_to_ssa (dict): A dictionary mapping AST nodes to their ssas.
-        ssa_to_origins (dict): A dictionary mapping ssas to their origins.
-        input_variables (set[(str, int)]): The SSA variables that are available at the call site.
+        variables (Variables): The input, closed, and output variables of the site
 
     Returns:
         list[str]: A list of variable names that are needed to extract the given node.
@@ -42,8 +39,7 @@ def variables_needed_to_extract(
                 continue
         if node in node_to_ssa:
             [ssa] = node_to_ssa[node]
-            if is_argument(ssa, ssa_to_origins, input_variables):
-                # TODO check for closed overness
+            if ssa[0] in variables.input_vars:
                 continue
 
         if node.id in name_to_scope:
@@ -57,9 +53,8 @@ def extract_as_function(
     scope_info,
     metavariable_node,
     node_to_ssa,
-    ssa_to_origins,
     metavariable_name,
-    input_variables,
+    variables,
 ):
     """
     Extract the given metavariable node as a function.
@@ -68,16 +63,15 @@ def extract_as_function(
         scope_info (dict): A dictionary mapping AST nodes to their scope.
         metavariable_node (ast.AST): The metavariable node to extract.
         node_to_ssa (dict): A dictionary mapping AST nodes to their ssas.
-        ssa_to_origins (dict): A dictionary mapping ssas to their origins.
         metavariable_name (str): The name of the metavariable.
-        input_variables (set[(str, int)]): The SSA variables that are available at the call site.
+        variables (Variables): The input, closed, and output variables of the site
 
     Returns:
         ast.Lambda: The parameter to be passed in.
         ast.Call: The call to the metavariable that replaces the metavariable_node.
     """
     variables = variables_needed_to_extract(
-        scope_info, metavariable_node, node_to_ssa, ssa_to_origins, input_variables
+        scope_info, metavariable_node, node_to_ssa, variables
     )
     args = ast.arguments(
         args=[ast.arg(v) for v in variables],
@@ -97,9 +91,7 @@ def extract_as_function(
     return parameter, call
 
 
-def extract_metavariables(
-    scope_info, site, node_to_ssa, ssa_to_origins, input_variables
-):
+def extract_metavariables(scope_info, site, node_to_ssa, variables):
     """
     Extract all metavariables in the given site.
 
@@ -107,8 +99,7 @@ def extract_metavariables(
         scope_info (dict): A dictionary mapping AST nodes to their scope.
         site (ExtractionSite): The site to extract metavariables from.
         node_to_ssa (dict): A dictionary mapping AST nodes to their ssas.
-        ssa_to_origins (dict): A dictionary mapping ssas to their origins.
-        input_variables (set[(str, int)]): The SSA variables that are available at the call site.
+        variables (Variables): The input, closed, and output variables of the site
 
     Returns:
         MetaVariables: The extracted metavariables.
@@ -120,9 +111,8 @@ def extract_metavariables(
             scope_info,
             metavariable_node,
             node_to_ssa,
-            ssa_to_origins,
             metavariable_name,
-            input_variables,
+            variables,
         )
         result[metavariable_name] = metavariable_node, parameter, call
     return MetaVariables(result)
@@ -149,20 +139,3 @@ class MetaVariables:
     @property
     def parameters(self):
         return [parameter for _, parameter, _ in self.metavariables.values()]
-
-
-def is_argument(ssa_id, origin_of, input_variables):
-    """
-    Whether a node is an argument. Treats a Gamma node as an argument if it's current
-        value is an argument and it has no downstreams.
-
-    Args:
-        ssa_id: The id of the node to check.
-        origin_of: dictionary from ssa_id to Origin.
-    """
-    # TODO fix this to make it less unreasonable
-    if ssa_id in input_variables:
-        return True
-    if isinstance(origin_of[ssa_id], Gamma) and not origin_of[ssa_id].downstreams:
-        return is_argument(origin_of[ssa_id].current, origin_of, input_variables)
-    return False
