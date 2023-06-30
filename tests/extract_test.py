@@ -5,7 +5,8 @@ import numpy as np
 from parameterized import parameterized
 
 from imperative_stitch.analyze_program.extract.errors import (
-    ClosureOverVariableModifiedInNonExtractedCode,
+    ClosedVariablePassedDirectly,
+    ClosureOverVariableModifiedInExtractedCode,
     MultipleExits,
     NonInitializedInputs,
     NonInitializedOutputs,
@@ -682,19 +683,8 @@ class ExtractTest(GenericExtractTest):
             __end_extract__
             return x
         """
-        post_extract_expected = """
-        def f(x, y):
-            x = __f0(y)
-            return x
-        """
-        post_extracted = """
-        def __f0(__1):
-            __0 = lambda: __1
-            __1 = 2
-            return __0
-        """
-        self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
+        self.assertEqual(
+            self.run_extract(code), ClosureOverVariableModifiedInExtractedCode()
         )
 
     def test_extract_lambda_redefined_externally(self):
@@ -706,9 +696,7 @@ class ExtractTest(GenericExtractTest):
             y = 2
             return x
         """
-        self.assertEqual(
-            self.run_extract(code), ClosureOverVariableModifiedInNonExtractedCode()
-        )
+        self.assertEqual(self.run_extract(code), ClosedVariablePassedDirectly())
 
     def test_extract_with_lambda(self):
         code = """
@@ -768,7 +756,7 @@ class ExtractTest(GenericExtractTest):
             return x, y
         """
         self.assertEqual(
-            self.run_extract(code), ClosureOverVariableModifiedInNonExtractedCode()
+            self.run_extract(code), ClosureOverVariableModifiedInExtractedCode()
         )
 
     def test_extract_with_called_lambda(self):
@@ -776,7 +764,7 @@ class ExtractTest(GenericExtractTest):
         def f(x, y):
             __start_extract__
             x = x ** 3
-            y = lambda k: y ** (x - y) * (lambda x: x)(y) + k
+            z = lambda k: y ** (x - y) * (lambda x: x)(y) + k
             __end_extract__
         """
         post_extract_expected = """
@@ -784,9 +772,9 @@ class ExtractTest(GenericExtractTest):
             return __f0(x, y)
         """
         post_extracted = """
-        def __f0(__0, __1):
+        def __f0(__0, __2):
             __0 = __0 ** 3
-            __1 = lambda __2: __1 ** (__0 - __1) * (lambda __3: __3)(__1) + __2
+            __1 = lambda __3: __2 ** (__0 - __2) * (lambda __4: __4)(__2) + __3
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
@@ -933,6 +921,46 @@ class RewriteTest(GenericExtractTest):
             __0 = [__m1(__2) for __2 in range(10)]
             __1 = 3
             return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_rewrite_inside_genexpr_extracted_contains_reassign(self):
+        code = """
+        def f(x):
+            y = x ** 7
+            __start_extract__
+            z = ({__metavariable__, y ** 7 - x} for x in range(10))
+            y = 3
+            __end_extract__
+            return z
+        """
+        self.assertEqual(
+            self.run_extract(code), ClosureOverVariableModifiedInExtractedCode()
+        )
+
+    def test_rewrite_inside_genexpr_extracted_not_contains_reassign(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = x ** 7
+            z = ({__metavariable__, y ** 7 - x} for x in range(10))
+            y = 3
+            __end_extract__
+            return z
+        """
+        post_extract_expected = """
+        def f(x):
+            z = __f0(x, lambda y, x: y ** 7 - x)
+            return z
+        """
+        post_extracted = """
+        def __f0(__1, __m1):
+            __0 = __1 ** 7
+            __2 = (__m1(__0, __3) for __3 in range(10))
+            __0 = 3
+            return __2
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
