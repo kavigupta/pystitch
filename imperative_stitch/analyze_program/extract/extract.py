@@ -185,7 +185,7 @@ def create_function_call(
     return call
 
 
-def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
+def compute_extract_asts(tree, scope_info, site, *, extract_name):
     """
     Returns the function definition and the function call for the extraction.
 
@@ -211,6 +211,8 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
     undos:
         A list of functions that undoes the extraction.
     """
+    pfcfg = site.locate_entry_point(tree)
+
     start, _, _, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
     _, exit = pfcfg.extraction_entry_exit(extracted_nodes)
@@ -226,7 +228,7 @@ def compute_extract_asts(scope_info, pfcfg, site, *, extract_name):
     undo_metavariables = metavariables.act(pfcfg.function_astn)
     undos += [undo_metavariables]
 
-    pfcfg = pfcfg.refresh()
+    pfcfg = site.locate_entry_point(tree)
 
     vars = compute_variables(site, scope_info, pfcfg, error_on_closed=True)
     vars.raise_if_needed(undos)
@@ -282,9 +284,8 @@ def do_extract(site, tree, *, extract_name):
     """
     scope_info = ast_scope.annotate(tree)
 
-    pfcfg = site.locate_entry_point(tree)
     func_def, call, exit, undos = compute_extract_asts(
-        scope_info, pfcfg, site, extract_name=extract_name
+        tree, scope_info, site, extract_name=extract_name
     )
 
     for calls in [call], [call, ast.Break()], [call, ast.Continue()]:

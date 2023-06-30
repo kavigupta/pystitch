@@ -966,6 +966,29 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_extract_in_conditional(self):
+        code = """
+        def _get_content_type(url, session):
+            __start_extract__
+            if {__metavariable__, scheme not in ('http', 'https')}:
+                return ''
+            return 2
+            __end_extract__
+        """
+        post_extract_expected = """
+        def _get_content_type(url, session):
+            return __f0(lambda: scheme not in ('http', 'https'))
+        """
+        post_extracted = """
+        def __f0(__m1):
+            if __m1():
+                return ''
+            return 2
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class ExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):
