@@ -128,9 +128,7 @@ class FunctionSSAAnnotator:
         closed = tuple(sorted(set(closed)))
         if closed == (current,):
             return current
-        fresh_var = self._mapping.fresh_variable(
-            node.id, Gamma(node, closed)
-        )
+        fresh_var = self._mapping.fresh_variable(node.id, Gamma(node, closed))
         return fresh_var
 
     def collect_annotations(self):

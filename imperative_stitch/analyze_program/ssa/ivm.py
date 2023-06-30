@@ -82,7 +82,7 @@ class Phi(Origin):
 @dataclass(eq=True, frozen=True)
 class Gamma(Origin):
     node: AST
-    closed : tuple
+    closed: tuple
 
     def replaceable_without_propagating(self, other):
         raise NotImplementedError
