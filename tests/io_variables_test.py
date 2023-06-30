@@ -49,6 +49,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         )
 
     def test_closed_if_not_entirely_within_section(self):
+        self.maxDiff = None
         code = """
         def f(x, y):
             __start_extract__
@@ -58,8 +59,8 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             return z
         """
         self.assertEqual(
-            self.run_io(code),
-            Variables(input_vars=["y"], closed_vars=["x"], output_vars=["z"]),
+            str(self.run_io(code)),
+            str(Variables(input_vars=["y"], closed_vars=["x"], output_vars=["z"])),
         )
 
     def test_not_closed_if_entirely_within_section(self):

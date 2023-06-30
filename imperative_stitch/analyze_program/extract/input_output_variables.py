@@ -40,7 +40,7 @@ class Variables:
             raise self.errors[0]
 
 
-def compute_variables(site, scope_info, pfcfg, error_on_closed=True):
+def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     """
     Compute a Variables object for a site. Ignores metavariables.
 
