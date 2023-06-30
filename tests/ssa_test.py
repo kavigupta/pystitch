@@ -637,6 +637,25 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_lambda_closed(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = x ** 7
+            z = lambda x: y ** 7 - x
+            __end_extract__
+            return z
+        """
+        expected = """
+        def f(x_1):
+            __start_extract__
+            y_2 = x_1 ** 7
+            z_2 = lambda x: y_2 ** 7 - x
+            __end_extract__
+            return z_2
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
