@@ -27,7 +27,6 @@ class FunctionSSAAnnotator:
     """
 
     def __init__(self, scope_info, per_function_cfg: PerFunctionCFG):
-
         self.scope_info = scope_info
         self.graph = per_function_cfg
 
