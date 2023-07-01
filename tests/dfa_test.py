@@ -131,7 +131,3 @@ class DFATest(unittest.TestCase):
         code = small_set_examples()[i]
         for element in ast.parse(code).body:
             self.classify_elements_in_code(ast.unparse(element))
-
-    def test_temp(self):
-        out = open("__test__.py").read()
-        self.classify_elements_in_code(out)
