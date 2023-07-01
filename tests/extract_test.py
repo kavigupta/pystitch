@@ -1017,6 +1017,8 @@ class ExtractRealisticTest(GenericExtractTest):
             except BannedComponentError:
                 # don't error on this, just skip it
                 pass
+            except SyntaxError:
+                self.fail()
 
     def sample_site(self, rng, tree):
         nodes = list(ast_nodes_in_order(tree))
@@ -1044,7 +1046,8 @@ class ExtractRealisticTest(GenericExtractTest):
 
 class RewriteRealisticTest(ExtractRealisticTest):
     def manipulate(self, body, rng):
-        expressions = list(x for x, tag in compute_types_each(body, "S") if tag == "E")
+        expressions = list(x for x, state in compute_types_each(body, "S") if state == "E")
+        expressions = [x for x in expressions if not isinstance(x, ast.Slice)]
         if not expressions:
             return body, 0
         count = rng.randint(1, min(5, len(expressions) + 1))
