@@ -24,7 +24,7 @@ transitions = {
             "annotation": "E",
             "simple": "X",
         },
-        (ast.For, ast.AsyncFor, ast.While, ast.If, ast.With, ast.Try): {
+        (ast.For, ast.AsyncFor, ast.While, ast.If, ast.With, ast.AsyncWith, ast.Try): {
             "iter": "E",
             "test": "E",
             "body": "S",
@@ -127,7 +127,6 @@ def compute_match(transition, key, default=None):
 
 
 def compute_transition(transitions, state, typ, field):
-    print(state, typ, field)
     transition = transitions[state]
     transition = compute_match(transition, typ, default={})
     transition = compute_match(transition, field, default="X")
