@@ -9,19 +9,19 @@ transitions = {
             "bases": "E",
             "name": "X",
             "args": "As",
-            "returns": "X",
+            "returns": "E",
             "type_comment": "X",
             "keywords": "K",
         },
         ast.Return: {"value": "E"},
-        ast.Delete: {"targets": "X"},
+        ast.Delete: {"targets": "L"},
         (ast.Assign, ast.AugAssign, ast.AnnAssign): {
             "value": "E",
-            "targets": "X",
-            "target": "X",
+            "targets": "L",
+            "target": "L",
             "type_comment": "X",
             "op": "X",
-            "annotation": "X",
+            "annotation": "E",
             "simple": "X",
         },
         (ast.For, ast.AsyncFor, ast.While, ast.If, ast.With, ast.Try): {
@@ -32,7 +32,7 @@ transitions = {
             "finalbody": "S",
             "items": "W",
             "handlers": "EH",
-            "target": "X",
+            "target": "L",
             "type_comment": "X",
         },
         #         ast.Match: {"subject": "E", "cases": "C"},
@@ -68,25 +68,33 @@ transitions = {
             all: "E",
         },
         ast.JoinedStr: {"values": "F"},
-        (ast.Constant, ast.Name): {all: "X"},
-        (ast.Attribute, ast.Subscript, ast.Starred): {"value": "E", all: "X"},
+        (ast.Constant, ast.Name, ast.AnnAssign): {all: "X"},
+        (ast.Attribute, ast.Subscript, ast.Starred): {
+            "value": "E",
+            "slice": "E",
+            all: "X",
+        },
+        ast.Slice: {"lower": "E", "upper": "E", "step": "E"},
     },
     "As": {
         ast.arguments: {
             ("kw_defaults", "defaults"): "E",
-            all: "X",
+            all: "A",
         }
+    },
+    "A": {
+        ast.arg: {"annotation": "E"},
     },
     "X": {all: {all: "X"}},
     "F": {
         ast.FormattedValue: {"value": "E", all: "X"},
         ast.Constant: {all: "X"},
     },
-    "C": {ast.comprehension: {"target": "X", "iter": "E", "ifs": "E", "is_async": "X"}},
+    "C": {ast.comprehension: {"target": "L", "iter": "E", "ifs": "E", "is_async": "X"}},
     "K": {ast.keyword: {"value": "E", "arg": "X"}},
     "EH": {
         ast.ExceptHandler: {
-            "type": "X",
+            "type": "E",
             "name": "X",
             "body": "S",
         }
@@ -94,13 +102,18 @@ transitions = {
     "W": {
         ast.withitem: {
             "context_expr": "E",
-            "optional_vars": "X",
+            "optional_vars": "L",
         }
+    },
+    "L": {
+        ast.Tuple: {all: "L"},
+        ast.Subscript: {"value": "E", "slice": "E"},
+        ast.Attribute: {"value": "E", "attr": "X"},
     },
 }
 
 
-def compute_match(transition, key):
+def compute_match(transition, key, default=None):
     for k, v in transition.items():
         if k is all:
             return v
@@ -108,13 +121,16 @@ def compute_match(transition, key):
             k = (k,)
         if key in k:
             return v
+    if default is not None:
+        return default
     raise RuntimeError(f"could not find {key}")
 
 
-def compute_transition(state, typ, field):
+def compute_transition(transitions, state, typ, field):
+    print(state, typ, field)
     transition = transitions[state]
-    transition = compute_match(transition, typ)
-    transition = compute_match(transition, field)
+    transition = compute_match(transition, typ, default={})
+    transition = compute_match(transition, field, default="X")
     return transition
 
 
@@ -127,5 +143,32 @@ def compute_types_each(t, state):
         yield t, state
         for f in t._fields:
             yield from compute_types_each(
-                getattr(t, f), compute_transition(state, type(t), f)
+                getattr(t, f), compute_transition(transitions, state, type(t), f)
             )
+
+
+def export_dfa(transitions):
+    """
+    Takes a transition dictionary of the form above and converts
+    it to a dict[state, dict[tag, list[state]]]
+    """
+    all_tags = [
+        x
+        for x in dir(ast)
+        if isinstance(getattr(ast, x), type) and issubclass(getattr(ast, x), ast.AST)
+    ]
+
+    result = {}
+    for state in transitions:
+        result[state] = {}
+        for tag in all_tags:
+            result[state][tag] = []
+            t = getattr(ast, tag)
+            for f in t._fields:
+                result[state][tag].append(compute_transition(transitions, state, t, f))
+    for state in transitions:
+        result[state]["list"] = [state]
+    for state in transitions:
+        result[state]["semi"] = ["X", "X"]
+    result["S"]["semi"] = ["S", "S"]
+    return result

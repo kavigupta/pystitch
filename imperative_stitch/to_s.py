@@ -49,7 +49,7 @@ def to_list_s_expr(x, descoper, is_body=False):
         if not x:
             return []
         x = [to_list_s_expr(x, descoper) for x in x]
-        result = x.pop()
+        result = []
         while x:
             result = ["semi", x.pop(), result]
         return result
