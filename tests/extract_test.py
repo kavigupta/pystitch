@@ -1046,8 +1046,12 @@ class ExtractRealisticTest(GenericExtractTest):
 
 class RewriteRealisticTest(ExtractRealisticTest):
     def manipulate(self, body, rng):
-        expressions = list(x for x, state in compute_types_each(body, "S") if state == "E")
-        expressions = [x for x in expressions if not isinstance(x, ast.Slice)]
+        expressions = list(
+            x for x, state in compute_types_each(body, "S") if state == "E"
+        )
+        expressions = [
+            x for x in expressions if not isinstance(x, (ast.Slice, ast.Ellipsis))
+        ]
         if not expressions:
             return body, 0
         count = rng.randint(1, min(5, len(expressions) + 1))
