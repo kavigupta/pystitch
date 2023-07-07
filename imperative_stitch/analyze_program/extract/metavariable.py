@@ -105,8 +105,7 @@ def extract_metavariables(scope_info, site, node_to_ssa, variables):
         MetaVariables: The extracted metavariables.
     """
     result = {}
-    for metavariable_index, metavariable_node in enumerate(site.metavariables, 1):
-        metavariable_name = f"__m{metavariable_index}"
+    for metavariable_name, metavariable_node in site.metavariables.items():
         parameter, call = extract_as_function(
             scope_info,
             metavariable_node,

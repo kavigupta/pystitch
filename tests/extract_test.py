@@ -786,7 +786,7 @@ class RewriteTest(GenericExtractTest):
         code = """
         def f(x, y):
             __start_extract__
-            z = x ** 2 + {__metavariable__, y ** 2}
+            z = x ** 2 + {__metavariable__, __m1, y ** 2}
             __end_extract__
             return z
         """
@@ -809,7 +809,7 @@ class RewriteTest(GenericExtractTest):
         def f(x):
             __start_extract__
             y = x ** 7
-            z = {__metavariable__, y ** 7 - y}
+            z = {__metavariable__, __m1, y ** 7 - y}
             __end_extract__
             return z
         """
@@ -833,7 +833,7 @@ class RewriteTest(GenericExtractTest):
         def f(x):
             __start_extract__
             y = x ** 7
-            z = lambda x: {__metavariable__, y ** 7 - x}
+            z = lambda x: {__metavariable__, __m1, y ** 7 - x}
             __end_extract__
             return z
         """
@@ -857,7 +857,7 @@ class RewriteTest(GenericExtractTest):
         def f(x):
             __start_extract__
             y = x ** 7
-            z = lambda x: {__metavariable__, y ** 7} - {__metavariable__, x}
+            z = lambda x: {__metavariable__, __m1, y ** 7} - {__metavariable__, __m2, x}
             __end_extract__
             return z
         """
@@ -881,7 +881,7 @@ class RewriteTest(GenericExtractTest):
         def f(x):
             y = x ** 7
             __start_extract__
-            z = [{__metavariable__, y ** 7 - x} for x in range(10)]
+            z = [{__metavariable__, __m1, y ** 7 - x} for x in range(10)]
             __end_extract__
             return z
         """
@@ -905,7 +905,7 @@ class RewriteTest(GenericExtractTest):
         def f(x):
             y = x ** 7
             __start_extract__
-            z = [{__metavariable__, y ** 7 - x} for x in range(10)]
+            z = [{__metavariable__, __m1, y ** 7 - x} for x in range(10)]
             y = 3
             __end_extract__
             return z
@@ -931,7 +931,7 @@ class RewriteTest(GenericExtractTest):
         def f(x):
             y = x ** 7
             __start_extract__
-            z = ({__metavariable__, y ** 7 - x} for x in range(10))
+            z = ({__metavariable__, __m1, y ** 7 - x} for x in range(10))
             y = 3
             __end_extract__
             return z
@@ -945,7 +945,7 @@ class RewriteTest(GenericExtractTest):
         def f(x):
             __start_extract__
             y = x ** 7
-            z = ({__metavariable__, y ** 7 - x} for x in range(10))
+            z = ({__metavariable__, __m1, y ** 7 - x} for x in range(10))
             y = 3
             __end_extract__
             return z
@@ -970,7 +970,7 @@ class RewriteTest(GenericExtractTest):
         code = """
         def _get_content_type(url, session):
             __start_extract__
-            if {__metavariable__, scheme not in ('http', 'https')}:
+            if {__metavariable__, __m1, scheme not in ('http', 'https')}:
                 return ''
             return 2
             __end_extract__
@@ -995,7 +995,7 @@ class RewriteTest(GenericExtractTest):
             __start_extract__
             x = x ** 3
             y = x ** 7
-            return y ** {__metavariable__, x - y}
+            return y ** {__metavariable__, __m1, x - y}
             __end_extract__
         """
         post_extract_expected = """
@@ -1082,8 +1082,10 @@ class RewriteRealisticTest(ExtractRealisticTest):
         print([repr(ast.unparse(e)) for e in expressions])
         replace = ReplaceNodes(
             {
-                expr: ast.Set(elts=[ast.Name("__metavariable__"), expr])
-                for expr in expressions
+                expr: ast.Set(
+                    elts=[ast.Name("__metavariable__"), ast.Name(f"__m{i}"), expr]
+                )
+                for i, expr in enumerate(expressions)
             }
         )
         body = [replace.visit(stmt) for stmt in body]

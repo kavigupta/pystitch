@@ -6,7 +6,7 @@ Takes code like
         for x, y in zip(xs, ys):
             __start_extract__
             x2y2 = x ** 2 + y ** 2
-            r = x2y2 ** {__metavariable__, 0.5}
+            r = x2y2 ** {__metavariable__, __m1, 0.5}
             z = x + r
             __end_extract__
             zs.append(z)
@@ -26,19 +26,21 @@ from imperative_stitch.utils.ast_utils import field_is_body
 class RemoveExprMetavariablesPragmas(ast.NodeTransformer):
     def __init__(self, metavariable_pragma):
         self.metavariable_pragma = metavariable_pragma
-        self.metavariables = []
+        self.metavariables = {}
 
     def visit_Set(self, node):
         node = super().generic_visit(node)
-        if len(node.elts) != 2:
+        if len(node.elts) != 3:
             return node
-        first, second = node.elts
-        if not isinstance(first, ast.Name):
+        pragma, name, value = node.elts
+        if not isinstance(pragma, ast.Name):
             return node
-        if first.id != self.metavariable_pragma:
+        if pragma.id != self.metavariable_pragma:
             return node
-        self.metavariables.append(second)
-        return second
+        assert isinstance(name, ast.Name)
+        assert name.id not in self.metavariables
+        self.metavariables[name.id] = value
+        return value
 
 
 class RemoveStartEndPragmas(ast.NodeTransformer):
