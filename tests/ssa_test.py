@@ -656,6 +656,21 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_real_001(self):
+        code = """
+        def f(x, y):
+            x = x ** 3
+            y = x ** 7
+            return lambda k: y ** (x - y) + u
+        """
+        expected = """
+        def f(x_1, y_1):
+            x_2 = x_1 ** 3
+            y_2 = x_2 ** 7
+            return lambda k: y_2 ** (x_2 - y_2) + u
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])

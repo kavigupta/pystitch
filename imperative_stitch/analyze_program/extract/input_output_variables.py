@@ -19,6 +19,7 @@ from imperative_stitch.analyze_program.ssa.ivm import (
 class Variables:
     """
     Represents the variables that interact with a site at its boundaries.
+        Each is a list of (variable name, ssa id) pairs.
 
     Specifically,
         - input_vars: variables that are accessed directly in the site but are not defined in the site
@@ -28,9 +29,9 @@ class Variables:
         - output_vars: variables that are accessed outside the site but are defined in the site
     """
 
-    input_vars: list[str]
-    closed_vars: list[str]
-    output_vars: list[str]
+    _input_vars_ssa: list[(str, int)]
+    _closed_vars_ssa: list[(str, int)]
+    _output_vars_ssa: list[(str, int)]
     errors: list[NotApplicable] = field(default_factory=lambda: [])
 
     def raise_if_needed(self, undos):
@@ -38,6 +39,27 @@ class Variables:
             for undo in undos[::-1]:
                 undo()
             raise self.errors[0]
+
+    def is_input(self, ssa_id):
+        assert (
+            isinstance(ssa_id, tuple)
+            and len(ssa_id) == 2
+            and isinstance(ssa_id[0], str)
+            and isinstance(ssa_id[1], int)
+        )
+        return ssa_id in self._input_vars_ssa
+
+    @property
+    def input_vars_without_ssa(self):
+        return sorted({x for x, _ in self._input_vars_ssa})
+
+    @property
+    def closed_vars_without_ssa(self):
+        return sorted({x for x, _ in self._closed_vars_ssa})
+
+    @property
+    def output_vars_without_ssa(self):
+        return sorted({x for x, _ in self._output_vars_ssa})
 
 
 def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
@@ -70,7 +92,7 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         ssa_id for node in site.all_nodes for ssa_id in node_to_ssa.get(node, ())
     ]
 
-    closed_variables_ssa_id = sorted(
+    closed_variables = sorted(
         ssa_id
         for ssa_id in extracted_variables
         if isinstance(ssa_to_origin[ssa_id], Gamma)
@@ -81,22 +103,21 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
             for closed_ssa_id in ssa_to_origin[ssa_id].closed
         )
     )
-    closed_variables = sorted({x for x, _ in closed_variables_ssa_id})
     errors = []
     if entry is not None and not all_initialized(
-        start[entry], input_variables, ultimate_origins
+        start[entry], [x for x, _ in input_variables], ultimate_origins
     ):
         errors.append(NonInitializedInputs)
 
     if output_variables and not all_initialized(
-        start[exit], output_variables, ultimate_origins
+        start[exit], [x for x, _ in output_variables], ultimate_origins
     ):
         errors.append(NonInitializedOutputs)
 
     if traces_an_origin_to_node_set(
         [
             origin
-            for ssa_id in closed_variables_ssa_id
+            for ssa_id in closed_variables
             for closed_ssa_id in ssa_to_origin[ssa_id].closed
             for origin in ultimate_origins[closed_ssa_id]
         ],
@@ -108,9 +129,9 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         errors.append(ClosedVariablePassedDirectly)
 
     return Variables(
-        input_vars=input_variables,
-        closed_vars=closed_variables,
-        output_vars=output_variables,
+        input_variables,
+        closed_variables,
+        output_variables,
         errors=errors,
     )
 
@@ -191,9 +212,7 @@ def variables_in_nodes(nodes, annotations):
     return {alias for x in nodes if x in annotations for alias in annotations[x]}
 
 
-def compute_input_variables(
-    site, annotations, ultimate_origins, extracted_nodes, keep_ssa=False
-):
+def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes):
     """
     Compute the input variables of an extraction site.
 
@@ -216,10 +235,7 @@ def compute_input_variables(
             )
         ]
     )
-    if keep_ssa:
-        return variables_in
-    var_set = sorted(set(var for var, _ in variables_in))
-    return var_set
+    return variables_in
 
 
 def compute_output_variables(
@@ -233,7 +249,7 @@ def compute_output_variables(
     )
     return sorted(
         {
-            x[0]
+            x
             for x in variables_out
             if traces_an_origin_to_node_set(
                 ultimate_origins[x], lambda x: x in extracted_nodes

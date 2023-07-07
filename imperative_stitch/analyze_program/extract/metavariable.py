@@ -39,7 +39,7 @@ def variables_needed_to_extract(scope_info, extract_node, node_to_ssa, variables
                 continue
         if node in node_to_ssa:
             [ssa] = node_to_ssa[node]
-            if ssa[0] in variables.input_vars:
+            if variables.is_input(ssa):
                 continue
 
         if node.id in name_to_scope:
