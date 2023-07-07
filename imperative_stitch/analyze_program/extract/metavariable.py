@@ -104,8 +104,9 @@ def extract_metavariables(scope_info, site, node_to_ssa, variables):
     Returns:
         MetaVariables: The extracted metavariables.
     """
-    result = {}
-    for metavariable_name, metavariable_node in site.metavariables.items():
+    result = []
+    for metavariable_name, metavariable_node in site.metavariables:
+        assert isinstance(metavariable_node, ast.AST)
         parameter, call = extract_as_function(
             scope_info,
             metavariable_node,
@@ -113,28 +114,31 @@ def extract_metavariables(scope_info, site, node_to_ssa, variables):
             metavariable_name,
             variables,
         )
-        result[metavariable_name] = metavariable_node, parameter, call
+        result.append((metavariable_name, (metavariable_node, parameter, call)))
     return MetaVariables(result)
 
 
 class MetaVariables:
     """
     Represents a set of metavariables.
+
+    Fields:
+        metavariables (list[(str, (ast.AST, ast.Lambda, ast.Call))]): A list of metavariables.
     """
 
     def __init__(self, metavariables):
         self.metavariables = metavariables
 
     def act(self, node):
-        forward = {node: call for node, _, call in self.metavariables.values()}
-        backward = {call: node for node, _, call in self.metavariables.values()}
+        forward = {node: call for _, (node, _, call) in self.metavariables}
+        backward = {call: node for _, (node, _, call) in self.metavariables}
         ReplaceNodes(forward).visit(node)
         return lambda: ReplaceNodes(backward).visit(node)
 
     @property
     def names(self):
-        return list(self.metavariables)
+        return sorted({name for name, _ in self.metavariables})
 
     @property
     def parameters(self):
-        return [parameter for _, parameter, _ in self.metavariables.values()]
+        return [parameter for _, (_, parameter, _) in self.metavariables]

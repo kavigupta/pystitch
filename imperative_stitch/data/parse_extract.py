@@ -26,7 +26,7 @@ from imperative_stitch.utils.ast_utils import field_is_body
 class RemoveExprMetavariablesPragmas(ast.NodeTransformer):
     def __init__(self, metavariable_pragma):
         self.metavariable_pragma = metavariable_pragma
-        self.metavariables = {}
+        self.metavariables = []
 
     def visit_Set(self, node):
         node = super().generic_visit(node)
@@ -39,7 +39,7 @@ class RemoveExprMetavariablesPragmas(ast.NodeTransformer):
             return node
         assert isinstance(name, ast.Name)
         assert name.id not in self.metavariables
-        self.metavariables[name.id] = value
+        self.metavariables.append((name.id, value))
         return value
 
 

@@ -31,7 +31,7 @@ class ExtractedCode:
 
     func_def: ast.AST
     call: ast.AST
-    metavariable_map: MetaVariables
+    metavariables: MetaVariables
     undo: Callable[[], None]
 
 
