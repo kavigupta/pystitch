@@ -13,15 +13,10 @@ from .input_output_variables import (
 )
 from .unused_return import remove_unnecessary_returns
 
-from .errors import (
-    ClosureOverVariableModifiedInExtractedCode,
-    NonInitializedInputs,
-    NonInitializedOutputs,
-)
 from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
-from ..ssa.ivm import Gamma, compute_ultimate_origins
+from ..ssa.ivm import Gamma
 
 
 def invalid_closure_over_variable_modified_in_non_extracted_code(
