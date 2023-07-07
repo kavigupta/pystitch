@@ -1,4 +1,5 @@
 import ast
+from dataclasses import dataclass
 
 from ast_scope.scope import GlobalScope, ErrorScope, FunctionScope, ClassScope
 from imperative_stitch.analyze_program.ssa.ivm import Gamma
@@ -114,8 +115,26 @@ def extract_metavariables(scope_info, site, node_to_ssa, variables):
             metavariable_name,
             variables,
         )
-        result.append((metavariable_name, (metavariable_node, parameter, call)))
+        result.append(
+            (metavariable_name, MetaVariable(metavariable_node, parameter, call))
+        )
     return MetaVariables(result)
+
+
+@dataclass
+class MetaVariable:
+    """
+    Represents a metavariable.
+
+    Fields:
+        node (ast.AST): The metavariable node.
+        parameter (ast.Lambda): The parameter to be passed in, if the metavariable is extracted.
+        call (ast.Call): The call to the metavariable that replaces the metavariable node, if the metavariable is extracted.
+    """
+
+    node: ast.AST
+    parameter: ast.Lambda
+    call: ast.Call
 
 
 class MetaVariables:
@@ -130,8 +149,8 @@ class MetaVariables:
         self.metavariables = metavariables
 
     def act(self, node):
-        forward = {node: call for _, (node, _, call) in self.metavariables}
-        backward = {call: node for _, (node, _, call) in self.metavariables}
+        forward = {meta.node: meta.call for _, meta in self.metavariables}
+        backward = {meta.call: meta.node for _, meta in self.metavariables}
         ReplaceNodes(forward).visit(node)
         return lambda: ReplaceNodes(backward).visit(node)
 
@@ -141,4 +160,7 @@ class MetaVariables:
 
     @property
     def parameters(self):
-        return [parameter for _, (_, parameter, _) in self.metavariables]
+        return [meta.parameter for _, meta in self.metavariables]
+
+    def for_name(self, name):
+        return [meta for meta_name, meta in self.metavariables if meta_name == name]
