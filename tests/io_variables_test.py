@@ -32,7 +32,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertEqual(
             self.run_io(code),
-            Variables(input_vars=["y"], closed_vars=[], output_vars=["x"]),
+            Variables([("y", 1)], [], [("x", 3)]),
         )
 
     def test_same_io(self):
@@ -45,7 +45,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertEqual(
             self.run_io(code),
-            Variables(input_vars=["x", "y"], closed_vars=[], output_vars=["x", "y"]),
+            Variables([("x", 1), ("y", 1)], [], [("x", 2), ("y", 2)]),
         )
 
     def test_closed_if_not_entirely_within_section(self):
@@ -60,7 +60,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertEqual(
             str(self.run_io(code)),
-            str(Variables(input_vars=["y"], closed_vars=["x"], output_vars=["z"])),
+            str(Variables([("y", 1)], [("x", 3)], [("z", 2)])),
         )
 
     def test_not_closed_if_entirely_within_section(self):
@@ -75,7 +75,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertEqual(
             self.run_io(code),
-            Variables(input_vars=["y"], closed_vars=[], output_vars=["z"]),
+            Variables([("y", 1)], [], [("z", 2)]),
         )
 
     def test_error_if_not_entirely_closed(self):
@@ -93,9 +93,9 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             str(self.run_io(code)),
             str(
                 Variables(
-                    input_vars=["y"],
-                    closed_vars=["x"],
-                    output_vars=["z"],
+                    [("y", 1)],
+                    [("x", 4)],
+                    [("z", 2)],
                     errors=[ClosureOverVariableModifiedInExtractedCode],
                 )
             ),
