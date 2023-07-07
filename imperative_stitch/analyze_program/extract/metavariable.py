@@ -130,7 +130,7 @@ class MetaVariables:
         forward = {node: call for node, _, call in self.metavariables.values()}
         backward = {call: node for node, _, call in self.metavariables.values()}
         ReplaceNodes(forward).visit(node)
-        return lambda: ReplaceNodes(backward).visit(node)
+        return forward, lambda: ReplaceNodes(backward).visit(node)
 
     @property
     def names(self):

@@ -1,5 +1,7 @@
 import ast
 import copy
+from dataclasses import dataclass
+from typing import Callable, Dict
 
 import ast_scope
 
@@ -10,6 +12,7 @@ from imperative_stitch.analyze_program.extract.metavariable import (
 
 from .input_output_variables import (
     compute_variables,
+    traces_an_origin_to_node_set,
 )
 from .unused_return import remove_unnecessary_returns
 
@@ -17,6 +20,18 @@ from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
 from ..ssa.ivm import Gamma
+
+
+@dataclass
+class ExtractedCode:
+    """
+    Represents the code that has been extracted from the site.
+    """
+
+    func_def: ast.AST
+    call: ast.AST
+    metavariable_map: Dict[ast.AST, ast.AST]
+    undo: Callable[[], None]
 
 
 def invalid_closure_over_variable_modified_in_non_extracted_code(
@@ -205,6 +220,8 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
         The exit node of the extraction site.
     undos:
         A list of functions that undoes the extraction.
+    metavariable_map:
+        A mapping from metavariable nodes to the calls to the metavariable functions.
     """
     pfcfg = site.locate_entry_point(tree)
 
@@ -220,7 +237,7 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
 
     undos = []
 
-    undo_metavariables = metavariables.act(pfcfg.function_astn)
+    metavariable_map, undo_metavariables = metavariables.act(pfcfg.function_astn)
     undos += [undo_metavariables]
 
     pfcfg = site.locate_entry_point(tree)
@@ -256,7 +273,7 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
         metavariables,
         is_return=exit == "<return>",
     )
-    return func_def, call, exit, undos
+    return func_def, call, exit, undos, metavariable_map
 
 
 def do_extract(site, tree, *, extract_name):
@@ -276,14 +293,13 @@ def do_extract(site, tree, *, extract_name):
 
     Returns
     -------
-    func_def: AST
-        The function definition of the extracted function.
-    undo: () -> None
-        A function that undoes the extraction.
+    ExtractedCode
+        The extracted code, including the function definition, the function call, and
+            a function that undoes the extraction.
     """
     scope_info = ast_scope.annotate(tree)
 
-    func_def, call, exit, undos = compute_extract_asts(
+    func_def, call, exit, undos, metavariable_map = compute_extract_asts(
         tree, scope_info, site, extract_name=extract_name
     )
 
@@ -301,7 +317,7 @@ def do_extract(site, tree, *, extract_name):
         for un in undos[::-1]:
             un()
 
-    return func_def, full_undo
+    return ExtractedCode(func_def, call, metavariable_map, full_undo)
 
 
 def attempt_to_mutate(site, tree, calls, exit):

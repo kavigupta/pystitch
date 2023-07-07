@@ -40,14 +40,14 @@ class GenericExtractTest(unittest.TestCase):
         # without pragmas
         code = ast.unparse(tree)
         try:
-            func_def, undo = do_extract(site, tree, extract_name="__f0")
+            extr = do_extract(site, tree, extract_name="__f0")
         except (NotApplicable, BannedComponentError) as e:
             # ensure that the code is not changed
             self.assertEqual(code, ast.unparse(tree))
             return e
 
-        post_extract, extracted = ast.unparse(tree), ast.unparse(func_def)
-        undo()
+        post_extract, extracted = ast.unparse(tree), ast.unparse(extr.func_def)
+        extr.undo()
         self.assertEqual(code, ast.unparse(tree), "undo")
         return post_extract, extracted
 
