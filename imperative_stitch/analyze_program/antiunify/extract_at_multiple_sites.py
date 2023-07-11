@@ -51,6 +51,7 @@ def antiunify_all_metavariables_across_extractions(extrs):
             print(code)
         raise RuntimeError("not all results are the same")
 
+
 def antiunify_metavariable_across_extractions(extrs, metavariable_name):
     """
     Antiunify the given metavariable across all extractions. Once this is done,
