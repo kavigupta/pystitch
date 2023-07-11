@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from python_graphs import control_flow
 
+from imperative_stitch.utils.ast_utils import ReplaceNodes
+
 
 @dataclass
 class ExtractionSite:
@@ -49,3 +51,17 @@ class ExtractionSite:
                 continue
             return pfcfg
         raise RuntimeError("Not found in given tree")
+
+    def add_pragmas(self):
+        """
+        Manipulate the AST to put the extraction site pragmas back in.
+        """
+        body = self.containing_sequence
+        body.insert(self.start, ast.parse("__start_extract__").body[0])
+        body.insert(self.end + 1, ast.parse("__end_extract__").body[0])
+        ReplaceNodes(
+            {
+                node: ast.Set(elts=[ast.Name("__metavariable__"), ast.Name(name), node])
+                for name, node in self.metavariables
+            }
+        ).visit(self.node)
