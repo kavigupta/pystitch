@@ -157,7 +157,6 @@ class AntiUnifyTest(GenericExtractTest):
 
 
 class AntiUnifyRealisticTest(GenericRewriteRealisticTest):
-
     def run_extract(self, code, num_metavariables=None):
         return run_extract(self, code, num_metavariables)
 

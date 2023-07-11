@@ -275,9 +275,7 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
         expressions = list(
             x for x, state in compute_types_each(body, start) if state == "E"
         )
-        expressions = [
-            x for x in expressions if not self.bad_expression(x)
-        ]
+        expressions = [x for x in expressions if not self.bad_expression(x)]
         return expressions
 
     def bad_expression(self, expr):
