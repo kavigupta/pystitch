@@ -105,9 +105,14 @@ def extract_metavariables(scope_info, site, node_to_ssa, variables):
     Returns:
         MetaVariables: The extracted metavariables.
     """
-    result = []
+    texts = {}
+    parameters = {}
+    replacements = []
     for metavariable_name, metavariable_node in site.metavariables:
         assert isinstance(metavariable_node, ast.AST)
+        if metavariable_name in texts:
+            assert texts[metavariable_name] == ast.unparse(metavariable_node)
+
         parameter, call = extract_as_function(
             scope_info,
             metavariable_node,
@@ -115,25 +120,25 @@ def extract_metavariables(scope_info, site, node_to_ssa, variables):
             metavariable_name,
             variables,
         )
-        result.append(
-            (metavariable_name, MetaVariable(metavariable_node, parameter, call))
+        texts[metavariable_name] = ast.unparse(metavariable_node)
+        parameters[metavariable_name] = parameter
+        replacements.append(
+            (metavariable_name, MetaVariableReplacement(metavariable_node, call))
         )
-    return MetaVariables(result)
+    return MetaVariables(parameters, replacements)
 
 
 @dataclass
-class MetaVariable:
+class MetaVariableReplacement:
     """
     Represents a metavariable.
 
     Fields:
         node (ast.AST): The metavariable node.
-        parameter (ast.Lambda): The parameter to be passed in, if the metavariable is extracted.
         call (ast.Call): The call to the metavariable that replaces the metavariable node, if the metavariable is extracted.
     """
 
     node: ast.AST
-    parameter: ast.Lambda
     call: ast.Call
 
 
@@ -145,22 +150,23 @@ class MetaVariables:
         metavariables (list[(str, (ast.AST, ast.Lambda, ast.Call))]): A list of metavariables.
     """
 
-    def __init__(self, metavariables):
-        self.metavariables = metavariables
+    def __init__(self, parameters, metavariables):
+        self._parameters = parameters
+        self._metavariables = metavariables
 
     def act(self, node):
-        forward = {meta.node: meta.call for _, meta in self.metavariables}
-        backward = {meta.call: meta.node for _, meta in self.metavariables}
+        forward = {meta.node: meta.call for _, meta in self._metavariables}
+        backward = {meta.call: meta.node for _, meta in self._metavariables}
         ReplaceNodes(forward).visit(node)
         return lambda: ReplaceNodes(backward).visit(node)
 
     @property
     def names(self):
-        return sorted({name for name, _ in self.metavariables})
+        return sorted(self._parameters)
 
     @property
     def parameters(self):
-        return [meta.parameter for _, meta in self.metavariables]
+        return [self._parameters[name] for name in self.names]
 
     def for_name(self, name):
-        return [meta for meta_name, meta in self.metavariables if meta_name == name]
+        return [meta for meta_name, meta in self._metavariables if meta_name == name]
