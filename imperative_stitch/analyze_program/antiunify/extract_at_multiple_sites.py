@@ -45,8 +45,11 @@ def antiunify_all_metavariables_across_extractions(extrs):
     for metavariable_name in all_metavariable_names:
         antiunify_metavariable_across_extractions(extrs, metavariable_name)
 
-    assert len(set(ast.unparse(extr.func_def) for extr in extrs)) == 1
-
+    codes = set(ast.unparse(extr.func_def) for extr in extrs)
+    if len(codes) != 1:
+        for code in codes:
+            print(code)
+        raise RuntimeError("not all results are the same")
 
 def antiunify_metavariable_across_extractions(extrs, metavariable_name):
     """
