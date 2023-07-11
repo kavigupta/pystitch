@@ -150,13 +150,13 @@ class MetaVariables:
         metavariables (list[(str, (ast.AST, ast.Lambda, ast.Call))]): A list of metavariables.
     """
 
-    def __init__(self, parameters, metavariables):
+    def __init__(self, parameters, replacements):
         self._parameters = parameters
-        self._metavariables = metavariables
+        self._replacements = replacements
 
     def act(self, node):
-        forward = {meta.node: meta.call for _, meta in self._metavariables}
-        backward = {meta.call: meta.node for _, meta in self._metavariables}
+        forward = {meta.node: meta.call for _, meta in self._replacements}
+        backward = {meta.call: meta.node for _, meta in self._replacements}
         ReplaceNodes(forward).visit(node)
         return lambda: ReplaceNodes(backward).visit(node)
 
@@ -168,5 +168,8 @@ class MetaVariables:
     def parameters(self):
         return [self._parameters[name] for name in self.names]
 
-    def for_name(self, name):
-        return [meta for meta_name, meta in self._metavariables if meta_name == name]
+    def parameter_for_name(self, name):
+        return self._parameters[name]
+
+    def replacements_for_name(self, name):
+        return [meta for meta_name, meta in self._replacements if meta_name == name]
