@@ -276,9 +276,16 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
             x for x, state in compute_types_each(body, start) if state == "E"
         )
         expressions = [
-            x for x in expressions if not isinstance(x, (ast.Slice, ast.Ellipsis))
+            x for x in expressions if not self.bad_expression(x)
         ]
         return expressions
+
+    def bad_expression(self, expr):
+        if isinstance(expr, (ast.Slice, ast.Ellipsis)):
+            return True
+        if isinstance(expr, ast.Tuple):
+            return any(self.bad_expression(x) for x in expr.elts)
+        return False
 
     def manipulate(self, body, rng):
         expressions = self.get_expressions(body)
