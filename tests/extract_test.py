@@ -989,6 +989,30 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_duplicated_metavariable(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = x ** 7
+            z = lambda x: {__metavariable__, __m1, y ** 7} - {__metavariable__, __m1, y ** 7}
+            __end_extract__
+            return z
+        """
+        post_extract_expected = """
+        def f(x):
+            z = __f0(x, lambda y: y ** 7)
+            return z
+        """
+        post_extracted = """
+        def __f0(__1, __m1):
+            __0 = __1 ** 7
+            __2 = lambda __3: __m1(__0) - __m1(__0)
+            return __2
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_extract_real_001(self):
         code = """
         def f(x, y):
