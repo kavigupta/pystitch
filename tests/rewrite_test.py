@@ -1,5 +1,7 @@
 import ast
 
+from parameterized import parameterized
+
 from imperative_stitch.analyze_program.extract.errors import (
     ClosureOverVariableModifiedInExtractedCode,
 )
@@ -7,8 +9,9 @@ from imperative_stitch.utils.ast_utils import (
     ReplaceNodes,
 )
 from imperative_stitch.utils.classify_nodes import compute_types_each
+from tests.parse_test import small_set_examples
 
-from .extract_test import ExtractRealisticTest, GenericExtractTest
+from .extract_test import GenericExtractRealisticTest, GenericExtractTest
 
 
 class RewriteTest(GenericExtractTest):
@@ -267,7 +270,11 @@ class RewriteTest(GenericExtractTest):
         )
 
 
-class RewriteRealisticTest(ExtractRealisticTest):
+class RewriteRealisticTest(GenericExtractRealisticTest):
+    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    def test_realistic(self, i):
+        self.operate(i)
+
     def manipulate(self, body, rng):
         expressions = list(
             x for x, state in compute_types_each(body, "S") if state == "E"

@@ -779,7 +779,7 @@ class ExtractTest(GenericExtractTest):
         )
 
 
-class ExtractRealisticTest(GenericExtractTest):
+class GenericExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):
         try:
             with open("__test__.py") as f:
@@ -788,8 +788,7 @@ class ExtractRealisticTest(GenericExtractTest):
             return
         self.run_extract(code)
 
-    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
-    def test_realistic(self, i):
+    def operate(self, i):
         rng = np.random.RandomState(i)
         code = small_set_examples()[i]
         tree = ast.parse(code)
@@ -831,3 +830,9 @@ class ExtractRealisticTest(GenericExtractTest):
 
     def manipulate(self, body, rng):
         return body, 0
+
+
+class ExtractRealisticTest(GenericExtractRealisticTest):
+    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    def test_realistic(self, i):
+        self.operate(i)
