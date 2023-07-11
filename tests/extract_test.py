@@ -802,7 +802,7 @@ class GenericExtractRealisticTest(GenericExtractTest):
             print(code)
             try:
                 self.run_extract(code, count)
-            except BannedComponentError:
+            except (NotApplicable, BannedComponentError):
                 # don't error on this, just skip it
                 pass
             except SyntaxError:

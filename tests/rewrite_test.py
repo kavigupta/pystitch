@@ -270,18 +270,18 @@ class RewriteTest(GenericExtractTest):
         )
 
 
-class RewriteRealisticTest(GenericExtractRealisticTest):
-    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
-    def test_realistic(self, i):
-        self.operate(i)
-
-    def manipulate(self, body, rng):
+class GenericRewriteRealisticTest(GenericExtractRealisticTest):
+    def get_expressions(self, body, start="S"):
         expressions = list(
-            x for x, state in compute_types_each(body, "S") if state == "E"
+            x for x, state in compute_types_each(body, start) if state == "E"
         )
         expressions = [
             x for x in expressions if not isinstance(x, (ast.Slice, ast.Ellipsis))
         ]
+        return expressions
+
+    def manipulate(self, body, rng):
+        expressions = self.get_expressions(body)
         if not expressions:
             return body, 0
         count = rng.randint(1, min(5, len(expressions) + 1))
@@ -297,6 +297,12 @@ class RewriteRealisticTest(GenericExtractRealisticTest):
         )
         body = [replace.visit(stmt) for stmt in body]
         return body, len(expressions)
+
+
+class RewriteRealisticTest(GenericRewriteRealisticTest):
+    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    def test_realistic(self, i):
+        self.operate(i)
 
 
 def sample_non_overlapping(xs, count, rng):
