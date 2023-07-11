@@ -34,7 +34,11 @@ def run_extract_from_tree(tree, site):
 
 
 def run_extract(test, code, num_metavariables=None):
-    code = canonicalize(code)
+    try:
+        code = canonicalize(code)
+    except SyntaxError:
+        print(code)
+        test.fail("syntax error")
     tree, sites = parse_extract_pragma(code)
     code = ast.unparse(tree)
     if num_metavariables is not None:
@@ -191,7 +195,11 @@ class AntiUnifyRealisticTest(GenericRewriteRealisticTest):
         codes = [code]
         num_copies = rng.randint(1, 4)
         for _ in range(num_copies):
-            tree, [site] = parse_extract_pragma(code)
+            try:
+                tree, [site] = parse_extract_pragma(code)
+            except SyntaxError:
+                print(code)
+                self.fail("syntax error")
             site.add_pragmas()
             for _, meta in site.metavariables:
                 exprs = [
