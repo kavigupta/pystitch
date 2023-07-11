@@ -173,3 +173,7 @@ class MetaVariables:
 
     def replacements_for_name(self, name):
         return [meta for meta_name, meta in self._replacements if meta_name == name]
+
+    @property
+    def all_calls(self):
+        return [meta.call for _, meta in self._replacements]

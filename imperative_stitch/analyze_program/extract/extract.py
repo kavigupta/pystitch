@@ -259,13 +259,13 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
         func_def,
         vars.input_vars_without_ssa,
         vars.output_vars_without_ssa,
-        metavariables.names,
+        metavariables,
     )
     func_def, undo_replace = create_function_definition(
         extract_name, site, input_variables, output_variables, metavariables
     )
     undos += [undo_replace]
-    func_def, undo_canonicalize = canonicalize_names_in(func_def, metavariables.names)
+    func_def, undo_canonicalize = canonicalize_names_in(func_def, metavariables)
     undos += undo_canonicalize
     call = create_function_call(
         extract_name,

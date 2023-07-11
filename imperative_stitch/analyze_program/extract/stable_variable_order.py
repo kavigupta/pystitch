@@ -5,20 +5,25 @@ import ast_scope
 from imperative_stitch.utils.ast_utils import ast_nodes_in_order, name_field
 
 
-def get_name_and_scope_each(func_def, do_not_rename):
+def get_name_and_scope_each(func_def, metavariables):
     args = {x for x in ast_nodes_in_order(func_def.args)}
+    metavariable_call_nodes = {
+        x for call in metavariables.all_calls for x in ast_nodes_in_order(call)
+    }
     annotation = ast_scope.annotate(func_def)
     nodes = [x for x in ast_nodes_in_order(func_def) if x in annotation]
     node_to_name_and_scope = {}
     name_and_scope_ordering = {}
     for i, node in enumerate(
-        [x for x in nodes if x not in args] + [x for x in nodes if x in args]
+        [x for x in nodes if x not in (args | metavariable_call_nodes)]
+        + [x for x in nodes if x in args]
+        + [x for x in nodes if x in metavariable_call_nodes]
     ):
         scope = annotation[node]
         if not isinstance(scope, ast_scope.scope.FunctionScope):
             continue
         name = scope.variables.node_to_symbol[node]
-        if name in do_not_rename:
+        if name in metavariables.names:
             continue
         node_to_name_and_scope[node] = (name, scope)
         if (name, scope) not in name_and_scope_ordering:
@@ -31,9 +36,9 @@ def get_name_and_scope_each(func_def, do_not_rename):
 
 
 def canonicalize_variable_order(
-    func_def, input_variables, output_variables, do_not_rename
+    func_def, input_variables, output_variables, metavariables
 ):
-    _, name_and_scope_ordering, scope = get_name_and_scope_each(func_def, do_not_rename)
+    _, name_and_scope_ordering, scope = get_name_and_scope_each(func_def, metavariables)
     var_order = lambda x: name_and_scope_ordering[(x, scope)]
     input_variables = sorted(input_variables, key=var_order)
     output_variables = sorted(output_variables, key=var_order)
@@ -54,9 +59,9 @@ class NameChanger(ast.NodeTransformer):
         return super().generic_visit(node)
 
 
-def canonicalize_names_in(func_def, do_not_rename):
+def canonicalize_names_in(func_def, metavariables):
     node_to_name, name_and_scope_ordering, _ = get_name_and_scope_each(
-        func_def, do_not_rename
+        func_def, metavariables
     )
     scopes = [x[1] for x in name_and_scope_ordering]
     scopes = sorted(set(scopes), key=lambda x: scopes.index(x))
