@@ -1,28 +1,19 @@
 import ast
-import copy
 
-import numpy as np
 from parameterized import parameterized
-
-from python_graphs import control_flow
 
 from imperative_stitch.analyze_program.antiunify.extract_at_multiple_sites import (
     antiunify_all_metavariables_across_extractions,
 )
 
-from imperative_stitch.analyze_program.extract.errors import (
-    ClosureOverVariableModifiedInExtractedCode,
-)
 from imperative_stitch.analyze_program.extract.extract import do_extract
-from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 from imperative_stitch.data.parse_extract import parse_extract_pragma
 from imperative_stitch.utils.ast_utils import (
     ReplaceNodes,
     ast_nodes_in_order,
     field_is_body,
 )
-from imperative_stitch.utils.classify_nodes import compute_types_each
-from tests.extract_test import GenericExtractRealisticTest, GenericExtractTest
+from tests.extract_test import GenericExtractTest
 from tests.parse_test import small_set_examples
 from tests.rewrite_test import GenericRewriteRealisticTest
 from tests.utils import canonicalize
