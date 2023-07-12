@@ -26,7 +26,7 @@ class FunctionSSAAnnotator:
         _end: A mapping from name to variable at the outlet of that node
     """
 
-    def __init__(self, scope_info, per_function_cfg: PerFunctionCFG):
+    def __init__(self, mapping, scope_info, per_function_cfg: PerFunctionCFG):
         self.scope_info = scope_info
         self.graph = per_function_cfg
 
@@ -44,7 +44,7 @@ class FunctionSSAAnnotator:
             )
             self.function_argument_symbols = [x.arg for x in self.function_arguments]
 
-        self._mapping = SSAVariableIntermediateMapping()
+        self._mapping = mapping
         self._start = {}
         self._end = {}
 
@@ -76,6 +76,7 @@ class FunctionSSAAnnotator:
                     queue.extend(self.graph.sort_by_cfn_key(cfn.next))
             if start == self._start and end == self._end:
                 break
+
         annotations = self.collect_annotations()
         ordered_cfns = self.graph.sort_by_cfn_key(self._start.keys())
 
@@ -96,19 +97,7 @@ class FunctionSSAAnnotator:
             annotations[node] = [self.add_gamma(node)]
             ordered_values += annotations[node]
 
-        remapping = name_vars(self._mapping.original_symbol_of, ordered_values)
-        start, end = [
-            {
-                cfn: {sym: remapping[sym_to_var[sym]] for sym in sym_to_var}
-                for cfn, sym_to_var in x.items()
-            }
-            for x in [self._start, self._end]
-        ]
-        annotations = {
-            node: [remapping[var] for var in vars] for node, vars in annotations.items()
-        }
-
-        return start, end, self._mapping.export_parents(remapping), annotations
+        return annotations, ordered_values
 
     def add_gamma(self, node):
         """
@@ -216,8 +205,36 @@ class FunctionSSAAnnotator:
 
 
 def run_ssa(scope_info, per_function_cfg: PerFunctionCFG):
-    annot = FunctionSSAAnnotator(scope_info, per_function_cfg)
-    return annot.run()
+
+    mapping = SSAVariableIntermediateMapping()
+    start = {}
+    end = {}
+    annotations = {}
+    ordered_values = []
+
+    if True:
+        annot = FunctionSSAAnnotator(mapping, scope_info, per_function_cfg)
+
+        this_annotations, this_ordered_values = annot.run()
+
+        start.update(annot._start)
+        end.update(annot._end)
+        annotations.update(this_annotations)
+        ordered_values.extend(this_ordered_values)
+
+    remapping = name_vars(mapping.original_symbol_of, ordered_values)
+    start, end = [
+        {
+            cfn: {sym: remapping[sym_to_var[sym]] for sym in sym_to_var}
+            for cfn, sym_to_var in x.items()
+        }
+        for x in [start, end]
+    ]
+    annotations = {
+        node: [remapping[var] for var in vars] for node, vars in annotations.items()
+    }
+
+    return start, end, mapping.export_parents(remapping), annotations
 
 
 def get_nodes_for_reads(astn):
