@@ -811,12 +811,12 @@ class GenericExtractRealisticTest(GenericExtractTest):
                 out = self.run_extract(
                     ast.unparse(tree) if use_full_tree else code, count
                 )
+                result.append((code, out))
             except (NotApplicable, BannedComponentError):
                 # don't error on this, just skip it
                 pass
             except SyntaxError:
                 self.fail()
-            result.append((code, out))
         return result
 
     def sample_site(self, rng, tree):
