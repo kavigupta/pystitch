@@ -270,6 +270,51 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_augadd_const(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            x += 1
+            __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x, y):
+            x = __f0(x)
+            return x
+        """
+        post_extracted = """
+        def __f0(__0):
+            __0 += 1
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_augadd_inside_function(self):
+        code = """
+        def f(x, y):
+            def g(x):
+                __start_extract__
+                x += 1
+                __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x, y):
+            def g(x):
+                return __f0(x)
+            return x
+        """
+        post_extracted = """
+        def __f0(__0):
+            __0 += 1
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_do_not_add_return(self):
         code = """
         def f(x, y):

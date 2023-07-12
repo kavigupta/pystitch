@@ -44,13 +44,17 @@ class ExtractionSite:
         )
 
         g = control_flow.get_control_flow_graph(tree)
-        entry_points = list(g.get_enter_blocks())
-        for entry_point in entry_points:
+        pfcfgs = []
+        for entry_point in list(g.get_enter_blocks()):
             pfcfg = PerFunctionCFG(entry_point)
             if self.node not in pfcfg.astn_order:
                 continue
-            return pfcfg
-        raise RuntimeError("Not found in given tree")
+            pfcfgs.append(pfcfg)
+        if not pfcfgs:
+            raise RuntimeError("Not found in given tree")
+        # get the entry point with the fewest nodes, that is the
+        # innermost function containing the site
+        return min(pfcfgs, key=lambda x: len(x.astn_order))
 
     def add_pragmas(self):
         """

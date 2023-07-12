@@ -656,6 +656,25 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_inside_function(self):
+        code = """
+        def f():
+            def g(x):
+                __start_extract__
+                x += [1]
+                __end_extract__
+            return g
+        """
+        expected = """
+        def f():
+            def g_2(x):
+                __start_extract__
+                x += [1]
+                __end_extract__
+            return g_2
+        """
+        self.assert_ssa(code, expected)
+
     def test_real_001(self):
         code = """
         def f(x, y):
