@@ -787,25 +787,37 @@ class GenericExtractRealisticTest(GenericExtractTest):
             return
         self.run_extract(code)
 
-    def operate(self, i):
-        rng = np.random.RandomState(i)
+    def operate(self, i, use_full_tree=False):
         code = small_set_examples()[i]
-        tree = ast.parse(code)
+        return self.operate_on_code(i, code, use_full_tree=use_full_tree)
+
+    def operate_on_code(self, i, full_code, use_full_tree=False):
+        rng = np.random.RandomState(i)
+        tree = ast.parse(full_code)
         g = control_flow.get_control_flow_graph(tree)
-        print(code)
-        for entry_point in g.get_enter_blocks():
+        num_entry_points = len(list(g.get_enter_blocks()))
+        print(full_code)
+        result = []
+        for i in range(num_entry_points):
+            tree = ast.parse(full_code)
+            g = control_flow.get_control_flow_graph(tree)
+            entry_point = list(g.get_enter_blocks())[i]
             print(entry_point)
             if not entry_point.node.body:
                 continue
-            code, count = self.sample_site(rng, copy.deepcopy(entry_point.node))
+            code, count = self.sample_site(rng, entry_point.node)
             print(code)
             try:
-                self.run_extract(code, count)
+                out = self.run_extract(
+                    ast.unparse(tree) if use_full_tree else code, count
+                )
             except (NotApplicable, BannedComponentError):
                 # don't error on this, just skip it
                 pass
             except SyntaxError:
                 self.fail()
+            result.append((code, out))
+        return result
 
     def sample_site(self, rng, tree):
         nodes = list(ast_nodes_in_order(tree))
