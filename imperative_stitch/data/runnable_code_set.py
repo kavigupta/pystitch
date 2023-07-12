@@ -1,12 +1,49 @@
+import ast
 import itertools
 import json
-import tempfile
-import subprocess
 
 import tqdm.auto as tqdm
 
-from permacache import permacache, stable_hash
+from permacache import permacache
 from datasets import load_dataset
+
+from imperative_stitch.utils.run_code import passes_tests
+
+
+def wrap(code):
+    body = ast.parse(code).body
+    imports = []
+    for node in body:
+        if isinstance(node, ast.Import):
+            imports.append(node)
+        elif isinstance(node, ast.ImportFrom):
+            imports.append(node)
+        else:
+            break
+    body = body[len(imports) :]
+    return ast.unparse(
+        ast.fix_missing_locations(
+            ast.Module(
+                body=[
+                    *imports,
+                    ast.FunctionDef(
+                        name="_main",
+                        args=[],
+                        body=body,
+                        decorator_list=[],
+                    ),
+                    ast.Expr(
+                        ast.Call(
+                            func=ast.Name(id="_main", ctx=ast.Load()),
+                            args=[],
+                            keywords=[],
+                        )
+                    ),
+                ],
+                type_ignores=[],
+            )
+        )
+    )
 
 
 def extract_from_data(datapoint, *, max_tests, max_solutions):
@@ -39,61 +76,14 @@ def extract_from_data(datapoint, *, max_tests, max_solutions):
     ]
     solutions = solutions[:max_solutions]
     for i, sol in enumerate(tqdm.tqdm(solutions)):
+        sol = wrap(sol)
         if not passes_tests(sol, inputs, outputs):
             continue
         yield dict(name=f"{name}_{i}", inputs=inputs, outputs=outputs, solution=sol)
 
 
-def normalize_output(output):
-    """
-    Normalize the output of a program, removing blank lines and trailing whitespace.
-    """
-    output = output.split("\n")
-    output = [line.strip() for line in output]
-    output = [line for line in output if line]
-    return "\n".join(output)
-
-
-def passes_tests(code, inputs, outputs):
-    """
-    Does the given code pass the given tests?
-    """
-    for inp, out in list(zip(inputs, outputs)):
-        py_out = run_python(code, inp)
-        if py_out is None:
-            return False
-        out, py_out = normalize_output(out), normalize_output(py_out)
-        if py_out != out:
-            return False
-    return True
-
-
 @permacache(
-    "imperative_stitch/data/runnable_code_set/run_python_2",
-    key_function=dict(code=stable_hash, input=stable_hash),
-)
-def run_python(code, input):
-    """
-    Run the given python code with the given input.
-
-    Returns the output of the program, or None if the program raised an exception.
-
-    This is cached, so it's safe to call this function many times.
-    """
-    with tempfile.NamedTemporaryFile(suffix=".py") as f:
-        f.write(code.encode("utf-8"))
-        f.flush()
-        try:
-            z = subprocess.check_output(
-                ["python3", f.name], input=input.encode("utf-8")
-            )
-        except subprocess.CalledProcessError as e:
-            return None
-        return z.decode("utf-8")
-
-
-@permacache(
-    "imperative_stitch/data/runnable_code_set/runnable_code_dataset",
+    "imperative_stitch/data/runnable_code_set/runnable_code_dataset_3",
 )
 def runnable_code_dataset(
     *, amount, max_solutions_per_datapoint, max_tests_per_datapoint
