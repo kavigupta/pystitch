@@ -9,7 +9,8 @@ from s_expression_parser import nil, Pair
 from imperative_stitch.to_s import python_to_s_exp, ParserConfig, parse
 from imperative_stitch.utils.classify_nodes import export_dfa, transitions
 from imperative_stitch.utils.recursion import recursionlimit
-from tests.parse_test import small_set_examples
+
+from .utils import small_set_examples
 
 dfa = export_dfa(transitions)
 

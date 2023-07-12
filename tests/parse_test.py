@@ -1,22 +1,14 @@
 import ast
-from functools import lru_cache
-import json
-import os
 
 import unittest
 from parameterized import parameterized
 import tqdm.auto as tqdm
-from s_expression_parser import parse, ParserConfig, Pair
+from s_expression_parser import parse, ParserConfig
 
 from imperative_stitch.to_s import pair_to_s_exp, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.recursion import recursionlimit
 
-
-@lru_cache(None)
-def small_set_examples():
-    with open("data/small_set.json") as f:
-        contents = json.load(f)
-    return contents
+from .utils import small_set_examples
 
 
 class ParseUnparseInverseTest(unittest.TestCase):

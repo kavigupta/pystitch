@@ -14,9 +14,8 @@ from imperative_stitch.utils.ast_utils import (
     field_is_body,
 )
 from tests.extract_test import GenericExtractTest
-from tests.parse_test import small_set_examples
 from tests.rewrite_test import GenericRewriteRealisticTest
-from tests.utils import canonicalize
+from tests.utils import canonicalize, small_set_examples
 
 
 def run_extract_from_tree(tree, site):

@@ -20,10 +20,9 @@ from imperative_stitch.utils.ast_utils import (
     ast_nodes_in_order,
     field_is_body,
 )
-from tests.parse_test import small_set_examples
 from python_graphs import control_flow
 
-from tests.utils import canonicalize
+from tests.utils import canonicalize, small_set_examples
 
 
 class GenericExtractTest(unittest.TestCase):

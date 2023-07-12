@@ -9,9 +9,9 @@ from imperative_stitch.utils.ast_utils import (
     ReplaceNodes,
 )
 from imperative_stitch.utils.classify_nodes import compute_types_each
-from tests.parse_test import small_set_examples
 
 from .extract_test import GenericExtractRealisticTest, GenericExtractTest
+from .utils import small_set_examples
 
 
 class RewriteTest(GenericExtractTest):
