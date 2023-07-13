@@ -196,7 +196,7 @@ def create_function_call(
     return call
 
 
-def compute_extract_asts(tree, scope_info, site, *, extract_name):
+def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     """
     Returns the function definition and the function call for the extraction.
 
@@ -232,11 +232,9 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
 
     vars = compute_variables(site, scope_info, pfcfg)
 
-    vars.raise_if_needed([])
+    vars.raise_if_needed()
 
     metavariables = extract_metavariables(scope_info, site, annotations, vars)
-
-    undos = []
 
     undo_metavariables = metavariables.act(pfcfg.function_astn)
     undos += [undo_metavariables]
@@ -244,7 +242,7 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
     pfcfg = site.locate_entry_point(tree)
 
     vars = compute_variables(site, scope_info, pfcfg, error_on_closed=True)
-    vars.raise_if_needed(undos)
+    vars.raise_if_needed()
 
     func_def, undo_replace = create_function_definition(
         extract_name,
@@ -274,7 +272,7 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
         metavariables,
         is_return=exit == "<return>",
     )
-    return func_def, call, exit, undos, metavariables
+    return func_def, call, exit, metavariables
 
 
 def do_extract(site, tree, *, extract_name):
@@ -298,27 +296,39 @@ def do_extract(site, tree, *, extract_name):
         The extracted code, including the function definition, the function call, and
             a function that undoes the extraction.
     """
-    scope_info = ast_scope.annotate(tree)
-
-    func_def, call, exit, undos, metavariables = compute_extract_asts(
-        tree, scope_info, site, extract_name=extract_name
-    )
-
-    for calls in [call], [call, ast.Break()], [call, ast.Continue()]:
-        success, undo = attempt_to_mutate(site, tree, calls, exit)
-        if success:
-            break
-    else:
-        for undo in undos[::-1]:
-            undo()
-        raise AssertionError("Weird and unexpected control flow")
+    undos = []
 
     def full_undo():
-        undo()
         for un in undos[::-1]:
             un()
 
+    try:
+        func_def, call, metavariables = _do_extract(
+            site, tree, extract_name=extract_name, undos=undos
+        )
+    except:
+        full_undo()
+        raise
+
     return ExtractedCode(func_def, call, metavariables, full_undo)
+
+
+def _do_extract(site, tree, *, extract_name, undos):
+    scope_info = ast_scope.annotate(tree)
+
+    func_def, call, exit, metavariables = compute_extract_asts(
+        tree, scope_info, site, extract_name=extract_name, undos=undos
+    )
+
+    for calls in [call], [call, ast.Break()], [call, ast.Continue()]:
+        success, undo_mutate = attempt_to_mutate(site, tree, calls, exit)
+        if success:
+            undos += [undo_mutate]
+            break
+    else:
+        raise AssertionError("Weird and unexpected control flow")
+
+    return func_def, call, metavariables
 
 
 def attempt_to_mutate(site, tree, calls, exit):

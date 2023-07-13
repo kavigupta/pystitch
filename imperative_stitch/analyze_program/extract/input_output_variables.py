@@ -38,10 +38,8 @@ class Variables:
     _parent_vars_no_ssa: list[str] = field(default_factory=lambda: [])
     errors: list[NotApplicable] = field(default_factory=lambda: [])
 
-    def raise_if_needed(self, undos):
+    def raise_if_needed(self):
         if self.errors:
-            for undo in undos[::-1]:
-                undo()
             raise self.errors[0]
 
     def is_input(self, node, node_to_ssa):
