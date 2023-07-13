@@ -224,8 +224,9 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     metavariables:
         A Metavariables object representing the metavariables.
     """
+    undo_sentinel = site.inject_sentinel()
+    undos += [undo_sentinel]
     pfcfg = site.locate_entry_point(tree)
-
     start, _, _, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
     _, exit, _ = pfcfg.extraction_entry_exit(extracted_nodes)
@@ -243,6 +244,8 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
 
     vars = compute_variables(site, scope_info, pfcfg, error_on_closed=True)
     vars.raise_if_needed()
+
+    undos.pop(0)()
 
     func_def, undo_replace = create_function_definition(
         extract_name,

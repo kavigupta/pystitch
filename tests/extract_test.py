@@ -39,6 +39,8 @@ class GenericExtractTest(unittest.TestCase):
             extr = do_extract(site, tree, extract_name="__f0")
         except (NotApplicable, BannedComponentError) as e:
             # ensure that the code is not changed
+            print(type(e), e)
+            self.maxDiff = None
             self.assertEqual(code, ast.unparse(tree))
             return e
 
@@ -74,7 +76,7 @@ class ExtractTest(GenericExtractTest):
         """
         post_extract_expected = """
         def f(x):
-            __f0()
+            return __f0()
         """
         post_extracted = """
         def __f0():

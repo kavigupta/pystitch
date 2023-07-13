@@ -269,6 +269,54 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_augadd_const(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            x += {__metavariable__, __m1, 1}
+            __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(x, y):
+            x = __f0(x, lambda: 1)
+            return x
+        """
+        post_extracted = """
+        def __f0(__0, __m1):
+            __0 += __m1()
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_metavariable_uses_variable_from_entry_but_origin_is_within_site(self):
+        code = """
+        def f(n):
+            x = 1
+            __start_extract__
+            while x <= n:
+                x = 1 + {__metavariable__, __m0, x}
+            __end_extract__
+            return x
+        """
+        post_extract_expected = """
+        def f(n):
+            x = 1
+            x = __f0(x, n, lambda x: x)
+            return x
+        """
+        post_extracted = """
+        def __f0(__0, __1, __m0):
+            while __0 <= __1:
+                __0 = 1 + __m0(__0)
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):

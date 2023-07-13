@@ -14,6 +14,7 @@ class ExtractionSite:
     start: int
     end: int  # exclusive
     metavariables: list[tuple[str, ast.AST]]
+    sentinel: ast.AST = None
 
     @property
     def containing_sequence(self):
@@ -69,3 +70,24 @@ class ExtractionSite:
                 for name, node in self.metavariables
             }
         ).visit(self.node)
+
+    def inject_sentinel(self):
+        """
+        Inject a sentinel to mark the start of the extraction site.
+        """
+        assert self.sentinel is None
+        body = self.containing_sequence
+        self.sentinel = ast.parse("'__start_sentinel__'").body[0]
+        body.insert(self.start, self.sentinel)
+        self.end += 1
+        return lambda: self._remove_sentinel(self.sentinel)
+
+    def _remove_sentinel(self, sentinel):
+        """
+        Remove the sentinel from the AST.
+        """
+        assert self.sentinel == sentinel
+        body = self.containing_sequence
+        assert body.pop(self.start) == self.sentinel
+        self.end -= 1
+        self.sentinel = None

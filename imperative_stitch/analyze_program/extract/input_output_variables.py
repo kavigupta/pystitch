@@ -107,6 +107,10 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         extracted_nodes,
         output_variables=output_variable_at_exit,
     )
+    # renormalize the input variables to be the ones that are actually passed in
+    # in case the ones used are the result of a phi node
+    input_variables = sorted({start[entry][x] for x, _ in input_variables})
+
     parent_variables = variables_from_parent(
         site, node_to_ssa, scope_info, pfcfg.function_astn
     )
