@@ -38,10 +38,8 @@ def variables_needed_to_extract(scope_info, extract_node, node_to_ssa, variables
         if isinstance(scope_info[node], FunctionScope):
             if scope_info[node].function_node in nodes:
                 continue
-        if node in node_to_ssa:
-            [ssa] = node_to_ssa[node]
-            if variables.is_input(ssa):
-                continue
+        if variables.is_input(node, node_to_ssa):
+            continue
 
         if node.id in name_to_scope:
             assert name_to_scope[node.id] == scope_info[node]

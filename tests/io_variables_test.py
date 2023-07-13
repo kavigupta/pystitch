@@ -146,7 +146,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertSameVariables(
             self.run_io(code),
-            Variables([("func", "<parent>")], [], []),
+            Variables([], [], [], ["func"]),
         )
 
     def test_dont_capture_non_global_from_child(self):

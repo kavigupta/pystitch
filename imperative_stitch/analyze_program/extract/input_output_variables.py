@@ -35,6 +35,7 @@ class Variables:
     _input_vars_ssa: list[(str, int)]
     _closed_vars_ssa: list[(str, int)]
     _output_vars_ssa: list[(str, int)]
+    _parent_vars_no_ssa: list[str] = field(default_factory=lambda: [])
     errors: list[NotApplicable] = field(default_factory=lambda: [])
 
     def raise_if_needed(self, undos):
@@ -43,7 +44,13 @@ class Variables:
                 undo()
             raise self.errors[0]
 
-    def is_input(self, ssa_id):
+    def is_input(self, node, node_to_ssa):
+        if node in node_to_ssa:
+            [ssa] = node_to_ssa[node]
+            return self.is_ssa_id_input(ssa)
+        return node.id in self._parent_vars_no_ssa
+
+    def is_ssa_id_input(self, ssa_id):
         assert (
             isinstance(ssa_id, tuple)
             and len(ssa_id) == 2
@@ -54,7 +61,9 @@ class Variables:
 
     @property
     def input_vars_without_ssa(self):
-        return sorted({x for x, _ in self._input_vars_ssa})
+        return sorted(
+            {x for x, _ in self._input_vars_ssa} | set(self._parent_vars_no_ssa)
+        )
 
     @property
     def closed_vars_without_ssa(self):
@@ -140,9 +149,10 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         errors.append(ClosedVariablePassedDirectly)
 
     return Variables(
-        input_variables + parent_variables,
+        input_variables,
         closed_variables,
         output_variables,
+        parent_variables,
         errors=errors,
     )
 
@@ -233,8 +243,7 @@ def variables_from_parent(site, annotations, scope_info, function_astn):
         - scope_info: a mapping from nodes to scopes
 
     Returns:
-        A list of variables that are defined in the parent function of the extraction site,
-            tagged with "<parent>" as their ssa id.
+        A list of variables that are defined in the parent function of the extraction site.
     """
     function_nodes = set(ast.walk(function_astn))
     result = set()
@@ -250,7 +259,7 @@ def variables_from_parent(site, annotations, scope_info, function_astn):
             continue
         result.add(node.id)
 
-    return sorted((x, "<parent>") for x in result)
+    return sorted(result)
 
 
 def compute_input_variables(
