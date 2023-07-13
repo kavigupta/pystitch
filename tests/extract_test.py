@@ -874,6 +874,36 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_extracting(self):
+        code = """
+        def test_3118(self):
+
+            def gen():
+                try:
+                    yield 1
+                finally:
+                    pass
+
+            def f():
+                g = gen()
+                next(g)
+                try:
+                    __start_extract__
+                    2
+                    try:
+                        raise {__metavariable__, __m0, ValueError}
+                    except:
+                        del g
+                        raise KeyError
+                    __end_extract__
+                except Exception as e:
+                    self.assertIsInstance(e.__context__, ValueError)
+            f()
+        """
+        # TODO this is not the correct output
+        # It results from a bug in python_graphs that we should fix
+        self.assertEqual(self.run_extract(code), MultipleExits())
+
 
 class GenericExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):
