@@ -719,6 +719,22 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_inside_loop_immediate(self):
+        code = """
+        def f():
+            while left <= right:
+                mid = (left + right) // 2
+                mid
+        """
+        expected = """
+        def f():
+            # mid_2 = phi(mid_1, mid_3)
+            while left <= right:
+                mid_3 = (left + right) // 2
+                mid_3
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])

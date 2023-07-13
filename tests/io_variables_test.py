@@ -131,7 +131,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertSameVariables(
             self.run_io(code),
-            Variables([("count", 4), ("i", 1)], [], [("count", 4)]),
+            Variables([("count", 2), ("i", 1)], [], [("count", 4)]),
         )
 
     def test_capturing_non_global_from_parent(self):
@@ -159,4 +159,33 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         self.assertSameVariables(
             self.run_io(code),
             Variables([], [], []),
+        )
+
+    def test_inside_loop(self):
+        code = """
+        def f():
+            while left <= right:
+                __start_extract__
+                mid = (left + right) // 2
+                __end_extract__
+            mid
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [], [("mid", 2)]),
+        )
+
+    def test_inside_loop_immediate(self):
+        # see ssa_test.py::SSATest::test_inside_loop_immediate
+        code = """
+        def f():
+            while left <= right:
+                __start_extract__
+                mid = (left + right) // 2
+                __end_extract__
+                mid
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [], [("mid", 3)]),
         )

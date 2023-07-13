@@ -86,9 +86,9 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     Returns:
         A Variables object
     """
-    start, _, ssa_to_origin, node_to_ssa = run_ssa(scope_info, pfcfg)
+    start, end, ssa_to_origin, node_to_ssa = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    entry, exit = pfcfg.extraction_entry_exit(extracted_nodes)
+    entry, exit, pre_exits = pfcfg.extraction_entry_exit(extracted_nodes)
     ultimate_origins = compute_ultimate_origins(ssa_to_origin)
 
     if exit is None or exit == "<return>":
@@ -97,12 +97,17 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         output_variables = compute_output_variables(
             pfcfg, site, node_to_ssa, ultimate_origins, extracted_nodes
         )
+    output_symbols = sorted({x for x, _ in output_variables})
+    output_variable_at_exit = {
+        end[pre_exit][sym] for pre_exit in pre_exits for sym in output_symbols
+    }
+
     input_variables = compute_input_variables(
         site,
         node_to_ssa,
         ultimate_origins,
         extracted_nodes,
-        output_variables=output_variables,
+        output_variables=output_variable_at_exit,
     )
     parent_variables = variables_from_parent(
         site, node_to_ssa, scope_info, pfcfg.function_astn
@@ -129,10 +134,11 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     ):
         errors.append(NonInitializedInputsOrOutputs)
 
-    if output_variables and not all_initialized(
-        start[exit], [x for x, _ in output_variables], ultimate_origins
-    ):
-        errors.append(NonInitializedInputsOrOutputs)
+    for pre_exit in pre_exits:
+        if not all_initialized(
+            end[pre_exit], [x for x, _ in output_variables], ultimate_origins
+        ):
+            errors.append(NonInitializedInputsOrOutputs)
 
     if traces_an_origin_to_node_set(
         [

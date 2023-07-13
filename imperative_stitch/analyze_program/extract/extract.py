@@ -228,7 +228,7 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name):
 
     start, _, _, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    _, exit = pfcfg.extraction_entry_exit(extracted_nodes)
+    _, exit, _ = pfcfg.extraction_entry_exit(extracted_nodes)
 
     vars = compute_variables(site, scope_info, pfcfg)
 

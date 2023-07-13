@@ -88,7 +88,7 @@ class PerFunctionCFG:
             cfns: A list of control flow nodes.
 
         Returns:
-            A tuple of (entry, exit) control flow nodes.
+            A tuple of (entry, exit, pre_exits) control flow nodes.
         """
         entry_nodes = accessible_cfns(self.prev_cfns_of, cfns)
         entry_nodes = {
@@ -98,27 +98,34 @@ class PerFunctionCFG:
             if y in cfns
         }
         exit_nodes = accessible_cfns(self.next_cfns_of, cfns)
-        return entry_nodes, exit_nodes
+        pre_exits = {
+            cfn
+            for cfn in cfns
+            if {y for _, y in exit_nodes} & {y for _, y in self.next_cfns_of[cfn]}
+        }
+        return entry_nodes, exit_nodes, pre_exits
 
     def extraction_entry_exit(self, nodes):
         """
-        Compute the entry and exit of an extraction site.
+        Compute the entry and exit of an extraction site, along with a list of pre-exits.
+            A pre-exit is a control flow node in the extraction site that leads to an exit.
 
         Args:
             nodes: The nodes in the extraction site.
 
         Returns:
-            A tuple of (entry, exit) control flow nodes.
+            A tuple of (entry, exit, pre-exits) control flow nodes.
             Returns (None, None) if the extraction site is empty,
                 or (entry, None) if the extraction site always raises an exception.
         """
         from imperative_stitch.analyze_program.extract.errors import MultipleExits
 
-        entrys, exits = self.entry_and_exit_cfns(set(nodes))
+        entrys, exits, pre_exits = self.entry_and_exit_cfns(nodes)
         exits = [x for tag, x in exits if tag != "exception"]
         if not entrys:
             assert not exits
-            return None, None
+            assert not pre_exits
+            return None, None, set()
         [entry] = entrys
         if len(exits) > 1:
             raise MultipleExits
@@ -127,7 +134,7 @@ class PerFunctionCFG:
             exit = None
         else:
             [exit] = exits
-        return entry, exit
+        return entry, exit, pre_exits
 
 
 class NoControlFlowNode:
