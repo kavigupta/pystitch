@@ -874,7 +874,7 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
-    def test_extracting(self):
+    def test_exception_multiple_exits_INCORRECT_TODO(self):
         code = """
         def test_3118(self):
 
