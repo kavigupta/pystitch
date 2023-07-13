@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict
 
 import ast_scope
+from imperative_stitch.analyze_program.extract.errors import MultipleExits
 
 from imperative_stitch.analyze_program.extract.metavariable import (
     MetaVariables,
@@ -377,6 +378,10 @@ def attempt_to_mutate(site, tree, calls, exit):
     call_exits = [
         x for tag, x in new_pfcfg.next_cfns_of[call_cfn] if tag != "exception"
     ]
+    # This should not be necessary, it results from a bug in the control flow graph
+    if len(call_exits) > 1:
+        undo()
+        raise MultipleExits
     [exit_cfn] = call_exits
     if not same(exit_cfn, exit):
         undo()
