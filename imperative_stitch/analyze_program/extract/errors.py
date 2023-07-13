@@ -9,14 +9,8 @@ class NotApplicable(Exception):
 class MultipleExits(NotApplicable):
     pass
 
-
 @dataclass
-class NonInitializedInputs(NotApplicable):
-    pass
-
-
-@dataclass
-class NonInitializedOutputs(NotApplicable):
+class NonInitializedInputsOrOutputs(NotApplicable):
     pass
 
 

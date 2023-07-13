@@ -8,8 +8,7 @@ from imperative_stitch.analyze_program.extract.errors import (
     ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
     MultipleExits,
-    NonInitializedInputs,
-    NonInitializedOutputs,
+    NonInitializedInputsOrOutputs,
 )
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 
@@ -424,7 +423,7 @@ class ExtractTest(GenericExtractTest):
             __end_extract__
             return x
         """
-        self.assertEqual(self.run_extract(code), NonInitializedInputs())
+        self.assertEqual(self.run_extract(code), NonInitializedInputsOrOutputs())
 
     def test_undefined_output(self):
         code = """
@@ -437,7 +436,7 @@ class ExtractTest(GenericExtractTest):
                 x += y
             return x
         """
-        self.assertEqual(self.run_extract(code), NonInitializedOutputs())
+        self.assertEqual(self.run_extract(code), NonInitializedInputsOrOutputs())
 
     def test_nonlocal(self):
         code = """
@@ -817,6 +816,32 @@ class ExtractTest(GenericExtractTest):
         def __f0(__0, __2):
             __0 = __0 ** 3
             __1 = lambda __3: __2 ** (__0 - __2) * (lambda __4: __4)(__2) + __3
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_conditionally_initializing_a_variable_you_must_return(self):
+        code = """
+        def _main(i):
+            count = 2
+            __start_extract__
+            if i == '8':
+                count = 7
+            __end_extract__
+            return count
+        """
+        post_extract_expected = """
+        def _main(i):
+            count = 2
+            count = __f0(i, count)
+            return count
+        """
+        post_extracted = """
+        def __f0(__0, __1):
+            if __0 == '8':
+                __1 = 7
+            return __1
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)

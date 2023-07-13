@@ -102,3 +102,18 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
                 errors=[ClosureOverVariableModifiedInExtractedCode],
             ),
         )
+
+    def test_conditionally_initializing_a_variable_you_must_return(self):
+        code = """
+        def _main(i):
+            count = 2
+            __start_extract__
+            if i == '8':
+                count = 7
+            __end_extract__
+            return count
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("count", 4), ("i", 1)], [], [("count", 4)]),
+        )

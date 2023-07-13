@@ -2,8 +2,7 @@ from dataclasses import dataclass, field
 from imperative_stitch.analyze_program.extract.errors import (
     ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
-    NonInitializedInputs,
-    NonInitializedOutputs,
+    NonInitializedInputsOrOutputs,
     NotApplicable,
 )
 from imperative_stitch.analyze_program.ssa.annotator import run_ssa
@@ -79,15 +78,20 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     entry, exit = pfcfg.extraction_entry_exit(extracted_nodes)
     ultimate_origins = compute_ultimate_origins(ssa_to_origin)
 
-    input_variables = compute_input_variables(
-        site, node_to_ssa, ultimate_origins, extracted_nodes
-    )
     if exit is None or exit == "<return>":
         output_variables = []
     else:
         output_variables = compute_output_variables(
             pfcfg, site, node_to_ssa, ultimate_origins, extracted_nodes
         )
+    input_variables = compute_input_variables(
+        site,
+        node_to_ssa,
+        ultimate_origins,
+        extracted_nodes,
+        output_variables=output_variables,
+    )
+
     extracted_variables = [
         ssa_id for node in site.all_nodes for ssa_id in node_to_ssa.get(node, ())
     ]
@@ -107,12 +111,12 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     if entry is not None and not all_initialized(
         start[entry], [x for x, _ in input_variables], ultimate_origins
     ):
-        errors.append(NonInitializedInputs)
+        errors.append(NonInitializedInputsOrOutputs)
 
     if output_variables and not all_initialized(
         start[exit], [x for x, _ in output_variables], ultimate_origins
     ):
-        errors.append(NonInitializedOutputs)
+        errors.append(NonInitializedInputsOrOutputs)
 
     if traces_an_origin_to_node_set(
         [
@@ -212,7 +216,9 @@ def variables_in_nodes(nodes, annotations):
     return {alias for x in nodes if x in annotations for alias in annotations[x]}
 
 
-def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes):
+def compute_input_variables(
+    site, annotations, ultimate_origins, extracted_nodes, *, output_variables
+):
     """
     Compute the input variables of an extraction site.
 
@@ -221,11 +227,14 @@ def compute_input_variables(site, annotations, ultimate_origins, extracted_nodes
         - annotations: a mapping from a node to the set of variables defined in the node
         - ultimate_origins: a mapping from a variable to the ultimate origins of the variable
         - extracted_nodes: the set of nodes in the extraction site
+        - output_variables: the output variables of the extraction site
 
     Returns:
         A list of input variables, sorted by name.
     """
-    variables_in = variables_in_nodes(site.all_nodes, annotations)
+    variables_in = variables_in_nodes(site.all_nodes, annotations) | set(
+        output_variables
+    )
     variables_in = sorted(
         [
             x
