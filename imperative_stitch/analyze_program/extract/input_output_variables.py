@@ -13,6 +13,7 @@ from imperative_stitch.analyze_program.ssa.annotator import run_ssa
 from imperative_stitch.analyze_program.ssa.ivm import (
     DefinedIn,
     Gamma,
+    Origin,
     Phi,
     compute_ultimate_origins,
 )
@@ -125,7 +126,9 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         if isinstance(ssa_to_origin[ssa_id], Gamma)
         if any(
             traces_an_origin_to_node_set(
-                ultimate_origins[closed_ssa_id], lambda x: x not in extracted_nodes
+                ultimate_origins,
+                ultimate_origins[closed_ssa_id],
+                lambda x: x not in extracted_nodes,
             )
             for closed_ssa_id in ssa_to_origin[ssa_id].closed
         )
@@ -143,6 +146,7 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
             errors.append(NonInitializedInputsOrOutputs)
 
     if traces_an_origin_to_node_set(
+        ultimate_origins,
         [
             origin
             for ssa_id in closed_variables
@@ -187,7 +191,9 @@ def all_initialized(lookup, vars, ultimate_origins):
     return all(all(x.initialized() for x in ultimate_origins[var]) for var in vars)
 
 
-def is_origin_defined_in_node_set(origin, node_set):
+def is_origin_defined_in_node_set(
+    node_to_origin, origin, node_set, include_gamma=False
+):
     """
     Is the origin of a variable defined in a given node set?
 
@@ -195,28 +201,38 @@ def is_origin_defined_in_node_set(origin, node_set):
     define a variable in the function definition (arguments)
 
     Args:
+        - node_to_origin: a mapping from nodes to origins
         - origin: the origin of a variable
         - node_set: a set of nodes, represented as a function from nodes to bool
+        - include_gamma: whether to include the origins of closed variables
 
     Returns
         True if the origin of the variable is a DefinedIn node and the site of the
         DefinedIn node is in the node set. Returns False otherwise.
     """
+    assert isinstance(origin, Origin)
     if isinstance(origin, DefinedIn):
         return node_set(origin.site)
     elif isinstance(origin, Phi):
         return node_set(origin.node)
     elif isinstance(origin, Gamma):
-        return False  # do not include anywhere
+        return include_gamma and any(
+            is_origin_defined_in_node_set(node_to_origin, origin, node_set)
+            for closed_var in origin.closed
+            for origin in node_to_origin[closed_var]
+        )  # do not include anywhere
     else:
         return node_set("<<function def>>")
 
 
-def traces_an_origin_to_node_set(origins, node_set):
+def traces_an_origin_to_node_set(
+    node_to_origin, origins, node_set, include_gamma=False
+):
     """
     Traces the origins of a variable to see if any of them are defined in a given node set
 
     Args:
+        - node_to_origin: a mapping from nodes to origins
         - origins: the origins of a variable
         - node_set: a set of nodes, represented as a function from nodes to bool
 
@@ -224,7 +240,12 @@ def traces_an_origin_to_node_set(origins, node_set):
         True if any of the origins of the variable are defined in the node set. Returns
         False otherwise.
     """
-    return any(is_origin_defined_in_node_set(origin, node_set) for origin in origins)
+    return any(
+        is_origin_defined_in_node_set(
+            node_to_origin, origin, node_set, include_gamma=include_gamma
+        )
+        for origin in origins
+    )
 
 
 def variables_in_nodes(nodes, annotations):
@@ -294,7 +315,9 @@ def compute_input_variables(
             x
             for x in variables_in
             if traces_an_origin_to_node_set(
-                ultimate_origins[x], lambda x: x not in extracted_nodes
+                ultimate_origins,
+                ultimate_origins[x],
+                lambda x: x not in extracted_nodes,
             )
         ]
     )
@@ -315,7 +338,10 @@ def compute_output_variables(
             x
             for x in variables_out
             if traces_an_origin_to_node_set(
-                ultimate_origins[x], lambda x: x in extracted_nodes
+                ultimate_origins,
+                ultimate_origins[x],
+                lambda x: x in extracted_nodes,
+                include_gamma=True,
             )
         }
     )

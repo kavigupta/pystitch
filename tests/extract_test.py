@@ -874,6 +874,32 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_site_defines_variable_referenced_in_closure_above(self):
+        code = """
+        def f():
+            def g():
+                return x
+            __start_extract__
+            x = 2
+            __end_extract__
+            return g
+        """
+        post_extract_expected = """
+        def f():
+            def g():
+                return x
+            x = __f0()
+            return g
+        """
+        post_extracted = """
+        def __f0():
+            __0 = 2
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
     def test_exception_multiple_exits_INCORRECT_TODO(self):
         code = """
         def test_3118(self):

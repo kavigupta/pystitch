@@ -189,3 +189,18 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             self.run_io(code),
             Variables([], [], [("mid", 3)]),
         )
+
+    def test_site_defines_variable_referenced_in_closure_above(self):
+        code = """
+        def f():
+            def g():
+                return x
+            __start_extract__
+            x = 2
+            __end_extract__
+            return g
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [], [("x", 3)]),
+        )
