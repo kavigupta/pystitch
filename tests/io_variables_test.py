@@ -133,3 +133,30 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             self.run_io(code),
             Variables([("count", 4), ("i", 1)], [], [("count", 4)]),
         )
+
+    def test_capturing_non_global_from_parent(self):
+        code = """
+        def f():
+            func = 2
+            def g():
+                __start_extract__
+                func
+                __end_extract__
+            return g
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("func", "<parent>")], [], []),
+        )
+
+    def test_dont_capture_non_global_from_child(self):
+        code = """
+        def f():
+            __start_extract__
+            lambda func: func
+            __end_extract__
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [], []),
+        )

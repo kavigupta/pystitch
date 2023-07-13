@@ -1,4 +1,8 @@
+import ast
 from dataclasses import dataclass, field
+
+import ast_scope.scope
+
 from imperative_stitch.analyze_program.extract.errors import (
     ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
@@ -91,6 +95,9 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         extracted_nodes,
         output_variables=output_variables,
     )
+    parent_variables = variables_from_parent(
+        site, node_to_ssa, scope_info, pfcfg.function_astn
+    )
 
     extracted_variables = [
         ssa_id for node in site.all_nodes for ssa_id in node_to_ssa.get(node, ())
@@ -133,7 +140,7 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         errors.append(ClosedVariablePassedDirectly)
 
     return Variables(
-        input_variables,
+        input_variables + parent_variables,
         closed_variables,
         output_variables,
         errors=errors,
@@ -214,6 +221,36 @@ def variables_in_nodes(nodes, annotations):
         A set of variables that are defined in the given nodes.
     """
     return {alias for x in nodes if x in annotations for alias in annotations[x]}
+
+
+def variables_from_parent(site, annotations, scope_info, function_astn):
+    """
+    Variables that are defined in the parent function of the extraction site.
+
+    Args:
+        - site: the extraction site
+        - annotations: a mapping from a node to the set of variables defined in the node
+        - scope_info: a mapping from nodes to scopes
+
+    Returns:
+        A list of variables that are defined in the parent function of the extraction site,
+            tagged with "<parent>" as their ssa id.
+    """
+    function_nodes = set(ast.walk(function_astn))
+    result = set()
+    for node in site.all_nodes:
+        if node in annotations:
+            continue
+        if node not in scope_info:
+            continue
+        scope = scope_info[node]
+        if not isinstance(scope, ast_scope.scope.FunctionScope):
+            continue
+        if scope.function_node in function_nodes:
+            continue
+        result.add(node.id)
+
+    return sorted((x, "<parent>") for x in result)
 
 
 def compute_input_variables(
