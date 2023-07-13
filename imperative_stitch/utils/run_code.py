@@ -19,9 +19,6 @@ def normalize_output(output):
 
 
 def passes_tests(code, inputs, outputs):
-    """
-    Does the given code pass the given tests?
-    """
     for inp, out in list(zip(inputs, outputs)):
         py_out = run_python(code, inp)
         if py_out is None:
@@ -31,6 +28,22 @@ def passes_tests(code, inputs, outputs):
             return False
     return True
 
+
+def run_python_with_timeout(code, input, *, timeout=10):
+    """
+    Does the given code pass the given tests?
+    """
+    import signal
+
+    def handler(signum, frame):
+        raise TimeoutError()
+
+    signal.signal(signal.SIGALRM, handler)
+    signal.alarm(timeout)
+    try:
+        return run_python(code, input)
+    except TimeoutError:
+        return False
 
 @permacache(
     "imperative_stitch/data/runnable_code_set/run_python_2",
