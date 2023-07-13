@@ -21,25 +21,25 @@ class NodeToContainingFunction(GroupSimilarConstructsVisitor):
             return
         if isinstance(node, list):
             for x in node:
-                self.generic_visit(x)
+                self.visit(x)
             return
         super().generic_visit(node)
         self.node_to_containing[node] = self.current_fn
 
     def visit_defaults_of(self, args):
-        self.generic_visit(args.defaults + args.kw_defaults)
+        self.visit(args.defaults + args.kw_defaults)
 
     def visit_function_def(self, func_node, is_async):
         self.visit_defaults_of(func_node.args)
-        self.generic_visit(func_node.decorator_list)
+        self.visit(func_node.decorator_list)
         self.visit_scope(func_node, func_node.body)
 
     def visit_comprehension_generic(self, targets, comprehensions, node):
-        self.generic_visit(self.get_generators(node))
+        self.visit(self.get_generators(node))
         return self.visit_scope(node, [node.elt, self.get_ifs(node)])
 
     def visit_DictComp(self, node):
-        self.generic_visit(self.get_generators(node))
+        self.visit(self.get_generators(node))
         return self.visit_scope(node, [node.key, node.value, self.get_ifs(node)])
 
     def visit_Lambda(self, node):
@@ -48,7 +48,7 @@ class NodeToContainingFunction(GroupSimilarConstructsVisitor):
 
     def visit_scope(self, func_node, content):
         self.current_fn = self.current_fn + [func_node]
-        self.generic_visit(content)
+        self.visit(content)
         self.current_fn = self.current_fn[:-1]
 
     @staticmethod
