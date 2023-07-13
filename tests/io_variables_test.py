@@ -21,6 +21,10 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         pfcfg = site.locate_entry_point(tree)
         return compute_variables(site, scope_info, pfcfg)
 
+    def assertSameVariables(self, actual, expected):
+        self.maxDiff = None
+        self.assertEqual(str(actual), str(expected))
+
     def test_basic(self):
         code = """
         def f(y):
@@ -30,7 +34,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             __end_extract__
             return x
         """
-        self.assertEqual(
+        self.assertSameVariables(
             self.run_io(code),
             Variables([("y", 1)], [], [("x", 3)]),
         )
@@ -43,7 +47,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             __end_extract__
             return x, y
         """
-        self.assertEqual(
+        self.assertSameVariables(
             self.run_io(code),
             Variables([("x", 1), ("y", 1)], [], [("x", 2), ("y", 2)]),
         )
@@ -58,9 +62,9 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             x = 2
             return z
         """
-        self.assertEqual(
-            str(self.run_io(code)),
-            str(Variables([("y", 1)], [("x", 3)], [("z", 2)])),
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("y", 1)], [("x", 3)], [("z", 2)]),
         )
 
     def test_not_closed_if_entirely_within_section(self):
@@ -73,7 +77,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             __end_extract__
             return z
         """
-        self.assertEqual(
+        self.assertSameVariables(
             self.run_io(code),
             Variables([("y", 1)], [], [("z", 2)]),
         )
@@ -89,14 +93,12 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             x = 5
             return z
         """
-        self.assertEqual(
-            str(self.run_io(code)),
-            str(
-                Variables(
-                    [("y", 1)],
-                    [("x", 4)],
-                    [("z", 2)],
-                    errors=[ClosureOverVariableModifiedInExtractedCode],
-                )
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables(
+                [("y", 1)],
+                [("x", 4)],
+                [("z", 2)],
+                errors=[ClosureOverVariableModifiedInExtractedCode],
             ),
         )
