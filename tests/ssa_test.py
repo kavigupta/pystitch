@@ -521,7 +521,6 @@ class SSATest(unittest.TestCase):
         self.assert_ssa(code, expected)
 
     def test_with_sub_function(self):
-        # TODO handle contained variables
         code = """
         def f():
             x = 2
@@ -535,7 +534,7 @@ class SSATest(unittest.TestCase):
         def f():
             x_2 = 2
             def g_2():
-                return x
+                return x_2
             def h_2(x):
                 return x
             return g_2
@@ -561,6 +560,36 @@ class SSATest(unittest.TestCase):
             h_2 = lambda x: x
             # y_4 = gamma(y_2, y_3)
             i_2 = lambda: y_4
+            y_3 = 4
+            return g_2
+        """
+        self.assert_ssa(code, expected)
+
+    def test_with_sub_def(self):
+        code = """
+        def f():
+            x = 2
+            y = 3
+            def g():
+                return x
+            def h(x):
+                return x
+            def i():
+                return y
+            y = 4
+            return g
+        """
+        expected = """
+        def f():
+            x_2 = 2
+            y_2 = 3
+            def g_2():
+                return x_2
+            def h_2(x):
+                return x
+            # y_4 = gamma(y_2, y_3)
+            def i_2():
+                return y_4
             y_3 = 4
             return g_2
         """

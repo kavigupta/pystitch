@@ -67,6 +67,22 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             Variables([("y", 1)], [("x", 3)], [("z", 2)]),
         )
 
+    def test_closed_if_not_entirely_within_section_def(self):
+        self.maxDiff = None
+        code = """
+        def f(x, y):
+            __start_extract__
+            def z():
+                return x + y
+            __end_extract__
+            x = 2
+            return z
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("y", 1)], [("x", 3)], [("z", 2)]),
+        )
+
     def test_not_closed_if_entirely_within_section(self):
         code = """
         def f(x, y):
