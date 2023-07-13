@@ -246,7 +246,8 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     vars = compute_variables(site, scope_info, pfcfg, error_on_closed=True)
     vars.raise_if_needed()
 
-    undos.pop(0)()
+    undos.remove(undo_sentinel)
+    undo_sentinel()
 
     func_def, undo_replace = create_function_definition(
         extract_name,
