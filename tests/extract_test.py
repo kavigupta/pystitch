@@ -901,11 +901,11 @@ class GenericExtractRealisticTest(GenericExtractTest):
             if not entry_point.node.body:
                 continue
             code, count = self.sample_site(rng, entry_point.node)
+            if use_full_tree:
+                code = ast.unparse(tree)
             print(code)
             try:
-                out = self.run_extract(
-                    ast.unparse(tree) if use_full_tree else code, count
-                )
+                out = self.run_extract(code, count)
                 result.append((code, out))
             except (NotApplicable, BannedComponentError):
                 # don't error on this, just skip it
