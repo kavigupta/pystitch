@@ -45,6 +45,9 @@ def get_ssa(code):
 def run_ssa_on_info(tree, scope_info, entry_point):
     _, _, phi_map, annotations = run_ssa(scope_info, PerFunctionCFG(entry_point))
     text = ast.unparse(rename_to_ssa(annotations, tree))
+    for ssa in phi_map:
+        print(ssa)
+        print(phi_map[ssa])
     phi_map = render_phi_map(phi_map)
     return text, phi_map
 
