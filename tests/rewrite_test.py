@@ -9,9 +9,10 @@ from imperative_stitch.utils.ast_utils import (
     ReplaceNodes,
 )
 from imperative_stitch.utils.classify_nodes import compute_types_each
+from imperative_stitch.utils.run_code import normalize_output, passes_tests, run_python
 
 from .extract_test import GenericExtractRealisticTest, GenericExtractTest
-from .utils import small_set_examples
+from .utils import small_set_examples, small_set_runnable_code_examples
 
 
 class RewriteTest(GenericExtractTest):
@@ -326,11 +327,13 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
         expressions = [x for x in expressions if not self.bad_expression(x)]
         return expressions
 
-    def bad_expression(self, expr):
+    def bad_expression(self, expr, top_level=True):
+        if top_level and isinstance(expr, ast.Starred):
+            return True
         if isinstance(expr, (ast.Slice, ast.Ellipsis)):
             return True
         if isinstance(expr, ast.Tuple):
-            return any(self.bad_expression(x) for x in expr.elts)
+            return any(self.bad_expression(x, top_level=False) for x in expr.elts)
         return False
 
     def manipulate(self, body, rng):
@@ -356,6 +359,33 @@ class RewriteRealisticTest(GenericRewriteRealisticTest):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
     def test_realistic(self, i):
         self.operate(i)
+
+
+class RewriteSemanticsTest(GenericRewriteRealisticTest):
+    @parameterized.expand(
+        [(i,) for i in range(len(small_set_runnable_code_examples()))]
+    )
+    def test_semantics(self, i):
+        example = small_set_runnable_code_examples()[i]
+        code = example["solution"]
+        xs = self.operate_on_code(i, code, use_full_tree=True)
+        for code, out in xs:
+            if isinstance(out, Exception):
+                continue
+            post_extract, extracted = out
+            new_code = "\n".join([extracted, post_extract])
+            print("*" * 80)
+            print(code)
+            print("=" * 80)
+            print(new_code)
+            for input, output in zip(example["inputs"], example["outputs"]):
+                py_out = run_python(new_code, input)
+                if py_out is None:
+                    run_python.function(new_code, input)
+                    self.fail("error")
+                py_out = normalize_output(py_out)
+                output = normalize_output(output)
+                self.assertEqual(py_out, output)
 
 
 def sample_non_overlapping(xs, count, rng):
