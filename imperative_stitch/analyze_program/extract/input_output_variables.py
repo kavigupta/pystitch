@@ -1,4 +1,5 @@
 import ast
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 import ast_scope.scope
@@ -93,20 +94,14 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     if exit is None or exit == "<return>":
         output_variables = []
     else:
-        output_variables = compute_output_variables(
-            pfcfg, site, node_to_ssa, ultimate_origins, extracted_nodes
-        )
+        output_variables = compute_output_variables(site, ssa_to_origin, node_to_ssa)
     output_symbols = sorted({x for x, _ in output_variables})
     output_variable_at_exit = {
         end[pre_exit][sym] for pre_exit in pre_exits for sym in output_symbols
     }
 
     input_variables = compute_input_variables(
-        site,
-        node_to_ssa,
-        ultimate_origins,
-        extracted_nodes,
-        output_variables=output_variable_at_exit,
+        site, ssa_to_origin, node_to_ssa, output_variable_at_exit
     )
     # renormalize the input variables to be the ones that are actually passed in
     # in case the ones used are the result of a phi node
@@ -167,6 +162,35 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         parent_variables,
         errors=errors,
     )
+
+
+def is_output_journey(journey, node_set):
+    journey = [node_set(x) for x in journey]
+    return (True, False) in zip(journey, journey[1:])
+
+
+def is_input_journey(journey, node_set):
+    journey = [node_set(x) for x in journey]
+    return (False, True) in zip(journey, journey[1:])
+
+
+def origin_paths(ssa_id, id_to_origin, handle_gamma=False, suffix=()):
+    origin = id_to_origin[ssa_id]
+    if isinstance(origin, DefinedIn):
+        yield (origin.site.instruction.node, *suffix)
+    elif isinstance(origin, Phi):
+        for x in origin.parents:
+            if origin.node in suffix:
+                yield (origin.node, *suffix)
+            else:
+                yield from origin_paths(x, id_to_origin, suffix=(*suffix, origin.node))
+    elif isinstance(origin, Gamma):
+        if handle_gamma:
+            for x in origin.closed:
+                yield from origin_paths(x, id_to_origin, suffix=suffix)
+
+    else:
+        yield ("<<function def>>",)
 
 
 def all_initialized(lookup, vars, ultimate_origins):
@@ -291,57 +315,55 @@ def variables_from_parent(site, annotations, scope_info, function_astn):
     return sorted(result)
 
 
-def compute_input_variables(
-    site, annotations, ultimate_origins, extracted_nodes, *, output_variables
-):
-    """
-    Compute the input variables of an extraction site.
-
-    Args:
-        - site: the extraction site
-        - annotations: a mapping from a node to the set of variables defined in the node
-        - ultimate_origins: a mapping from a variable to the ultimate origins of the variable
-        - extracted_nodes: the set of nodes in the extraction site
-        - output_variables: the output variables of the extraction site
-
-    Returns:
-        A list of input variables, sorted by name.
-    """
-    variables_in = variables_in_nodes(site.all_nodes, annotations) | set(
-        output_variables
-    )
-    variables_in = sorted(
-        [
-            x
-            for x in variables_in
-            if traces_an_origin_to_node_set(
-                ultimate_origins,
-                ultimate_origins[x],
-                lambda x: x not in extracted_nodes,
-            )
-        ]
-    )
-    return variables_in
+def get_node_journeys(ssa_to_origin, node_to_ssa, *, handle_gamma):
+    node_journeys = defaultdict(list)
+    for node in node_to_ssa:
+        for ssa_id in node_to_ssa[node]:
+            node_journeys[ssa_id] += [
+                (*path, node)
+                for path in origin_paths(
+                    ssa_id, ssa_to_origin, handle_gamma=handle_gamma
+                )
+            ]
+    return node_journeys
 
 
-def compute_output_variables(
-    pfcfg, site, annotations, ultimate_origins, extracted_nodes
-):
+def compute_output_variables(site, ssa_to_origin, node_to_ssa):
     """
     Like compute_input_variables, but for output variables.
     """
-    variables_out = variables_in_nodes(
-        set(pfcfg.astn_order) - site.all_nodes, annotations
-    )
-    return sorted(
-        {
-            x
-            for x in variables_out
-            if traces_an_origin_to_node_set(
-                ultimate_origins,
-                ultimate_origins[x],
-                lambda x: x in extracted_nodes,
-                include_gamma=True,
-            )
-        }
-    )
+    node_journeys = get_node_journeys(ssa_to_origin, node_to_ssa, handle_gamma=True)
+
+    result = []
+
+    for ssa_id in node_journeys:
+        if any(
+            is_output_journey(j, lambda x: x in site.all_nodes)
+            for j in node_journeys[ssa_id]
+        ):
+            result.append(ssa_id)
+
+    return sorted(result)
+
+
+def compute_input_variables(site, ssa_to_origin, node_to_ssa, out):
+    """
+    Like compute_input_variables, but for output variables.
+    """
+    node_journeys = get_node_journeys(ssa_to_origin, node_to_ssa, handle_gamma=False)
+    for x in out:
+        if x in node_journeys:
+            node_journeys[x] += [
+                (*path[:-1], True, path[-1]) for path in node_journeys[x]
+            ]
+
+    result = []
+
+    for ssa_id in node_journeys:
+        if any(
+            is_input_journey(j, lambda x: x in site.all_nodes or x is True)
+            for j in node_journeys[ssa_id]
+        ):
+            result.append(ssa_id)
+
+    return sorted(result)
