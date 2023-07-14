@@ -71,7 +71,7 @@ class FunctionSSAAnnotator:
         """
         while True:
             start, end = self._start.copy(), self._end.copy()
-            queue = [self.graph.first_cfn]
+            queue = [self.graph.first_cfn, *start]
             while queue:
                 cfn = queue.pop()
                 if self._process(cfn):

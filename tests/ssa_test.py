@@ -753,7 +753,7 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
-    def test_nontrivial_control_flow_1(self):
+    def test_nontrivial_control_flow(self):
         code = """
         def f():
             if True:
@@ -806,6 +806,41 @@ class SSATest(unittest.TestCase):
                 # x_6 = gamma(x_4, x_5)
                 lambda: x_6
                 x_5 = 3
+        """
+        self.assert_ssa(code, expected)
+
+    def test_nontrivial_control_flow_2(self):
+        code = """
+        def f():
+            x = 0
+            y = 0
+            while True:
+                x = 3
+            while True:
+                if True:
+                    y = 2
+                    break
+                if True:
+                    y = 3
+            print(x)
+            print(y)
+        """
+        expected = """
+        def f():
+            x_2 = 0
+            y_2 = 0
+            # x_3 = phi(x_2, x_4)
+            while True:
+                x_4 = 3
+            # y_3 = phi(y_2, y_5)
+            while True:
+                if True:
+                    y_4 = 2
+                    break
+                if True:
+                    y_5 = 3
+            print(x_3)
+            print(y_3)
         """
         self.assert_ssa(code, expected)
 

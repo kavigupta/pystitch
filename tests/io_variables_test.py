@@ -17,6 +17,7 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
     def run_io(self, code):
         code = canonicalize(code)
         tree, [site] = parse_extract_pragma(code)
+        site.inject_sentinel()
         scope_info = ast_scope.annotate(tree)
         pfcfg = site.locate_entry_point(tree)
         return compute_variables(site, scope_info, pfcfg)
@@ -255,4 +256,27 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         self.assertSameVariables(
             self.run_io(code),
             Variables([], [], []),
+        )
+
+    def test_nontrivial_control_flow_2(self):
+        code = """
+        def f():
+            __start_extract__
+            x = 0
+            y = 0
+            while True:
+                x = 3
+            __end_extract__
+            while True:
+                if True:
+                    y = 2
+                    break
+                if True:
+                    y = 3
+            print(x)
+            print(y)
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [], [("x", 3), ("y", 3)]),
         )
