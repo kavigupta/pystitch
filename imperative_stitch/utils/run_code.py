@@ -20,7 +20,7 @@ def normalize_output(output):
 
 def passes_tests(code, inputs, outputs):
     for inp, out in list(zip(inputs, outputs)):
-        py_out = run_python(code, inp)
+        py_out = run_python_with_timeout(code, inp)
         if py_out is None:
             return False
         out, py_out = normalize_output(out), normalize_output(py_out)
