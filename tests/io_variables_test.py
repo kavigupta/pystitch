@@ -204,3 +204,36 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             self.run_io(code),
             Variables([], [], [("x", 3)]),
         )
+
+    def test_variable_only_referenced_in_loop(self):
+        code = """
+        def f():
+            x = 0
+            y = 0
+            while y < 10:
+                __start_extract__
+                x = x + 1
+                y = x
+                z = 2
+                z = z + 1
+                __end_extract__
+            return y
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("x", 3)], [], [("x", 3), ("y", 3)]),
+        )
+
+    def test_return_both(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            y = y + 1
+            x = lambda: y
+            __end_extract__
+            return x, y
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("y", 1)], [], [("x", 2), ("y", 2)]),
+        )
