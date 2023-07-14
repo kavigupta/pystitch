@@ -53,9 +53,10 @@ class NameChanger(ast.NodeTransformer):
     def generic_visit(self, node):
         if node in self.node_to_new_name:
             new_name = self.node_to_new_name[node]
-            old_name = getattr(node, name_field(node))
-            self.undos.append(lambda: setattr(node, name_field(node), old_name))
-            setattr(node, name_field(node), new_name)
+            if name_field(node) is not None:
+                old_name = getattr(node, name_field(node))
+                self.undos.append(lambda: setattr(node, name_field(node), old_name))
+                setattr(node, name_field(node), new_name)
         return super().generic_visit(node)
 
 
