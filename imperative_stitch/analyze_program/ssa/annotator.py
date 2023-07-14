@@ -78,7 +78,19 @@ class FunctionSSAAnnotator:
                     queue.extend(self.graph.sort_by_cfn_key(cfn.next))
             if start == self._start and end == self._end:
                 break
+
+        renamer = self._mapping.clean()
+
+        self._start, self._end = [
+            {
+                cfn: {sym: renamer.get(var, var) for sym, var in x.items()}
+                for cfn, x in y.items()
+            }
+            for y in [self._start, self._end]
+        ]
+
         annotations = self.collect_annotations()
+
         ordered_cfns = self.graph.sort_by_cfn_key(self._start.keys())
 
         ordered_values = self._mapping.initials() + [

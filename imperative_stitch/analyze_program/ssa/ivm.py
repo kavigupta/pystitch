@@ -31,6 +31,12 @@ class Origin(ABC):
         """
         pass
 
+    def without_parent(self, parent):
+        return self
+
+    def reduce_if_possible(self):
+        return None
+
 
 @dataclass(eq=True, frozen=True)
 class Uninitialized(Origin):
@@ -70,13 +76,23 @@ class Phi(Origin):
         return isinstance(other, Phi)
 
     def remap(self, renaming_map):
-        return Phi(self.node, tuple(sorted({renaming_map[x] for x in self.parents})))
+        return Phi(
+            self.node, tuple(sorted({renaming_map.get(x, x) for x in self.parents}))
+        )
 
     def initial(self):
         return False
 
     def initialized(self):
         return True
+
+    def without_parent(self, parent):
+        return Phi(self.node, tuple(x for x in self.parents if x != parent))
+
+    def reduce_if_possible(self):
+        if len(self.parents) == 1:
+            return self.parents[0]
+        return None
 
 
 @dataclass(eq=True, frozen=True)
@@ -117,7 +133,7 @@ class SSAVariableIntermediateMapping:
         self.parents_of = {}
 
     def fresh_variable(self, original_symbol, parents):
-        var = len(self.original_symbol_of)
+        var = 1 + max(self.original_symbol_of) if self.original_symbol_of else 0
         self.original_symbol_of[var] = original_symbol
         self.parents_of[var] = parents
         return var
@@ -157,6 +173,37 @@ class SSAVariableIntermediateMapping:
             if node in renaming_map:
                 result[renaming_map[node]] = origin.remap(renaming_map)
         return result
+
+    def clean(self):
+        """
+        Remove all self-parented variable references.
+        """
+        for var in self.parents_of:
+            self.parents_of[var] = self.parents_of[var].without_parent(var)
+
+        renamer = {}
+        while True:
+            done = True
+            for var in self.parents_of:
+                replacement = self.parents_of[var].reduce_if_possible()
+                if replacement is not None:
+                    self.remap(var, replacement)
+                    renamer[var] = replacement
+                    done = False
+                    break
+            if done:
+                break
+        return renamer
+
+    def remap(self, old, new):
+        """
+        Replace all references to old with new.
+        """
+        assert self.original_symbol_of[new] == self.original_symbol_of[old]
+        del self.original_symbol_of[old]
+        del self.parents_of[old]
+        for var, origin in self.parents_of.items():
+            self.parents_of[var] = origin.remap({old: new})
 
 
 def compute_ultimate_origins(origin_of):

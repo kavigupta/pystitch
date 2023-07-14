@@ -162,8 +162,6 @@ class SSATest(unittest.TestCase):
             # u_3 = phi(u_1, u_2)
             print
             # x_2 = phi(x_1, x_3)
-            # f_4 = phi(f_3, f_4)
-            # u_4 = phi(u_3, u_4)
             while True:
                 if 2:
                     2
@@ -749,6 +747,62 @@ class SSATest(unittest.TestCase):
             x_2 = os_2
             import os
             return os_3, x_2
+        """
+        self.assert_ssa(code, expected)
+
+    def test_nontrivial_control_flow_1(self):
+        code = """
+        def f():
+            if True:
+                x = 1
+            else:
+                x = 2
+            while False:
+                print
+            lambda: x
+            x = 3
+        """
+        expected = """
+        def f():
+            if True:
+                x_2 = 1
+            else:
+                x_3 = 2
+            # x_4 = phi(x_2, x_3)
+            while False:
+                print
+            # x_6 = gamma(x_4, x_5)
+            lambda: x_6
+            x_5 = 3
+        """
+        self.assert_ssa(code, expected)
+
+    def test_nontrivial_control_flow_2(self):
+        code = """
+        def f():
+            if True:
+                x = 1
+            else:
+                x = 2
+            if True:
+                while False:
+                    pass
+                lambda: x
+                x = 3
+        """
+        expected = """
+        def f():
+            if True:
+                x_2 = 1
+            else:
+                x_3 = 2
+            # x_4 = phi(x_2, x_3)
+            if True:
+                while False:
+                    pass
+                # x_6 = gamma(x_4, x_5)
+                lambda: x_6
+                x_5 = 3
         """
         self.assert_ssa(code, expected)
 
