@@ -23,6 +23,7 @@ class Symbol:
     def render(self):
         return f"&{self.name}:{self.scope}"
 
+
 def to_list_s_expr(x, descoper, is_body=False):
     if is_body:
         assert isinstance(x, list), str(x)

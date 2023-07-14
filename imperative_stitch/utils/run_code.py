@@ -45,6 +45,7 @@ def run_python_with_timeout(code, input, *, timeout=10):
     except TimeoutError:
         return False
 
+
 @permacache(
     "imperative_stitch/data/runnable_code_set/run_python_2",
     key_function=dict(code=stable_hash, input=stable_hash),
