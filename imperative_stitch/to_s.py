@@ -3,7 +3,7 @@ import base64
 
 import attr
 import ast_scope
-from imperative_stitch.utils.ast_utils import field_is_body
+from imperative_stitch.utils.ast_utils import field_is_body, name_field
 
 from imperative_stitch.utils.recursion import recursionlimit
 from s_expression_parser import Pair, nil, Renderer, parse, ParserConfig
@@ -23,26 +23,6 @@ class Symbol:
     def render(self):
         return f"&{self.name}:{self.scope}"
 
-
-def is_the_symbol(node, f):
-    x = type(node).__name__
-    if x == "Name":
-        return f == "id"
-    if x == "FunctionDef" or x == "AsyncFunctionDef":
-        return f == "name"
-    if x == "ClassDef":
-        return f == "name"
-    if x == "arg":
-        return f == "arg"
-    if x == "ExceptHandler":
-        return f == "name" and node.name is not None
-    if x == "alias":
-        if node.asname is None:
-            return f == "name"
-        return f == "asname"
-    raise ValueError(f"Unsupported: {node}")
-
-
 def to_list_s_expr(x, descoper, is_body=False):
     if is_body:
         assert isinstance(x, list), str(x)
@@ -59,8 +39,8 @@ def to_list_s_expr(x, descoper, is_body=False):
         result = [type(x)]
         for f in x._fields:
             el = getattr(x, f)
-            if x in descoper and is_the_symbol(x, f):
-                assert isinstance(el, str)
+            if x in descoper and f == name_field(x):
+                assert isinstance(el, str), (x, f, el)
                 result.append(Symbol(el, descoper[x]))
             else:
                 result.append(

@@ -23,7 +23,7 @@ def name_field(x):
     if t == ast.AsyncFunctionDef:
         return "name"
     if t == ast.ExceptHandler:
-        return "name"
+        return "name" if x.name is not None else None
     if t == ast.ClassDef:
         return "name"
     if t == ast.alias:
