@@ -193,7 +193,7 @@ class SSAVariableIntermediateMapping:
                     break
             if done:
                 break
-        return renamer
+        return resolve_pointers(renamer)
 
     def remap(self, old, new):
         """
@@ -204,6 +204,19 @@ class SSAVariableIntermediateMapping:
         del self.parents_of[old]
         for var, origin in self.parents_of.items():
             self.parents_of[var] = origin.remap({old: new})
+
+
+def resolve_pointers(renamer):
+    """
+    If a -> b and b -> c then replace with a -> c and b -> c.
+    """
+
+    def resolve(x):
+        while x in renamer:
+            x = renamer[x]
+        return x
+
+    return {x: resolve(y) for x, y in renamer.items()}
 
 
 def compute_ultimate_origins(origin_of):
