@@ -51,12 +51,20 @@ class NameChanger(ast.NodeTransformer):
         self.undos = []
 
     def generic_visit(self, node):
-        if node in self.node_to_new_name:
-            new_name = self.node_to_new_name[node]
-            if name_field(node) is not None:
-                old_name = getattr(node, name_field(node))
-                self.undos.append(lambda: setattr(node, name_field(node), old_name))
-                setattr(node, name_field(node), new_name)
+        if node not in self.node_to_new_name:
+            return super().generic_visit(node)
+
+        new_name = self.node_to_new_name[node]
+        if name_field(node) is None:
+            return super().generic_visit(node)
+
+        if isinstance(node, ast.alias) and node.asname is None:
+            self.undos.append(lambda: delattr(node, "asname"))
+            setattr(node, "asname", new_name)
+        else:
+            old_name = getattr(node, name_field(node))
+            self.undos.append(lambda: setattr(node, name_field(node), old_name))
+            setattr(node, name_field(node), new_name)
         return super().generic_visit(node)
 
 

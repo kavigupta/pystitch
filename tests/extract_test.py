@@ -930,6 +930,34 @@ class ExtractTest(GenericExtractTest):
         # It results from a bug in python_graphs that we should fix
         self.assertEqual(self.run_extract(code), MultipleExits())
 
+    def test_imports(self):
+        code = """
+        def f():
+            __start_extract__
+            import os
+            from collections import defaultdict
+            import numpy as np
+            import torch.nn as nn
+            __end_extract__
+            return os, defaultdict, np, nn
+        """
+        post_extract_expected = """
+        def f():
+            os, defaultdict, np, nn = __f0()
+            return os, defaultdict, np, nn
+        """
+        post_extracted = """
+        def __f0():
+            import os as __0
+            from collections import defaultdict as __1
+            import numpy as __2
+            import torch.nn as __3
+            return __0, __1, __2, __3
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class GenericExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):

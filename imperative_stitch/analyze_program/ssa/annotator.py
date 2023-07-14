@@ -1,6 +1,8 @@
 import ast
 from collections import defaultdict
 
+from imperative_stitch.utils.ast_utils import name_field
+
 
 from ..structures.per_function_cfg import PerFunctionCFG, eventually_accessible_cfns
 
@@ -239,6 +241,8 @@ def get_nodes_for_write(node):
         return get_nodes_for_write(node.target)
     elif isinstance(node, ast.ExceptHandler):
         name = node.name
+    elif isinstance(node, ast.alias):
+        name = getattr(node, name_field(node))
     else:
         raise Exception(f"Unexpected write: {node}")
     return [(node, name)]
