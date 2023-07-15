@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 class Origin(ABC):
-    def replaceable_without_propagating(self, current, other):
+    def replaceable_without_propagating(self, other):
         """
         Whether this origin can be replaced by another origin without propagating
         the replacement to the children.
@@ -72,7 +72,7 @@ class Phi(Origin):
     node: AST
     parents: tuple
 
-    def replaceable_without_propagating(self, current, other):
+    def replaceable_without_propagating(self, other):
         return isinstance(other, Phi)
 
     def remap(self, renaming_map):
@@ -102,7 +102,7 @@ class Gamma(Origin):
     node: AST
     closed: tuple
 
-    def replaceable_without_propagating(self, current, other):
+    def replaceable_without_propagating(self, other):
         raise NotImplementedError
 
     def remap(self, renaming_map):
@@ -142,12 +142,9 @@ class SSAVariableIntermediateMapping:
 
     def fresh_variable_if_needed(self, original_symbol, parents, current):
         if current is not None and self.original_symbol_of[current] == original_symbol:
-            print("PARENTS OF", self.parents_of[current], parents)
             if self.parents_of[current] == parents:
                 return current
-            if self.parents_of[current].replaceable_without_propagating(
-                current, parents
-            ):
+            if self.parents_of[current].replaceable_without_propagating(parents):
                 self.parents_of[current] = parents
                 return current
         return self.fresh_variable(original_symbol, parents)

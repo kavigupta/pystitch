@@ -71,30 +71,16 @@ class FunctionSSAAnnotator:
         """
         while True:
 
-            def copy_2(x):
-                return {k: v.copy() for k, v in x.items()}
-
-            # start, end = self._start.copy(), self._end.copy()
-            start, end = copy_2(self._start), copy_2(self._end)
+            start, end = self._start.copy(), self._end.copy()
             queue = [self.graph.first_cfn, *start]
-            print("Q")
             while queue:
                 cfn = queue.pop()
-                print(cfn)
                 if self._process(cfn):
                     queue.extend(self.graph.sort_by_cfn_key(cfn.next))
-                print(self._start[cfn])
-                print(self._end[cfn])
             if start == self._start and end == self._end:
                 break
 
-        print(self._mapping.parents_of)
-
         renamer = self._mapping.clean()
-
-        print(self._mapping.parents_of)
-
-        # renamer = {}
 
         self._start, self._end = [
             {
@@ -206,8 +192,6 @@ class FunctionSSAAnnotator:
                 if sym in parent_end:
                     parent_vars.add(parent_end[sym])
             parent_vars = sorted(parent_vars)
-            print(sym, parent_vars)
-            print(old_start.get(sym, None))
             self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
                 sym,
                 Phi(cfn.instruction.node, tuple(parent_vars)),
