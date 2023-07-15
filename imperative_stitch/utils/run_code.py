@@ -43,7 +43,7 @@ def run_python_with_timeout(code, input, *, timeout=10):
     try:
         return run_python(code, input)
     except TimeoutError:
-        return False
+        return None
 
 
 @permacache(
