@@ -189,7 +189,6 @@ class SSAVariableIntermediateMapping:
                 if replacement is not self.parents_of[var]:
                     self.parents_of[var] = replacement
                     done = False
-                    break
 
             for var in self.parents_of:
                 replacement = self.parents_of[var].reduce_if_possible()
