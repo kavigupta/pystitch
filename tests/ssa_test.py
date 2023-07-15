@@ -839,8 +839,34 @@ class SSATest(unittest.TestCase):
                     break
                 if True:
                     y_5 = 3
+            # y_6 = phi(y_3, y_4)
             print(x_3)
-            print(y_3)
+            print(y_6)
+        """
+        self.assert_ssa(code, expected)
+
+    def test_nontrivial_control_flow_3(self):
+        code = """
+        def f():
+            if True:
+                x = 1
+            else:
+                x = 2
+                while True:
+                    x = 3
+            print(x)
+        """
+        expected = """
+        def f():
+            if True:
+                x_2 = 1
+            else:
+                x_3 = 2
+                # x_4 = phi(x_3, x_5)
+                while True:
+                    x_5 = 3
+            # x_6 = phi(x_2, x_4)
+            print(x_6)
         """
         self.assert_ssa(code, expected)
 

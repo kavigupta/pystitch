@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 class Origin(ABC):
-    def replaceable_without_propagating(self, other):
+    def replaceable_without_propagating(self, current, other):
         """
         Whether this origin can be replaced by another origin without propagating
         the replacement to the children.
@@ -72,7 +72,7 @@ class Phi(Origin):
     node: AST
     parents: tuple
 
-    def replaceable_without_propagating(self, other):
+    def replaceable_without_propagating(self, current, other):
         return isinstance(other, Phi)
 
     def remap(self, renaming_map):
@@ -87,6 +87,8 @@ class Phi(Origin):
         return True
 
     def without_parent(self, parent):
+        if parent not in self.parents:
+            return self
         return Phi(self.node, tuple(x for x in self.parents if x != parent))
 
     def reduce_if_possible(self):
@@ -100,7 +102,7 @@ class Gamma(Origin):
     node: AST
     closed: tuple
 
-    def replaceable_without_propagating(self, other):
+    def replaceable_without_propagating(self, current, other):
         raise NotImplementedError
 
     def remap(self, renaming_map):
@@ -140,9 +142,12 @@ class SSAVariableIntermediateMapping:
 
     def fresh_variable_if_needed(self, original_symbol, parents, current):
         if current is not None and self.original_symbol_of[current] == original_symbol:
+            print("PARENTS OF", self.parents_of[current], parents)
             if self.parents_of[current] == parents:
                 return current
-            if self.parents_of[current].replaceable_without_propagating(parents):
+            if self.parents_of[current].replaceable_without_propagating(
+                current, parents
+            ):
                 self.parents_of[current] = parents
                 return current
         return self.fresh_variable(original_symbol, parents)
@@ -178,12 +183,17 @@ class SSAVariableIntermediateMapping:
         """
         Remove all self-parented variable references.
         """
-        for var in self.parents_of:
-            self.parents_of[var] = self.parents_of[var].without_parent(var)
 
         renamer = {}
         while True:
             done = True
+            for var in self.parents_of:
+                replacement = self.parents_of[var].without_parent(var)
+                if replacement is not self.parents_of[var]:
+                    self.parents_of[var] = replacement
+                    done = False
+                    break
+
             for var in self.parents_of:
                 replacement = self.parents_of[var].reduce_if_possible()
                 if replacement is not None:

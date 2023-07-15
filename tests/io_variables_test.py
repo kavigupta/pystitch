@@ -278,5 +278,23 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertSameVariables(
             self.run_io(code),
-            Variables([], [], [("x", 3), ("y", 3)]),
+            Variables([], [], [("x", 3), ("y", 6)]),
+        )
+
+    def test_nontrivial_control_flow_3(self):
+        code = """
+        def _main():
+            if True:
+                __start_extract__
+                x = 1
+                __end_extract__
+            else:
+                x = 2
+                while True:
+                    x = 3
+            print(x)
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [], [("x", 6)]),
         )
