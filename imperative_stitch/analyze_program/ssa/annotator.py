@@ -70,6 +70,7 @@ class FunctionSSAAnnotator:
             annotations: A mapping from node to its variable.
         """
         while True:
+
             start, end = self._start.copy(), self._end.copy()
             queue = [self.graph.first_cfn, *start]
             while queue:
@@ -191,14 +192,11 @@ class FunctionSSAAnnotator:
                 if sym in parent_end:
                     parent_vars.add(parent_end[sym])
             parent_vars = sorted(parent_vars)
-            if len(parent_vars) == 1:
-                [self._start[cfn][sym]] = parent_vars
-            else:
-                self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
-                    sym,
-                    Phi(cfn.instruction.node, tuple(parent_vars)),
-                    old_start.get(sym, None),
-                )
+            self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
+                sym,
+                Phi(cfn.instruction.node, tuple(parent_vars)),
+                old_start.get(sym, None),
+            )
         new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
         if cfn not in self._end or new_end != self._end[cfn]:
             self._end[cfn] = new_end

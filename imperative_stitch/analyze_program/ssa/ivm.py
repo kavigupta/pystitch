@@ -87,6 +87,8 @@ class Phi(Origin):
         return True
 
     def without_parent(self, parent):
+        if parent not in self.parents:
+            return self
         return Phi(self.node, tuple(x for x in self.parents if x != parent))
 
     def reduce_if_possible(self):
@@ -178,19 +180,25 @@ class SSAVariableIntermediateMapping:
         """
         Remove all self-parented variable references.
         """
-        for var in self.parents_of:
-            self.parents_of[var] = self.parents_of[var].without_parent(var)
 
         renamer = {}
         while True:
             done = True
             for var in self.parents_of:
-                replacement = self.parents_of[var].reduce_if_possible()
-                if replacement is not None:
-                    self.remap(var, replacement)
-                    renamer[var] = replacement
+                replacement = self.parents_of[var].without_parent(var)
+                if replacement is not self.parents_of[var]:
+                    self.parents_of[var] = replacement
                     done = False
-                    break
+
+            for var in list(self.parents_of):
+                replacement = self.parents_of[var].reduce_if_possible()
+                if replacement is not None and replacement not in renamer:
+                    renamer[var] = replacement
+                    self.remap(var, replacement)
+                    done = False
+            if not done:
+                for var, origin in self.parents_of.items():
+                    self.parents_of[var] = origin.remap(renamer)
             if done:
                 break
         return resolve_pointers(renamer)
@@ -202,8 +210,6 @@ class SSAVariableIntermediateMapping:
         assert self.original_symbol_of[new] == self.original_symbol_of[old]
         del self.original_symbol_of[old]
         del self.parents_of[old]
-        for var, origin in self.parents_of.items():
-            self.parents_of[var] = origin.remap({old: new})
 
 
 def resolve_pointers(renamer):
