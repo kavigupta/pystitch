@@ -190,13 +190,15 @@ class SSAVariableIntermediateMapping:
                     self.parents_of[var] = replacement
                     done = False
 
-            for var in self.parents_of:
+            for var in list(self.parents_of):
                 replacement = self.parents_of[var].reduce_if_possible()
-                if replacement is not None:
-                    self.remap(var, replacement)
+                if replacement is not None and replacement not in renamer:
                     renamer[var] = replacement
+                    self.remap(var, replacement)
                     done = False
-                    break
+            if not done:
+                for var, origin in self.parents_of.items():
+                    self.parents_of[var] = origin.remap(renamer)
             if done:
                 break
         return resolve_pointers(renamer)
@@ -208,8 +210,6 @@ class SSAVariableIntermediateMapping:
         assert self.original_symbol_of[new] == self.original_symbol_of[old]
         del self.original_symbol_of[old]
         del self.parents_of[old]
-        for var, origin in self.parents_of.items():
-            self.parents_of[var] = origin.remap({old: new})
 
 
 def resolve_pointers(renamer):
