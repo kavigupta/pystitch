@@ -122,13 +122,14 @@ def runnable_code_dataset(
 
 
 if __name__ == "__main__":
+    out = runnable_code_dataset(
+        amount=10_000,
+        max_solutions_per_datapoint=10,
+        max_tests_per_datapoint=10,
+    )
     with open("data/small_set_runnable_code.json", "w") as f:
         json.dump(
-            runnable_code_dataset(
-                amount=10_000,
-                max_solutions_per_datapoint=10,
-                max_tests_per_datapoint=10,
-            ),
+            out,
             f,
-            indent=2,
+            indent=2
         )
