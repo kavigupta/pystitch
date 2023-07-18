@@ -298,3 +298,31 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
             self.run_io(code),
             Variables([], [], [("x", 6)]),
         )
+
+    def test_re_reference_in_group(self):
+        code = """
+        def _main():
+            i = 2
+            while True:
+                __start_extract__
+                i = i + 1
+                __end_extract__
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("i", 3)], [], [("i", 3)]),
+        )
+
+    def test_re_reference_in_group_with_metavariable(self):
+        code = """
+        def _main():
+            i = 2
+            while True:
+                __start_extract__
+                i = {__metavariable__, __m1, i} + 1
+                __end_extract__
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([("i", 3)], [], [("i", 3)]),
+        )
