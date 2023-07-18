@@ -397,7 +397,7 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
             if isinstance(out, Exception):
                 continue
             post_extract, extracted = out
-            new_code = "\n".join([extracted, post_extract])
+            new_code = self.concat_code(extracted, post_extract)
             print("*" * 80)
             print(code)
             print("=" * 80)
@@ -410,6 +410,24 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
                 py_out = normalize_output(py_out)
                 output = normalize_output(output)
                 self.assertEqual(py_out, output)
+
+    def concat_code(self, first, second):
+        """
+        yanks from __future__ import annotations from second
+        and then concatenates the two
+        """
+        second = ast.parse(second)
+        first = ast.parse(first)
+        future_statements = [
+            x
+            for x in second.body
+            if isinstance(x, ast.ImportFrom) and x.module == "__future__"
+        ]
+        second.body = (
+            future_statements + first.body + second.body[len(future_statements) :]
+        )
+        second = ast.fix_missing_locations(second)
+        return ast.unparse(second)
 
 
 def sample_non_overlapping(xs, count, rng):
