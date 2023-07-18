@@ -26,3 +26,33 @@ class BannedComponentVisitor(ast.NodeVisitor):
         raise BannedComponentError(
             "walrus statements cannot be used because we do not support them yet"
         )
+
+    def visit_Yield(self, node):
+        raise BannedComponentError(
+            "yield statements cannot be used because we do not support them yet"
+        )
+
+    def visit_YieldFrom(self, node):
+        raise BannedComponentError(
+            "yield from statements cannot be used because we do not support them yet"
+        )
+
+    def visit_AsyncFor(self, node):
+        raise BannedComponentError(
+            "async for statements cannot be used because we do not support them yet"
+        )
+
+    def visit_AsyncWith(self, node):
+        raise BannedComponentError(
+            "async with statements cannot be used because we do not support them yet"
+        )
+
+    def visit_AsyncFunctionDef(self, node):
+        raise BannedComponentError(
+            "async functions cannot be used because we do not support them yet"
+        )
+
+    def visit_Await(self, node):
+        raise BannedComponentError(
+            "await statements cannot be used because we do not support them yet"
+        )
