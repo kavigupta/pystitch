@@ -73,8 +73,14 @@ class Variables:
     def output_vars_without_ssa(self):
         return sorted({x for x, _ in self._output_vars_ssa})
 
+    @property
+    def output_vars_ssa(self):
+        return sorted(self._output_vars_ssa)
 
-def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
+
+def compute_variables(
+    site, scope_info, pfcfg, error_on_closed=False, guarantee_outputs_of=()
+):
     """
     Compute a Variables object for a site. Ignores metavariables.
 
@@ -82,6 +88,8 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         - site: the extraction site
         - scope_info: a mapping from nodes to scopes
         - pfcfg: the program flow control graph
+        - error_on_closed: whether to error if a closed variable is passed directly
+        - guarantee_outputs_of: a list of variables that must be outputted, with SSA ids
 
     Returns:
         A Variables object
@@ -95,6 +103,7 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         output_variables = []
     else:
         output_variables = compute_output_variables(site, ssa_to_origin, node_to_ssa)
+    output_variables += guarantee_outputs_of
     output_symbols = sorted({x for x, _ in output_variables})
     output_variable_at_exit = {
         end[pre_exit][sym] for pre_exit in pre_exits for sym in output_symbols
@@ -395,6 +404,8 @@ def compute_input_variables(site, ssa_to_origin, node_to_ssa, out):
             node_journeys[x] += [
                 (*path[:-1], True, path[-1]) for path in node_journeys[x]
             ]
+        else:
+            node_journeys[x] = [(False, True, False)]
 
     result = []
 

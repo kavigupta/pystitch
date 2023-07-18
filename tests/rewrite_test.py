@@ -342,6 +342,32 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_partial_output_re_reference_in_group_with_metavariable(self):
+        code = """
+        def f():
+            x = 0
+            while True:
+                __start_extract__
+                if {__metavariable__, __m0, x}:
+                    x = 2
+                __end_extract__
+        """
+        post_extract_expected = """
+        def f():
+            x = 0
+            while True:
+                x = __f0(x, lambda: x)
+        """
+        post_extracted = """
+        def __f0(__0, __m0):
+            if __m0():
+                __0 = 2
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):

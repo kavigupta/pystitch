@@ -232,18 +232,24 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
     _, exit, _ = pfcfg.extraction_entry_exit(extracted_nodes)
 
-    vars_before = compute_variables(site, scope_info, pfcfg)
-    vars_before.raise_if_needed()
+    vars = compute_variables(site, scope_info, pfcfg)
+    vars.raise_if_needed()
 
-    metavariables = extract_metavariables(scope_info, site, annotations, vars_before)
+    metavariables = extract_metavariables(scope_info, site, annotations, vars)
 
     undo_metavariables = metavariables.act(pfcfg.function_astn)
     undos += [undo_metavariables]
 
     pfcfg = site.locate_entry_point(tree)
 
-    vars_after = compute_variables(site, scope_info, pfcfg, error_on_closed=True)
-    vars_after.raise_if_needed()
+    vars = compute_variables(
+        site,
+        scope_info,
+        pfcfg,
+        error_on_closed=True,
+        guarantee_outputs_of=vars.output_vars_ssa,
+    )
+    vars.raise_if_needed()
 
     undos.remove(undo_sentinel)
     undo_sentinel()
@@ -251,16 +257,16 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     func_def, undo_replace = create_function_definition(
         extract_name,
         site,
-        vars_after.input_vars_without_ssa,
-        vars_before.output_vars_without_ssa,
+        vars.input_vars_without_ssa,
+        vars.output_vars_without_ssa,
         metavariables,
     )
     undos += [undo_replace]
 
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
-        vars_after.input_vars_without_ssa,
-        vars_before.output_vars_without_ssa,
+        vars.input_vars_without_ssa,
+        vars.output_vars_without_ssa,
         metavariables,
     )
     func_def, undo_replace = create_function_definition(
