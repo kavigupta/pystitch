@@ -128,8 +128,4 @@ if __name__ == "__main__":
         max_tests_per_datapoint=10,
     )
     with open("data/small_set_runnable_code.json", "w") as f:
-        json.dump(
-            out,
-            f,
-            indent=2
-        )
+        json.dump(out, f, indent=2)
