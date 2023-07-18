@@ -905,10 +905,7 @@ class ExtractTest(GenericExtractTest):
         def test_3118(self):
 
             def gen():
-                try:
-                    yield 1
-                finally:
-                    pass
+                pass
 
             def f():
                 g = gen()
