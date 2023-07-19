@@ -369,3 +369,31 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
                 errors=[ModifiesVariableClosedOverInNonExtractedCode],
             ),
         )
+
+    def test_variable_closed_over_by_later_variable(self):
+        code = """
+        def f():
+            __start_extract__
+            u = lambda: {__metavariable__, __m0, n}
+            __end_extract__
+            n = 3
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [("n", 3)], []),
+        )
+
+    def test_variable_closed_over_by_later_variable_2(self):
+        code = """
+        def f():
+            before
+            __start_extract__
+            inside
+            u = lambda: __m0(n)
+            __end_extract__
+            n = 3
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables([], [("n", 3)], []),
+        )

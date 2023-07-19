@@ -3,6 +3,7 @@ import ast
 from parameterized import parameterized
 
 from imperative_stitch.analyze_program.extract.errors import (
+    ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
     ModifiesVariableClosedOverInNonExtractedCode,
 )
@@ -424,6 +425,16 @@ class RewriteTest(GenericExtractTest):
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
+
+    def test_variable_closed_over_by_later_variable(self):
+        code = """
+        def f():
+            __start_extract__
+            u = lambda: {__metavariable__, __m0, n}
+            __end_extract__
+            n = 3
+        """
+        self.assertEqual(self.run_extract(code), ClosedVariablePassedDirectly())
 
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):

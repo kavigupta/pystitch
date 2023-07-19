@@ -209,14 +209,12 @@ def create_function_call(
     return call
 
 
-def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
+def compute_extract_asts(tree, site, *, extract_name, undos):
     """
     Returns the function definition and the function call for the extraction.
 
     Arguments
     ---------
-    scope_info: ScopeInfo
-        The scope information of the program.
     site: ExtractionSite
         The extraction site.
     extract_name: str
@@ -238,6 +236,7 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
         A Metavariables object representing the metavariables.
     """
     undo_preprocess = preprocess(tree)
+    scope_info = ast_scope.annotate(tree)
     undos += [undo_preprocess]
     undo_sentinel = site.inject_sentinel()
     undos += [undo_sentinel]
@@ -256,6 +255,8 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
 
     undo_metavariables = metavariables.act(pfcfg.function_astn)
     undos += [undo_metavariables]
+
+    scope_info = ast_scope.annotate(tree)
 
     pfcfg = site.locate_entry_point(tree)
 
@@ -350,10 +351,9 @@ def do_extract(site, tree, *, extract_name):
 
 
 def _do_extract(site, tree, *, extract_name, undos):
-    scope_info = ast_scope.annotate(tree)
 
     func_def, call, exit, metavariables = compute_extract_asts(
-        tree, scope_info, site, extract_name=extract_name, undos=undos
+        tree, site, extract_name=extract_name, undos=undos
     )
 
     for calls in [call], [call, ast.Break()], [call, ast.Continue()]:
