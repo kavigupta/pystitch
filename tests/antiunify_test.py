@@ -71,6 +71,40 @@ class AntiUnifyTest(GenericExtractTest):
             __start_extract__
             x = x ** 3
             y = x ** 7
+            return lambda u: y ** {__metavariable__, __m1, y} + u
+            __end_extract__
+        """
+        post_extract_expected = """
+        def f(x, y):
+            return __f0(x, lambda x, y: x - y)
+
+        def g(x, y):
+            return __f0(x, lambda __u1, y: y)
+        """
+        post_extracted = """
+        def __f0(__0, __m1):
+            __0 = __0 ** 3
+            __1 = __0 ** 7
+            return lambda u: __1 ** __m1(__0, __1) + u
+        """
+        self.assertCodes(
+            self.run_extract(code),
+            (post_extract_expected, post_extracted),
+        )
+
+    def test_basic_antiunify_unsafe(self):
+        code = """
+        def f(x, y):
+            __start_extract__
+            x = x ** 3
+            y = x ** 7
+            return lambda u: y ** {__metavariable__, __m1, x - y} + u
+            __end_extract__
+
+        def g(x, y):
+            __start_extract__
+            x = x ** 3
+            y = x ** 7
             return lambda v: y ** {__metavariable__, __m1, y} + v
             __end_extract__
         """
@@ -88,7 +122,8 @@ class AntiUnifyTest(GenericExtractTest):
             return lambda __2: __1 ** __m1(__0, __1) + __2
         """
         self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
+            self.run_extract(code, config=ExtractConfiguration(False)),
+            (post_extract_expected, post_extracted),
         )
 
     def test_no_overlap_antiunify(self):
@@ -121,7 +156,8 @@ class AntiUnifyTest(GenericExtractTest):
             return lambda __2: __1 ** __m1(__0, __1) + __2
         """
         self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
+            self.run_extract(code, config=ExtractConfiguration(False)),
+            (post_extract_expected, post_extracted),
         )
 
     def test_different_order(self):
