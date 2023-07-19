@@ -444,6 +444,7 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
             print("=" * 80)
             print(new_code)
             for input, output in zip(example["inputs"], example["outputs"]):
+                print(repr(input))
                 py_out = run_python(new_code, input)
                 if py_out is None:
                     run_python.function(new_code, input)
