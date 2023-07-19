@@ -897,6 +897,70 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_for_loop_with_only_break_continue(self):
+        code = """
+        def f():
+            for i in range(30, -1, -1):
+                if a():
+                    __start_extract__
+                    x = 1
+                    __end_extract__
+                    continue
+                else:
+                    x = 2
+                    break
+            print(x)
+        """
+        expected = """
+        def f():
+            # x_2 = phi(x_1, x_3)
+            # i_2 = phi(i_1, i_3)
+            for i_3 in range(30, -1, -1):
+                if a():
+                    __start_extract__
+                    x_3 = 1
+                    __end_extract__
+                    continue
+                else:
+                    x_4 = 2
+                    break
+            # x_5 = phi(x_2, x_4)
+            # i_4 = phi(i_2, i_3)
+            print(x_5)
+        """
+        self.assert_ssa(code, expected)
+
+    def test_while_loop_with_only_break_continue(self):
+        code = """
+        def f():
+            while True:
+                if a():
+                    __start_extract__
+                    x = 1
+                    __end_extract__
+                    continue
+                else:
+                    x = 2
+                    break
+            print(x)
+        """
+        expected = """
+        def f():
+            # x_2 = phi(x_1, x_3)
+            while True:
+                if a():
+                    __start_extract__
+                    x_3 = 1
+                    __end_extract__
+                    continue
+                else:
+                    x_4 = 2
+                    break
+            # x_5 = phi(x_2, x_4)
+            print(x_5)
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
