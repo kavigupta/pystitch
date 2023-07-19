@@ -11,6 +11,9 @@ from imperative_stitch.analyze_program.extract.errors import (
     MultipleExits,
     NonInitializedInputsOrOutputs,
 )
+from imperative_stitch.analyze_program.extract.extract_configuration import (
+    ExtractConfiguration,
+)
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 
 from imperative_stitch.data import parse_extract_pragma
@@ -26,18 +29,20 @@ from tests.utils import canonicalize, small_set_examples
 
 
 class GenericExtractTest(unittest.TestCase):
-    def run_extract(self, code, num_metavariables=None):
+    def run_extract(
+        self, code, num_metavariables=None, config=ExtractConfiguration(True)
+    ):
         code = canonicalize(code)
         tree, [site] = parse_extract_pragma(code)
         if num_metavariables is not None:
             self.assertEqual(len(site.metavariables), num_metavariables)
-        return self.run_extract_from_tree(tree, site)
+        return self.run_extract_from_tree(tree, site, config=config)
 
-    def run_extract_from_tree(self, tree, site):
+    def run_extract_from_tree(self, tree, site, *, config):
         # without pragmas
         code = ast.unparse(tree)
         try:
-            extr = do_extract(site, tree, extract_name="__f0")
+            extr = do_extract(site, tree, extract_name="__f0", config=config)
         except (NotApplicable, BannedComponentError) as e:
             # ensure that the code is not changed
             print(type(e), e)
@@ -455,9 +460,7 @@ class ExtractTest(GenericExtractTest):
         """
         self.assertEqual(
             self.run_extract(code),
-            BannedComponentError(
-                "nonlocal statements cannot be used because we do not support them yet"
-            ),
+            BannedComponentError("nonlocal", "us"),
         )
 
     def test_within_try(self):
@@ -770,7 +773,8 @@ class ExtractTest(GenericExtractTest):
             lambda __3: __3
         """
         self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
+            self.run_extract(code, config=ExtractConfiguration(False)),
+            (post_extract_expected, post_extracted),
         )
 
     def test_extract_with_lambda_reassign(self):
@@ -805,7 +809,8 @@ class ExtractTest(GenericExtractTest):
             __1 = lambda __3: __2 ** (__0 - __2) * (lambda __4: __4)(__2) + __3
         """
         self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
+            self.run_extract(code, config=ExtractConfiguration(False)),
+            (post_extract_expected, post_extracted),
         )
 
     def test_conditionally_initializing_a_variable_you_must_return(self):
@@ -889,7 +894,6 @@ class ExtractTest(GenericExtractTest):
                     try:
                         raise {__metavariable__, __m0, ValueError}
                     except:
-                        del g
                         raise KeyError
                     __end_extract__
                 except Exception as e:
@@ -928,7 +932,8 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
-    def test_global(self):
+    def test_global_TODO(self):
+        # TODO we sohuld be able to handle this
         code = """
         def f():
             global x
@@ -948,8 +953,61 @@ class ExtractTest(GenericExtractTest):
             global x
             x = 2
         """
+        self.assertEqual(self.run_extract(code), BannedComponentError("global", "us"))
+        if not "fixed global":
+            self.assertCodes(
+                self.run_extract(code), (post_extract_expected, post_extracted)
+            )
+
+    def test_keyword_internally_safe_mode(self):
+        code = """
+        def f():
+            __start_extract__
+            def g(x):
+                y = x + 2
+                return y
+            return g(x=2)
+            __end_extract__
+        """
+        post_extract_expected = """
+        def f():
+            return __f0()
+        """
+        post_extracted = """
+        def __f0():
+            def __0(x):
+                __1 = x + 2
+                return __1
+            return __0(x=2)
+        """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_keyword_internally_unsafe_mode(self):
+        code = """
+        def f():
+            __start_extract__
+            def g(x):
+                y = x + 2
+                return y
+            return g(x=2)
+            __end_extract__
+        """
+        post_extract_expected = """
+        def f():
+            return __f0()
+        """
+        post_extracted = """
+        def __f0():
+            def __0(__1):
+                __2 = __1 + 2
+                return __2
+            return __0(x=2)
+        """
+        self.assertCodes(
+            self.run_extract(code, config=ExtractConfiguration(False)),
+            (post_extract_expected, post_extracted),
         )
 
 

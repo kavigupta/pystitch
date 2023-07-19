@@ -209,7 +209,7 @@ def create_function_call(
     return call
 
 
-def compute_extract_asts(tree, site, *, extract_name, undos):
+def compute_extract_asts(tree, site, *, config, extract_name, undos):
     """
     Returns the function definition and the function call for the extraction.
 
@@ -217,6 +217,8 @@ def compute_extract_asts(tree, site, *, extract_name, undos):
     ---------
     site: ExtractionSite
         The extraction site.
+    config: ExtractConfiguration
+        The configuration for the extraction.
     extract_name: str
         The name of the extracted function.
     undos:
@@ -286,6 +288,7 @@ def compute_extract_asts(tree, site, *, extract_name, undos):
         vars.input_vars_without_ssa,
         vars.output_vars_without_ssa,
         metavariables,
+        do_not_change_internal_args=config.do_not_change_internal_args,
     )
     undo_replace()
 
@@ -298,7 +301,11 @@ def compute_extract_asts(tree, site, *, extract_name, undos):
         global_variables,
     )
     undos += [undo_replace]
-    func_def, undo_canonicalize = canonicalize_names_in(func_def, metavariables)
+    func_def, undo_canonicalize = canonicalize_names_in(
+        func_def,
+        metavariables,
+        do_not_change_internal_args=config.do_not_change_internal_args,
+    )
     undos += undo_canonicalize
     call = create_function_call(
         extract_name,
@@ -312,7 +319,7 @@ def compute_extract_asts(tree, site, *, extract_name, undos):
     return func_def, call, exit, metavariables
 
 
-def do_extract(site, tree, *, extract_name):
+def do_extract(site, tree, *, config, extract_name):
     """
     Mutate the AST to extract the code in `site` into a function named `extract_name`.
 
@@ -322,6 +329,8 @@ def do_extract(site, tree, *, extract_name):
         The site to extract.
     tree: AST
         The AST of the whole program.
+    config: ExtractConfiguration
+        The configuration for the extraction.
     extract_name: str
         The name of the extracted function.
 
@@ -341,7 +350,7 @@ def do_extract(site, tree, *, extract_name):
 
     try:
         func_def, call, metavariables = _do_extract(
-            site, tree, extract_name=extract_name, undos=undos
+            site, tree, config=config, extract_name=extract_name, undos=undos
         )
     except:
         full_undo()
@@ -350,10 +359,10 @@ def do_extract(site, tree, *, extract_name):
     return ExtractedCode(func_def, call, metavariables, full_undo)
 
 
-def _do_extract(site, tree, *, extract_name, undos):
+def _do_extract(site, tree, *, config, extract_name, undos):
 
     func_def, call, exit, metavariables = compute_extract_asts(
-        tree, site, extract_name=extract_name, undos=undos
+        tree, site, config=config, extract_name=extract_name, undos=undos
     )
 
     for calls in [call], [call, ast.Break()], [call, ast.Continue()]:

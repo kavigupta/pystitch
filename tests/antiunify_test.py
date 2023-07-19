@@ -7,6 +7,9 @@ from imperative_stitch.analyze_program.antiunify.extract_at_multiple_sites impor
 )
 
 from imperative_stitch.analyze_program.extract.extract import do_extract
+from imperative_stitch.analyze_program.extract.extract_configuration import (
+    ExtractConfiguration,
+)
 from imperative_stitch.data.parse_extract import parse_extract_pragma
 from imperative_stitch.utils.ast_utils import (
     ReplaceNodes,
@@ -18,12 +21,12 @@ from tests.rewrite_test import GenericRewriteRealisticTest
 from tests.utils import canonicalize, small_set_examples
 
 
-def run_extract_from_tree(tree, site):
-    extr = do_extract(site, tree, extract_name="__f0")
+def run_extract_from_tree(tree, site, *, config):
+    extr = do_extract(site, tree, config=config, extract_name="__f0")
     return extr
 
 
-def run_extract(test, code, num_metavariables=None):
+def run_extract(test, code, num_metavariables=None, *, config):
     try:
         code = canonicalize(code)
     except SyntaxError:
@@ -34,7 +37,7 @@ def run_extract(test, code, num_metavariables=None):
     if num_metavariables is not None:
         for site in sites:
             test.assertEqual(len(site.metavariables), num_metavariables)
-    extrs = [run_extract_from_tree(tree, site) for site in sites]
+    extrs = [run_extract_from_tree(tree, site, config=config) for site in sites]
     antiunify_all_metavariables_across_extractions(extrs)
     post_extracteds = {ast.unparse(extr.func_def) for extr in extrs}
     if len(post_extracteds) != 1:
@@ -50,8 +53,10 @@ def run_extract(test, code, num_metavariables=None):
 
 
 class AntiUnifyTest(GenericExtractTest):
-    def run_extract(self, code, num_metavariables=None):
-        return run_extract(self, code, num_metavariables)
+    def run_extract(
+        self, code, num_metavariables=None, config=ExtractConfiguration(True)
+    ):
+        return run_extract(self, code, num_metavariables, config=config)
 
     def test_basic_antiunify(self):
         code = """
