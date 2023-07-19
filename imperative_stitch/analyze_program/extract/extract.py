@@ -10,6 +10,7 @@ from imperative_stitch.analyze_program.extract.metavariable import (
     MetaVariables,
     extract_metavariables,
 )
+from imperative_stitch.analyze_program.extract.pre_and_post_process import preprocess
 from imperative_stitch.utils.ast_utils import name_field
 
 
@@ -236,6 +237,8 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     metavariables:
         A Metavariables object representing the metavariables.
     """
+    undo_preprocess = preprocess(tree)
+    undos += [undo_preprocess]
     undo_sentinel = site.inject_sentinel()
     undos += [undo_sentinel]
     pfcfg = site.locate_entry_point(tree)
@@ -303,6 +306,8 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
         metavariables,
         is_return=exit == "<return>",
     )
+    undos.remove(undo_preprocess)
+    undo_preprocess()
     return func_def, call, exit, metavariables
 
 
