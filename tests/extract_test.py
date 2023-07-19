@@ -472,23 +472,7 @@ class ExtractTest(GenericExtractTest):
                 pass
             return x
         """
-        post_extract_expected = """
-        def f(x):
-            try:
-                x = __f0(x)
-            except:
-                pass
-            return x
-        """
-        post_extracted = """
-        def __f0(__0):
-            __0 = h(__0)
-            __0 = g(__0)
-            return __0
-        """
-        self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
-        )
+        self.assertEqual(self.run_extract(code), MultipleExits())
 
     def test_within_try_with_raise(self):
         code = """
