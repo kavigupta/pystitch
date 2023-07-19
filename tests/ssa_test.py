@@ -870,6 +870,33 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_nontrivial_control_flow_4(self):
+        code = """
+        def f():
+            n = 2
+            try:
+                n = n - 1
+            except:
+                a
+                b
+                c
+            return n
+        """
+        expected = """
+        def f():
+            n_2 = 2
+            try:
+                n_3 = n_2 - 1
+            except:
+                # n_4 = phi(n_2, n_3)
+                a
+                b
+                c
+            # n_5 = phi(n_3, n_4)
+            return n_5
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])

@@ -224,9 +224,9 @@ def compute_full_graph(first_cfn):
         if cfn is first_cfn:
             exception_causers.add(None)
         exception_targets = {
-            exc_cfn
+            exc_cfb.control_flow_nodes[0]
             for exc_cfb in cfb.exits_from_middle
-            for exc_cfn in exc_cfb.control_flow_nodes
+            if exc_cfb.control_flow_nodes
         }
         for exc_causer in exception_causers:
             for exc_target in exception_targets:
