@@ -152,7 +152,9 @@ class AntiUnifyTest(GenericExtractTest):
 
 
 class AntiUnifyRealisticTest(GenericRewriteRealisticTest):
-    def run_extract(self, code, num_metavariables=None, config=ExtractConfiguration(False)):
+    def run_extract(
+        self, code, num_metavariables=None, config=ExtractConfiguration(False)
+    ):
         return run_extract(self, code, num_metavariables, config=config)
 
     def sample_site(self, rng, tree):
