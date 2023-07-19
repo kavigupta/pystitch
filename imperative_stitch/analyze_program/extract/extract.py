@@ -10,6 +10,7 @@ from imperative_stitch.analyze_program.extract.metavariable import (
     MetaVariables,
     extract_metavariables,
 )
+from imperative_stitch.utils.ast_utils import name_field
 
 
 from .input_output_variables import (
@@ -107,7 +108,7 @@ def create_return_from_function(variables):
 
 
 def create_function_definition(
-    extract_name, site, input_variables, output_variables, metavariables
+    extract_name, site, input_variables, output_variables, metavariables, ensure_global
 ):
     """
     Create a function definition for the extracted function.
@@ -124,6 +125,8 @@ def create_function_definition(
         The output variables of the extracted function.
     metavariables: MetaVariables
         The metavariables of the extracted function.
+    ensure_global: list[ast.AST]
+        The variables that should be global in this function.
 
     Returns
     -------
@@ -144,6 +147,14 @@ def create_function_definition(
         body=body,
         decorator_list=[],
     )
+    scope_info = ast_scope.annotate(func_def)
+    make_global = [
+        getattr(astn, name_field(astn))
+        for astn in set(scope_info) & set(ensure_global)
+        if scope_info[astn] is not scope_info.global_scope
+    ]
+    if make_global:
+        func_def.body = [ast.Global(names=make_global)] + func_def.body
     func_def = ast.fix_missing_locations(func_def)
     _, _, func_def, undo = replace_break_and_continue(func_def, return_from_function)
     func_def = remove_unnecessary_returns(func_def)
@@ -232,6 +243,9 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
     _, exit, _ = pfcfg.extraction_entry_exit(extracted_nodes)
 
+    global_variables = [
+        x for x in scope_info if scope_info[x] is scope_info.global_scope
+    ]
     vars = compute_variables(site, scope_info, pfcfg)
     vars.raise_if_needed()
 
@@ -260,6 +274,7 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
         vars.input_vars_without_ssa,
         vars.output_vars_without_ssa,
         metavariables,
+        global_variables,
     )
 
     input_variables, output_variables = canonicalize_variable_order(
@@ -271,7 +286,12 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     undo_replace()
 
     func_def, undo_replace = create_function_definition(
-        extract_name, site, input_variables, output_variables, metavariables
+        extract_name,
+        site,
+        input_variables,
+        output_variables,
+        metavariables,
+        global_variables,
     )
     undos += [undo_replace]
     func_def, undo_canonicalize = canonicalize_names_in(func_def, metavariables)
