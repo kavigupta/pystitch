@@ -216,12 +216,12 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
     ---------
     scope_info: ScopeInfo
         The scope information of the program.
-    pfcfg: PerFunctionCFG
-        The per-function control flow graph for the relevant function
     site: ExtractionSite
         The extraction site.
     extract_name: str
         The name of the extracted function.
+    undos:
+        a list of functions that undoes the extraction, will be added to
 
     Returns
     -------
