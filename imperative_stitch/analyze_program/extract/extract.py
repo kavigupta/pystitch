@@ -155,7 +155,7 @@ def create_function_definition(
         if scope_info[astn] is not scope_info.global_scope
     ]
     if make_global:
-        func_def.body = [ast.Global(names=make_global)] + func_def.body
+        func_def.body = [ast.Global(names=sorted(set(make_global)))] + func_def.body
     func_def = ast.fix_missing_locations(func_def)
     _, _, func_def, undo = replace_break_and_continue(func_def, return_from_function)
     func_def = remove_unnecessary_returns(func_def)
