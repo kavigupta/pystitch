@@ -869,18 +869,6 @@ class ExtractTest(GenericExtractTest):
             __end_extract__
             return g
         """
-        post_extract_expected = """
-        def f():
-            def g():
-                return x
-            x = __f0()
-            return g
-        """
-        post_extracted = """
-        def __f0():
-            __0 = 2
-            return __0
-        """
         self.assertEqual(
             self.run_extract(code), ModifiesVariableClosedOverInNonExtractedCode()
         )
