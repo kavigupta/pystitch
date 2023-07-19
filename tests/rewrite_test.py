@@ -383,6 +383,48 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
+    def test_multiple_returns_other_order(self):
+        code = """
+        def f():
+            ans = 0
+            s = 0
+            idx = 0
+            while True:
+                __start_extract__
+                if False:
+                    ans = 2
+                    s = 1
+                else:
+                    idx = 1
+                    s = a1
+                    continue
+                __end_extract__
+            return ans, s, idx
+        """
+        post_extract_expected = """
+        def f():
+            ans = 0
+            s = 0
+            idx = 0
+            while True:
+                ans, s, idx = __f0(ans, idx)
+            return ans, s, idx
+        """
+        post_extracted = """
+        def __f0(__0, __2):
+            if False:
+                __0 = 2
+                __1 = 1
+            else:
+                __2 = 1
+                __1 = a1
+                return __0, __1, __2
+            return __0, __1, __2
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
