@@ -474,8 +474,8 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
     )
     def test_semantics(self, i):
         example = small_set_runnable_code_examples()[i]
-        code = example["solution"]
-        xs = self.operate_on_code(i, code, use_full_tree=True)
+        code_original = example["solution"]
+        xs = self.operate_on_code(i, code_original, use_full_tree=True)
         for code, out in xs:
             if isinstance(out, Exception):
                 continue
@@ -493,7 +493,17 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
                     self.fail("error")
                 py_out = normalize_output(py_out)
                 output = normalize_output(output)
+                if py_out != output:
+                    if not self.check_deterministic(code_original, input):
+                        continue
                 self.assertEqual(py_out, output)
+
+    def check_deterministic(self, code, input):
+        outputs = []
+        for i in range(20):
+            outputs.append(run_python.function(code, input))
+        outputs = set(outputs)
+        return len(outputs) == 1
 
     def concat_code(self, first, second):
         """
