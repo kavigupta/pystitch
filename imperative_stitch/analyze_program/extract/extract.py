@@ -261,7 +261,6 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
         vars.output_vars_without_ssa,
         metavariables,
     )
-    undos += [undo_replace]
 
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
@@ -269,6 +268,8 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
         vars.output_vars_without_ssa,
         metavariables,
     )
+    undo_replace()
+
     func_def, undo_replace = create_function_definition(
         extract_name, site, input_variables, output_variables, metavariables
     )
