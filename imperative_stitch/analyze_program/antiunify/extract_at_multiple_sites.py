@@ -47,6 +47,7 @@ def antiunify_all_metavariables_across_extractions(extrs):
 
     codes = set(ast.unparse(extr.func_def) for extr in extrs)
     if len(codes) != 1:
+        print("*" * 80)
         for code in codes:
             print(code)
         raise RuntimeError("not all results are the same")
