@@ -152,8 +152,8 @@ class AntiUnifyTest(GenericExtractTest):
 
 
 class AntiUnifyRealisticTest(GenericRewriteRealisticTest):
-    def run_extract(self, code, num_metavariables=None):
-        return run_extract(self, code, num_metavariables)
+    def run_extract(self, code, num_metavariables=None, config=ExtractConfiguration(False)):
+        return run_extract(self, code, num_metavariables, config=config)
 
     def sample_site(self, rng, tree):
         nodes = list(ast_nodes_in_order(tree))
