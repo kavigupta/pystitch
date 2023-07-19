@@ -2,6 +2,7 @@ import ast_scope
 import unittest
 from imperative_stitch.analyze_program.extract.errors import (
     ClosureOverVariableModifiedInExtractedCode,
+    ModifiesVariableClosedOverInNonExtractedCode,
 )
 from imperative_stitch.analyze_program.extract.input_output_variables import (
     Variables,
@@ -203,7 +204,12 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         """
         self.assertSameVariables(
             self.run_io(code),
-            Variables([], [], [("x", 3)]),
+            Variables(
+                [],
+                [],
+                [("x", 3)],
+                errors=[ModifiesVariableClosedOverInNonExtractedCode],
+            ),
         )
 
     def test_variable_only_referenced_in_loop(self):
@@ -325,4 +331,24 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
         self.assertSameVariables(
             self.run_io(code),
             Variables([("i", 3)], [], [("i", 3)]),
+        )
+
+    def test_assign_to_closed(self):
+        code = """
+        def f():
+            def g():
+                return A
+            __start_extract__
+            A = 2
+            g()
+            __end_extract__
+        """
+        self.assertSameVariables(
+            self.run_io(code),
+            Variables(
+                [("g", 2)],
+                [],
+                [],
+                errors=[ModifiesVariableClosedOverInNonExtractedCode],
+            ),
         )

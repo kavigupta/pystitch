@@ -4,6 +4,7 @@ from parameterized import parameterized
 
 from imperative_stitch.analyze_program.extract.errors import (
     ClosureOverVariableModifiedInExtractedCode,
+    ModifiesVariableClosedOverInNonExtractedCode,
 )
 from imperative_stitch.utils.ast_utils import (
     ReplaceNodes,
@@ -340,6 +341,20 @@ class RewriteTest(GenericExtractTest):
         """
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_assign_to_closed(self):
+        code = """
+        def f():
+            def g():
+                return A
+            __start_extract__
+            A = 2
+            g()
+            __end_extract__
+        """
+        self.assertEqual(
+            self.run_extract(code), ModifiesVariableClosedOverInNonExtractedCode()
         )
 
     def test_partial_output_re_reference_in_group_with_metavariable(self):

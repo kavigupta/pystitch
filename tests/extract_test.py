@@ -7,6 +7,7 @@ from parameterized import parameterized
 from imperative_stitch.analyze_program.extract.errors import (
     ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
+    ModifiesVariableClosedOverInNonExtractedCode,
     MultipleExits,
     NonInitializedInputsOrOutputs,
 )
@@ -896,8 +897,8 @@ class ExtractTest(GenericExtractTest):
             __0 = 2
             return __0
         """
-        self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
+        self.assertEqual(
+            self.run_extract(code), ModifiesVariableClosedOverInNonExtractedCode()
         )
 
     def test_exception_multiple_exits_INCORRECT_TODO(self):

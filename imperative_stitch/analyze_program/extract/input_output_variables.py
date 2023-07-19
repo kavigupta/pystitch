@@ -7,6 +7,7 @@ import ast_scope.scope
 from imperative_stitch.analyze_program.extract.errors import (
     ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
+    ModifiesVariableClosedOverInNonExtractedCode,
     NonInitializedInputsOrOutputs,
     NotApplicable,
 )
@@ -137,6 +138,14 @@ def compute_variables(
             for closed_ssa_id in ssa_to_origin[ssa_id].closed
         )
     )
+
+    closed_in_parent_variables = sorted(
+        ssa_id
+        for node in set(node_to_ssa) - set(site.all_nodes)
+        for ssa_id in node_to_ssa.get(node, ())
+        if isinstance(ssa_to_origin[ssa_id], Gamma)
+    )
+
     errors = []
     if entry is not None and not all_initialized(
         start[entry], [x for x, _ in input_variables], ultimate_origins
@@ -160,6 +169,15 @@ def compute_variables(
         lambda x: x in extracted_nodes,
     ):
         errors.append(ClosureOverVariableModifiedInExtractedCode)
+
+    for ssa_id in closed_in_parent_variables:
+        if traces_an_origin_to_node_set(
+            ultimate_origins,
+            ultimate_origins[ssa_id],
+            lambda x: x in extracted_nodes,
+            include_gamma=True,
+        ):
+            errors.append(ModifiesVariableClosedOverInNonExtractedCode)
 
     if error_on_closed and closed_variables:
         errors.append(ClosedVariablePassedDirectly)

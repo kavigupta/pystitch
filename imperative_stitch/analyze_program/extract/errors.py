@@ -23,3 +23,8 @@ class ClosureOverVariableModifiedInExtractedCode(NotApplicable):
 @dataclass
 class ClosedVariablePassedDirectly(NotApplicable):
     pass
+
+
+@dataclass
+class ModifiesVariableClosedOverInNonExtractedCode(NotApplicable):
+    pass
