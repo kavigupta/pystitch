@@ -80,7 +80,7 @@ class RewriteTest(GenericExtractTest):
         post_extracted = """
         def __f0(__1, __m1):
             __0 = __1 ** 7
-            __2 = lambda __3: __m1(__0, __3)
+            __2 = lambda x: __m1(__0, x)
             return __2
         """
         self.assertCodes(
@@ -104,7 +104,7 @@ class RewriteTest(GenericExtractTest):
         post_extracted = """
         def __f0(__1, __m1, __m2):
             __0 = __1 ** 7
-            __2 = lambda __3: __m1(__0) - __m2(__3)
+            __2 = lambda x: __m1(__0) - __m2(x)
             return __2
         """
         self.assertCodes(
@@ -241,7 +241,7 @@ class RewriteTest(GenericExtractTest):
         post_extracted = """
         def __f0(__1, __m1):
             __0 = __1 ** 7
-            __2 = lambda __3: __m1(__0) - __m1(__0)
+            __2 = lambda x: __m1(__0) - __m1(__0)
             return __2
         """
         self.assertCodes(
