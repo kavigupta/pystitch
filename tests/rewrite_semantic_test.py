@@ -1,5 +1,6 @@
 import ast
 
+from permacache import stable_hash
 from parameterized import parameterized
 
 from imperative_stitch.utils.run_code import normalize_output, run_python
@@ -7,6 +8,7 @@ from tests.rewrite_test import GenericRewriteRealisticTest
 
 from .utils import small_set_runnable_code_examples
 
+TEST_VERSION = 1
 
 class RewriteSemanticsTest(GenericRewriteRealisticTest):
     @parameterized.expand(
@@ -17,6 +19,7 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
             i % len(small_set_runnable_code_examples())
         ]
         code_original = example["solution"]
+        seed = int(stable_hash((i, TEST_VERSION)), 16) % 2 ** 32
         xs = self.operate_on_code(i, code_original, use_full_tree=True)
         for code, out in xs:
             if isinstance(out, Exception):
