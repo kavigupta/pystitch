@@ -991,7 +991,6 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
-
     def test_with(self):
         code = """
         def f(y):

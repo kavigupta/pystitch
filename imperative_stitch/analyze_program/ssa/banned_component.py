@@ -9,7 +9,6 @@ class BannedComponentError(Exception):
 
 
 class BannedComponentVisitor(ast.NodeVisitor):
-
     def visit_ClassDef(self, node):
         raise BannedComponentError("classes", "us")
 
