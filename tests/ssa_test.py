@@ -976,6 +976,21 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_del(self):
+        code = """
+        def f(y):
+            x = 2 + y
+            del x
+            return x, y
+        """
+        expected = """
+        def f(y_1):
+            x_2 = 2 + y_1
+            del x_2_x_1
+            return x_1, y_1
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
