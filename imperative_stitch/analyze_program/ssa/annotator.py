@@ -152,8 +152,7 @@ class FunctionSSAAnnotator:
             annotations[argument].append(argument_to_var[argument.arg])
         for cfn in self._start:
             s, e = self._start[cfn], self._end[cfn]
-            for astn in cfn.instruction.get_reads():
-                astn = get_nodes_for_reads(astn)
+            for astn in self.get_reads_for(cfn):
                 if astn.id in s:
                     annotations[astn].append(s[astn.id])
             for astn, name in self.get_writes_for(cfn):
