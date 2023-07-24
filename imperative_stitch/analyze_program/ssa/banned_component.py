@@ -18,12 +18,6 @@ class BannedComponentVisitor(ast.NodeVisitor):
     def visit_NamedExpr(self, node):
         raise BannedComponentError("walrus operator", "us")
 
-    def visit_Yield(self, node):
-        raise BannedComponentError("yield", "us")
-
-    def visit_YieldFrom(self, node):
-        raise BannedComponentError("yield from", "us")
-
     def visit_AsyncFor(self, node):
         raise BannedComponentError("async for", "us")
 

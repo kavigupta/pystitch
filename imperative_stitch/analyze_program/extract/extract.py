@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from typing import Callable, Dict
 
 import ast_scope
-from imperative_stitch.analyze_program.extract.errors import MultipleExits
+from imperative_stitch.analyze_program.extract.errors import (
+    BothYieldsAndReturns,
+    MultipleExits,
+)
 
 from imperative_stitch.analyze_program.extract.metavariable import (
     MetaVariables,
@@ -21,6 +24,7 @@ from .input_output_variables import (
 from .unused_return import remove_unnecessary_returns
 
 from .loop import replace_break_and_continue
+from .generator import is_function_generator
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
 from ..ssa.ivm import Gamma
@@ -163,7 +167,12 @@ def create_function_definition(
 
 
 def create_function_call(
-    extract_name, input_variables, output_variables, metavariables, is_return
+    extract_name,
+    input_variables,
+    output_variables,
+    metavariables,
+    is_return,
+    is_generator,
 ):
     """
     Create the function call for the extracted function. Can be either a return
@@ -181,18 +190,24 @@ def create_function_call(
         The output variables of the extracted function.
     is_return: bool
         True if the extracted site returns a value.
+    is_generator: bool
+        True if the extracted site is a generator
 
     Returns
     -------
     call: AST
         The function call.
     """
+    if is_generator and output_variables:
+        raise BothYieldsAndReturns
     call = ast.Call(
         func=ast.Name(id=extract_name, ctx=ast.Load()),
         args=[ast.Name(id=x, ctx=ast.Load()) for x in input_variables]
         + metavariables.parameters,
         keywords=[],
     )
+    if is_generator:
+        call = ast.YieldFrom(value=call)
     if is_return:
         call = ast.Return(value=call)
     elif not output_variables:
@@ -313,6 +328,7 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
         output_variables,
         metavariables,
         is_return=exit == "<return>",
+        is_generator=is_function_generator(func_def),
     )
     undos.remove(undo_preprocess)
     undo_preprocess()

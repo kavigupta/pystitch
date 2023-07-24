@@ -5,6 +5,7 @@ import numpy as np
 from parameterized import parameterized
 
 from imperative_stitch.analyze_program.extract.errors import (
+    BothYieldsAndReturns,
     ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
     ModifiesVariableClosedOverInNonExtractedCode,
@@ -1031,6 +1032,42 @@ class ExtractTest(GenericExtractTest):
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
+
+    def test_extract_generator(self):
+        code = """
+        def f():
+            yield 1
+            __start_extract__
+            yield 2
+            yield 3
+            __end_extract__
+        """
+        post_extract_expected = """
+        def f():
+            yield 1
+            return (yield from __f0())
+        """
+        post_extracted = """
+        def __f0():
+            yield 2
+            yield 3
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_extract_generator_also_returns(self):
+        code = """
+        def f():
+            yield 1
+            __start_extract__
+            yield 2
+            yield 3
+            x = 7
+            __end_extract__
+            print(x)
+        """
+        self.assertEqual(self.run_extract(code), BothYieldsAndReturns())
 
 
 class GenericExtractRealisticTest(GenericExtractTest):
