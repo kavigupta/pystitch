@@ -992,6 +992,22 @@ class SSATest(unittest.TestCase):
         self.assert_ssa(code, expected)
 
 
+    def test_with(self):
+        code = """
+        def f(y):
+            with y() as x:
+                x = list(x)
+            return x
+        """
+        expected = """
+        def f(y_1):
+            with y_1() as x_2:
+                x_3 = list(x_2)
+            return x_3
+        """
+        self.assert_ssa(code, expected)
+
+
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
     def test_realistic(self, i):
