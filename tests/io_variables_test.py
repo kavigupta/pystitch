@@ -14,7 +14,7 @@ from imperative_stitch.data.parse_extract import parse_extract_pragma
 from .utils import canonicalize
 
 
-class ReplaceBreakAndContinueTest(unittest.TestCase):
+class IOVariablesTest(unittest.TestCase):
     def run_io(self, code):
         code = canonicalize(code)
         tree, [site] = parse_extract_pragma(code)
