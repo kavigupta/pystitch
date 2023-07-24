@@ -152,10 +152,12 @@ class FunctionSSAAnnotator:
             annotations[argument].append(argument_to_var[argument.arg])
         for cfn in self._start:
             s, e = self._start[cfn], self._end[cfn]
-            for astn in self.get_reads_for(cfn):
+            for astn in self.get_reads_for(cfn) + self.get_dels_for(cfn):
                 if astn.id in s:
                     annotations[astn].append(s[astn.id])
-            for astn, name in self.get_writes_for(cfn):
+            for astn, name in self.get_writes_for(cfn) + [
+                (x, x.id) for x in self.get_dels_for(cfn)
+            ]:
                 if name in e:
                     annotations[astn].append(e[name])
         return dict(annotations.items())
@@ -173,6 +175,9 @@ class FunctionSSAAnnotator:
             result.extend(get_nodes_for_write(write))
         result = self.graph.sort_by_astn_key(result, lambda x: x[0])
         return result
+
+    def get_dels_for(self, cfn):
+        return self.graph.sort_by_astn_key(cfn.instruction.get_dels(), lambda x: x)
 
     def _process(self, cfn):
         """
@@ -223,6 +228,8 @@ class FunctionSSAAnnotator:
             end_variables[x] = self._mapping.fresh_variable_if_needed(
                 x, DefinedIn(cfn), current_end.get(x, None)
             )
+        for x in self.get_dels_for(cfn):
+            end_variables[x.id] = self._mapping.fresh_uninitialized(x.id)
         return end_variables
 
 

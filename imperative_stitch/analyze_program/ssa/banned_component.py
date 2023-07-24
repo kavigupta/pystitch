@@ -41,6 +41,3 @@ class BannedComponentVisitor(ast.NodeVisitor):
 
     def visit_Global(self, node):
         raise BannedComponentError("global", "us")
-
-    def visit_Delete(self, node):
-        raise BannedComponentError("del", "us")

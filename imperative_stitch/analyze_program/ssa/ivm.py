@@ -149,6 +149,15 @@ class SSAVariableIntermediateMapping:
                 return current
         return self.fresh_variable(original_symbol, parents)
 
+    def fresh_uninitialized(self, name):
+        for var in self.original_symbol_of:
+            if self.original_symbol_of[var] != name:
+                continue
+            if self.parents_of[var] != Uninitialized():
+                continue
+            return var
+        return self.fresh_variable(name, Uninitialized())
+
     def arguments_map(self):
         """
         Returns a map from the symbol to the variable id
