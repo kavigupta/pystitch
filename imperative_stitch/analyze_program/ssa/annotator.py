@@ -161,13 +161,6 @@ class FunctionSSAAnnotator:
                     annotations[astn].append(e[name])
         return dict(annotations.items())
 
-    def get_reads_for(self, cfn):
-        result = []
-        for astn in cfn.instruction.get_reads():
-            result.append(get_nodes_for_reads(astn))
-        result = self.graph.sort_by_astn_key(result, lambda x: x)
-        return result
-
     def get_writes_for(self, cfn):
         result = []
         for write in cfn.instruction.get_writes():
