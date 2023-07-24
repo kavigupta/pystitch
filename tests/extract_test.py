@@ -1010,6 +1010,28 @@ class ExtractTest(GenericExtractTest):
             (post_extract_expected, post_extracted),
         )
 
+    def test_extract_with_del(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = x ** 2
+            __end_extract__
+            del y
+        """
+        post_extract_expected = """
+        def f(x):
+            y = __f0(x)
+            del y
+        """
+        post_extracted = """
+        def __f0(__1):
+            __0 = __1 ** 2
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class GenericExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):
