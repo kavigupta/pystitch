@@ -60,7 +60,12 @@ class ReplaceBreakAndContinue(ast.NodeTransformer):
         return node
 
     def visit_While(self, node):
+        node.orelse = self.visit_all(node.orelse)
         return node
 
     def visit_For(self, node):
+        node.orelse = self.visit_all(node.orelse)
         return node
+
+    def visit_all(self, nodes):
+        return [self.visit(node) for node in nodes]

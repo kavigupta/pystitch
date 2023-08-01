@@ -92,3 +92,24 @@ class ReplaceBreakAndContinueTest(unittest.TestCase):
                 return x
         """
         self.assertCodes(pre_replace, post_replace, b=True)
+
+    def test_inside_else(self):
+        pre_replace = """
+        def f(x):
+            break
+            while True:
+                continue
+                return x
+            else:
+                continue
+        """
+        post_replace = """
+        def f(x):
+            __replaced__
+            while True:
+                continue
+                return x
+            else:
+                __replaced__
+        """
+        self.assertCodes(pre_replace, post_replace, b=True, c=True)
