@@ -24,6 +24,6 @@ setuptools.setup(
         "ast_scope>=0.4.2",
         "permacache>=3.7.0",
         # my fork of python-graphs, update this to the latest commit hash
-        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/efd21f74d5c48610a6cdb56e914e6cebac51c822.zip",
+        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/5767bed7f70706c5b3979dc3a58a98b9b7258307.zip",
     ],
 )

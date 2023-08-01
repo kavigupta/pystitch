@@ -1006,6 +1006,19 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_type_annotation(self):
+        code = """
+        def f(x):
+            x : int = x + 1
+            return x
+        """
+        expected = """
+        def f(x_1):
+            x_2 : int = x_1 + 1
+            return x_2
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
