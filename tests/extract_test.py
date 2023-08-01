@@ -1081,6 +1081,28 @@ class ExtractTest(GenericExtractTest):
             self.run_extract(code), BannedComponentError("coroutine", "us")
         )
 
+    def test_default_argument_in_child_function(self):
+        code = """
+        def f(x):
+            __start_extract__
+            y = {__metavariable__, __m0, lambda i=x: i}
+            __end_extract__
+            return y
+        """
+        post_extract_expected = """
+        def f(x):
+            y = __f0(lambda: lambda i=x: i)
+            return y
+        """
+        post_extracted = """
+        def __f0(__m0):
+            __0 = __m0()
+            return __0
+        """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
 
 class GenericExtractRealisticTest(GenericExtractTest):
     def test_temporary(self):

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="imperative_stitch",
-    version="3.6.10",
+    version="3.6.11,
     author="Kavi Gupta, Matt Bowers",
     author_email="imperative-stitch@kavigupta.org",
     description="Imperative version of stitch.",
@@ -24,6 +24,6 @@ setuptools.setup(
         "ast_scope>=0.4.2",
         "permacache>=3.7.0",
         # my fork of python-graphs, update this to the latest commit hash
-        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/8b3123f45d29da8c7d0b446a72c49ed5a5031f43.zip",
+        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/37af3499725c1cb63e4ad024a4db9f52d04f772d.zip",
     ],
 )

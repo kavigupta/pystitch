@@ -1019,6 +1019,19 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
+    def test_default_argument_in_child_function(self):
+        code = """
+        def f(x):
+            y = lambda i=x: i
+            return y
+        """
+        expected = """
+        def f(x_1):
+            y_2 = lambda i=x_1: i
+            return y_2
+        """
+        self.assert_ssa(code, expected)
+
 
 class SSARealisticTest(unittest.TestCase):
     @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
