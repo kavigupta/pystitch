@@ -1045,7 +1045,8 @@ class ExtractTest(GenericExtractTest):
         post_extract_expected = """
         def f():
             yield 1
-            return (yield from __f0())
+            yield from __f0()
+            return
         """
         post_extracted = """
         def __f0():
@@ -1068,6 +1069,17 @@ class ExtractTest(GenericExtractTest):
             print(x)
         """
         self.assertEqual(self.run_extract(code), BothYieldsAndReturns())
+
+    def test_coroutine_banned(self):
+        code = """
+        def f():
+            __start_extract__
+            return [(yield 2)]
+            __end_extract__
+        """
+        self.assertEqual(
+            self.run_extract(code), BannedComponentError("coroutine", "us")
+        )
 
 
 class GenericExtractRealisticTest(GenericExtractTest):

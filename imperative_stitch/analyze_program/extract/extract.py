@@ -195,8 +195,8 @@ def create_function_call(
 
     Returns
     -------
-    call: AST
-        The function call.
+    call: [AST]
+        The function call. Can be multiple statements.
     """
     if is_generator and output_variables:
         raise BothYieldsAndReturns
@@ -207,8 +207,10 @@ def create_function_call(
         keywords=[],
     )
     if is_generator:
-        call = ast.YieldFrom(value=call)
-    if is_return:
+        call = ast.Expr(ast.YieldFrom(value=call))
+        if is_return:
+            call = [call, ast.Return()]
+    elif is_return:
         call = ast.Return(value=call)
     elif not output_variables:
         call = ast.Expr(value=call)
@@ -220,7 +222,9 @@ def create_function_call(
             value=call,
             type_comment=None,
         )
-    call = ast.fix_missing_locations(call)
+    if not isinstance(call, list):
+        call = [call]
+    call = [ast.fix_missing_locations(stmt) for stmt in call]
     return call
 
 
@@ -381,7 +385,7 @@ def _do_extract(site, tree, *, config, extract_name, undos):
         tree, site, config=config, extract_name=extract_name, undos=undos
     )
 
-    for calls in [call], [call, ast.Break()], [call, ast.Continue()]:
+    for calls in [*call], [*call, ast.Break()], [*call, ast.Continue()]:
         success, undo_mutate = attempt_to_mutate(site, tree, calls, exit)
         if success:
             undos += [undo_mutate]
@@ -427,11 +431,17 @@ def attempt_to_mutate(site, tree, calls, exit):
     if exit is None:
         return True, undo
     new_pfcfg = site.locate_entry_point(tree)
-    [call_cfn] = [
-        cfn
-        for cfn in new_pfcfg.next_cfns_of
-        if cfn is not None and cfn.instruction.node == calls[0]
-    ]
+    for call in calls[::-1]:
+        call_cfns = [
+            cfn
+            for cfn in new_pfcfg.next_cfns_of
+            if cfn is not None and cfn.instruction.node == call
+        ]
+        if call_cfns:
+            [call_cfn] = call_cfns
+            break
+    else:
+        assert False, "should have found a call cfn"
     call_exits = [
         x for tag, x in new_pfcfg.next_cfns_of[call_cfn] if tag != "exception"
     ]

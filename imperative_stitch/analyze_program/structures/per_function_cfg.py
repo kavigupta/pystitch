@@ -24,12 +24,12 @@ class PerFunctionCFG:
     """
 
     def __init__(self, entry_point: BasicBlock):
-        from ..ssa.banned_component import BannedComponentVisitor
+        from ..ssa.banned_component import check_banned_components
         from ..ssa.renamer import get_node_order
 
         self.entry_point = entry_point
         self.function_astn = entry_point.node
-        BannedComponentVisitor().visit(self.function_astn)
+        check_banned_components(self.function_astn)
         self.entry_point = entry_point
         [first_block] = entry_point.next
         if first_block.control_flow_nodes:
