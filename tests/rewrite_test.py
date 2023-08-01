@@ -447,7 +447,7 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def bad_expression(self, expr, top_level=True):
         if top_level and isinstance(expr, ast.Starred):
             return True
-        if isinstance(expr, (ast.Slice, ast.Ellipsis)):
+        if isinstance(expr, (ast.Slice, ast.Ellipsis, ast.Yield, ast.YieldFrom)):
             return True
         if isinstance(expr, ast.Tuple):
             return any(self.bad_expression(x, top_level=False) for x in expr.elts)
