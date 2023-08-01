@@ -87,8 +87,6 @@ def extract_as_function(
         args=[ast.Name(id=x, ctx=ast.Load()) for x in variables],
         keywords=[],
     )
-    if isinstance(metavariable_node, (ast.Yield, ast.YieldFrom)):
-        call = ast.YieldFrom(call)
     return parameter, call
 
 

@@ -435,26 +435,6 @@ class RewriteTest(GenericExtractTest):
         """
         self.assertEqual(self.run_extract(code), ClosedVariablePassedDirectly())
 
-    def test_extract_yield(self):
-        code = """
-        def f():
-            __start_extract__
-            {__metavariable__, __m0, (yield 2)}
-            __end_extract__
-        """
-        post_extract_expected = """
-        def f():
-            yield from __f0(lambda: (yield 2))
-            return
-        """
-        post_extracted = """
-        def __f0(__m0):
-            yield from __m0()
-        """
-        self.assertCodes(
-            self.run_extract(code), (post_extract_expected, post_extracted)
-        )
-
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
