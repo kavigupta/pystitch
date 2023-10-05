@@ -3,18 +3,31 @@ import os
 import subprocess
 
 
-def run_julia_stitch(code, *, stitch_jl_dir, iters):
-    result = subprocess.run(
-        [
-            "julia",
-            "--project=" + stitch_jl_dir,
-            os.path.join(stitch_jl_dir, "src/cli.jl"),
-            f"--iterations={iters}",
-        ],
+def run_julia_stitch(code, *, stitch_jl_dir, iters, quiet=True):
+    cmd = [
+        "julia",
+        "--project=" + stitch_jl_dir,
+        os.path.join(stitch_jl_dir, "src/cli.jl"),
+        f"--iterations={iters}",
+    ]
+    if not quiet:
+        temp_txt = os.path.join(stitch_jl_dir, "temp.txt")
+        with open(temp_txt, "w") as f:
+            f.write(json.dumps(code))
+        print("Run the following command to debug:")
+        print(" ".join(cmd) + " < " + temp_txt)
+    abstractions = subprocess.run(
+        cmd,
         input=json.dumps(code).encode("utf-8"),
         capture_output=True,
     ).stdout
-    *_, tildes, result, newline = result.decode("utf-8").split("\n")
-    assert tildes == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" and not newline
-    result = json.loads(result)
-    return result
+    abstractions = abstractions.decode("utf-8")
+    if not quiet:
+        print(abstractions)
+    *_, tildes1, abstractions, tildes2, rewritten, newline = abstractions.split("\n")
+    assert tildes1 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert tildes2 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert newline == ""
+    abstractions = json.loads(abstractions)
+    rewritten = json.loads(rewritten)
+    return abstractions, rewritten
