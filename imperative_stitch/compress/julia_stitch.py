@@ -3,12 +3,13 @@ import os
 import subprocess
 
 
-def run_julia_stitch(code, *, stitch_jl_dir, iters, quiet=True):
+def run_julia_stitch(code, *, stitch_jl_dir, iters, max_arity, quiet=True):
     cmd = [
         "julia",
         "--project=" + stitch_jl_dir,
         os.path.join(stitch_jl_dir, "src/cli.jl"),
         f"--iterations={iters}",
+        f"--max-arity={max_arity}",
     ]
     if not quiet:
         temp_txt = os.path.join(stitch_jl_dir, "temp.txt")

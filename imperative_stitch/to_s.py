@@ -133,6 +133,11 @@ def pair_to_s_exp(x):
     assert isinstance(x, str), str(type(x))
     if x.startswith("&"):
         return Symbol.parse(x).name
+    if x.startswith("%"):
+        return x
+    if x.startswith("#"):
+        return ast.Name(id=x)
+
     if x == "Ellipsis":
         return Ellipsis
     if x in {"True", "False", "None"}:
