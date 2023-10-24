@@ -171,9 +171,14 @@ def python_to_s_exp(code, renderer_kwargs=dict()):
         return code
 
 
+def s_exp_parse(code):
+    (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+    return code
+
+
 def s_exp_to_python(code):
     with recursionlimit(max(1500, len(code))):
-        (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+        code = s_exp_parse(code)
         code = pair_to_s_exp(code)
         code = to_python(code)
         code = ast.unparse(code)
