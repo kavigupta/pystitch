@@ -146,7 +146,7 @@ def compute_types_each(t, state):
             )
 
 
-def export_dfa(transitions):
+def export_dfa(transitions=transitions):
     """
     Takes a transition dictionary of the form above and converts
     it to a dict[state, dict[tag, list[state]]]

@@ -2,14 +2,19 @@ import json
 import os
 import subprocess
 
+from imperative_stitch.utils.classify_nodes import export_dfa
+
 
 def run_julia_stitch(code, *, stitch_jl_dir, iters, max_arity, quiet=True):
+    with open("data/dfa.json", "w") as f:
+        json.dump(export_dfa(), f)
     cmd = [
         "julia",
         "--project=" + stitch_jl_dir,
         os.path.join(stitch_jl_dir, "src/cli.jl"),
         f"--iterations={iters}",
         f"--max-arity={max_arity}",
+        f"--dfa={os.path.abspath('data/dfa.json')}",
     ]
     if not quiet:
         temp_txt = os.path.join(stitch_jl_dir, "temp.txt")
