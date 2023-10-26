@@ -129,7 +129,21 @@ def pair_to_s_exp(x):
     if x is nil or x == "nil":
         return []
     if isinstance(x, Pair):
-        return [pair_to_s_exp(x.car), *pair_to_s_exp(x.cdr)]
+        if isinstance(x.car, str) and x.car.startswith("fn"):
+            args = pair_to_s_exp(x.cdr)
+            args = [
+                [ast.Name, sym, [ast.Load]]
+                if isinstance(sym, str)
+                else sym
+                for sym in args
+            ]
+            return [
+                ast.Call,
+                [ast.Name, x.car, [ast.Load]],
+                [list, *args],
+                [],
+            ]
+        return [pair_to_s_exp(x.car)] + pair_to_s_exp(x.cdr)
     assert isinstance(x, str), str(type(x))
     if x.startswith("&"):
         return Symbol.parse(x).name
