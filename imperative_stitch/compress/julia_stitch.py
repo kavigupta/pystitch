@@ -1,11 +1,35 @@
 import json
 import os
+import shlex
 import subprocess
 
 from imperative_stitch.utils.classify_nodes import export_dfa
 
 
-def run_julia_stitch(code, *, stitch_jl_dir, iters, max_arity, quiet=True):
+# a, b = f(c, d)
+# (Assign
+#     (list (Tuple (list (Name &a:0 Store) (Name &b:0 Store)) Store))
+#     (Call (Name &f:0 Load) (list (Name &c:0 Load) (Name &d:0 Load)) nil)
+#     None
+# )
+# sizeof
+#     = assign_size + n_returns * sym_size + call_size + fn_name + n_returns * sym_size
+#     = assign_size + call_size + fn_name + 2 * n_returns * sym_size
+application_utility_fixed = -3
+
+
+def run_julia_stitch(code, *, stitch_jl_dir, iters, max_arity, quiet=True, application_utility_metavar=-1, application_utility_symvar=-0.5):
+    size_by_symbol = {
+        "Name": 0.0,
+        "Load": 0.0,
+        "Store": 0.0,
+        "None": 0.0,
+        "list": 0.0,
+        "nil": 0.0,
+        "semi": 0.0,
+        "Constant": 0.0,
+        "Attribute": 0.0,
+    }
     with open("data/dfa.json", "w") as f:
         json.dump(export_dfa(), f)
     cmd = [
@@ -15,13 +39,17 @@ def run_julia_stitch(code, *, stitch_jl_dir, iters, max_arity, quiet=True):
         f"--iterations={iters}",
         f"--max-arity={max_arity}",
         f"--dfa={os.path.abspath('data/dfa.json')}",
+        f"--size-by-symbol={json.dumps(size_by_symbol)}",
+        f"--application-utility-fixed={application_utility_fixed}",
+        f"--application-utility-metavar={application_utility_metavar}",
+        f"--application-utility-symvar={application_utility_symvar}",
     ]
     if not quiet:
         temp_txt = os.path.join(stitch_jl_dir, "temp.txt")
         with open(temp_txt, "w") as f:
             f.write(json.dumps(code))
         print("Run the following command to debug:")
-        print(" ".join(cmd) + " < " + temp_txt)
+        print(" ".join([shlex.quote(x) for x in cmd]) + " < " + temp_txt)
     abstractions = subprocess.run(
         cmd,
         input=json.dumps(code).encode("utf-8"),
