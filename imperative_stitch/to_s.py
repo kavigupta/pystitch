@@ -61,11 +61,10 @@ def to_python(x, is_body=False):
     if is_body:
         if x == []:
             return []
-        elif isinstance(x, list) and x[0] == "semi":
+        if isinstance(x, list) and x[0] == "semi":
             _, first, second = x
             return to_python(first, True) + to_python(second, True)
-        else:
-            return [to_python(x)]
+        return [to_python(x)]
     if isinstance(x, list):
         if x and isinstance(x[0], type):
             if x[0] is list:
@@ -179,16 +178,19 @@ def pair_to_s_exp(x):
     return typ()
 
 
-def python_to_s_exp(code, renderer_kwargs=dict()):
+def python_to_s_exp(code, renderer_kwargs=None):
+    if renderer_kwargs is None:
+        renderer_kwargs = {}
     with recursionlimit(max(1500, len(code))):
         code = ast.parse(code)
-        code = to_list_s_expr(code, descoper(code))
+        code = to_list_s_expr(code, create_descoper(code))
         code = s_exp_to_pair(code)
         code = Renderer(**renderer_kwargs, nil_as_word=True).render(code)
         return code
 
 
 def s_exp_parse(code):
+    # pylint: disable=unbalanced-tuple-unpacking
     (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
     return code
 
@@ -202,7 +204,7 @@ def s_exp_to_python(code):
         return code
 
 
-def descoper(code):
+def create_descoper(code):
     annot = ast_scope.annotate(code)
     scopes = []
     results = {}
