@@ -20,7 +20,7 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
             i % len(small_set_runnable_code_examples())
         ]
         code_original = example["solution"]
-        seed = int(stable_hash((i, TEST_VERSION)), 16) % 2**32
+        seed = int(stable_hash((i, TEST_VERSION)), 16) % 2 ** 32
         xs = self.operate_on_code(seed, code_original, use_full_tree=True)
         for code, out in xs:
             if isinstance(out, Exception):

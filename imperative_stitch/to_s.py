@@ -132,9 +132,7 @@ def pair_to_s_exp(x):
         if isinstance(x.car, str) and x.car.startswith("fn"):
             args = pair_to_s_exp(x.cdr)
             args = [
-                [ast.Name, sym, [ast.Load]]
-                if isinstance(sym, str)
-                else sym
+                [ast.Name, sym, [ast.Load]] if isinstance(sym, str) else sym
                 for sym in args
             ]
             return [
