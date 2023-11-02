@@ -1,12 +1,12 @@
 import ast
 import base64
 
-import attr
 import ast_scope
-from imperative_stitch.utils.ast_utils import field_is_body, name_field
+import attr
+from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
+from imperative_stitch.utils.ast_utils import field_is_body, name_field
 from imperative_stitch.utils.recursion import recursionlimit
-from s_expression_parser import Pair, nil, Renderer, parse, ParserConfig
 
 
 @attr.s(hash=True)

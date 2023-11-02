@@ -1,17 +1,18 @@
 import ast
 import re
-from textwrap import dedent
 import unittest
+from textwrap import dedent
 
 import ast_scope
-from python_graphs import control_flow, program_utils
-from parameterized import parameterized
 import timeout_decorator
+from parameterized import parameterized
+from python_graphs import control_flow, program_utils
 
-from imperative_stitch.analyze_program.ssa import run_ssa, rename_to_ssa
+from imperative_stitch.analyze_program.ssa import rename_to_ssa, run_ssa
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 from imperative_stitch.analyze_program.ssa.render import render_phi_map
 from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
+
 from .utils import small_set_examples
 
 

@@ -1,9 +1,8 @@
 import ast
 import unittest
 
-from imperative_stitch.analyze_program.extract import (
-    remove_unnecessary_returns,
-)
+from imperative_stitch.analyze_program.extract import remove_unnecessary_returns
+
 from .utils import canonicalize
 
 

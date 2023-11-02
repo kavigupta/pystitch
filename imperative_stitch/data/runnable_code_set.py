@@ -3,9 +3,8 @@ import itertools
 import json
 
 import tqdm.auto as tqdm
-
-from permacache import permacache
 from datasets import load_dataset
+from permacache import permacache
 
 from imperative_stitch.utils.run_code import passes_tests
 from imperative_stitch.utils.wrap import wrap

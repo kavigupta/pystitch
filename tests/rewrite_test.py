@@ -7,9 +7,7 @@ from imperative_stitch.analyze_program.extract.errors import (
     ClosureOverVariableModifiedInExtractedCode,
     ModifiesVariableClosedOverInNonExtractedCode,
 )
-from imperative_stitch.utils.ast_utils import (
-    ReplaceNodes,
-)
+from imperative_stitch.utils.ast_utils import ReplaceNodes
 from imperative_stitch.utils.classify_nodes import compute_types_each
 
 from .extract_test import GenericExtractRealisticTest, GenericExtractTest

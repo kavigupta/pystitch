@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from typing import Callable, Dict
 
 import ast_scope
+
 from imperative_stitch.analyze_program.extract.errors import (
     BothYieldsAndReturns,
     MultipleExits,
 )
-
 from imperative_stitch.analyze_program.extract.metavariable import (
     MetaVariables,
     extract_metavariables,
@@ -16,18 +16,13 @@ from imperative_stitch.analyze_program.extract.metavariable import (
 from imperative_stitch.analyze_program.extract.pre_and_post_process import preprocess
 from imperative_stitch.utils.ast_utils import name_field
 
-
-from .input_output_variables import (
-    compute_variables,
-    traces_an_origin_to_node_set,
-)
-from .unused_return import remove_unnecessary_returns
-
-from .loop import replace_break_and_continue
-from .generator import is_function_generator
-from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from ..ssa.annotator import run_ssa
 from ..ssa.ivm import Gamma
+from .generator import is_function_generator
+from .input_output_variables import compute_variables, traces_an_origin_to_node_set
+from .loop import replace_break_and_continue
+from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
+from .unused_return import remove_unnecessary_returns
 
 
 @dataclass
@@ -380,7 +375,6 @@ def do_extract(site, tree, *, config, extract_name):
 
 
 def _do_extract(site, tree, *, config, extract_name, undos):
-
     func_def, call, exit, metavariables = compute_extract_asts(
         tree, site, config=config, extract_name=extract_name, undos=undos
     )

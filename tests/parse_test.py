@@ -1,9 +1,9 @@
 import ast
-
 import unittest
-from parameterized import parameterized
+
 import tqdm.auto as tqdm
-from s_expression_parser import parse, ParserConfig
+from parameterized import parameterized
+from s_expression_parser import ParserConfig, parse
 
 from imperative_stitch.to_s import pair_to_s_exp, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.recursion import recursionlimit

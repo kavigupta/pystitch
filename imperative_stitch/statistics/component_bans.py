@@ -1,8 +1,8 @@
 import ast
 from collections import defaultdict
 
-from python_graphs import control_flow
 import numpy as np
+from python_graphs import control_flow
 
 from imperative_stitch.analyze_program.ssa.banned_component import (
     BannedComponentError,

@@ -1,12 +1,11 @@
 import ast
-from textwrap import dedent
 import unittest
+from textwrap import dedent
 
 from parameterized import parameterized
+from s_expression_parser import Pair, nil
 
-from s_expression_parser import nil, Pair
-
-from imperative_stitch.to_s import python_to_s_exp, ParserConfig, parse
+from imperative_stitch.to_s import ParserConfig, parse, python_to_s_exp
 from imperative_stitch.utils.classify_nodes import export_dfa, transitions
 from imperative_stitch.utils.recursion import recursionlimit
 

@@ -5,7 +5,6 @@ from parameterized import parameterized
 from imperative_stitch.analyze_program.antiunify.extract_at_multiple_sites import (
     antiunify_all_metavariables_across_extractions,
 )
-
 from imperative_stitch.analyze_program.extract.extract import do_extract
 from imperative_stitch.analyze_program.extract.extract_configuration import (
     ExtractConfiguration,

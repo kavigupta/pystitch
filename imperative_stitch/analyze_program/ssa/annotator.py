@@ -3,9 +3,8 @@ from collections import defaultdict
 
 from imperative_stitch.utils.ast_utils import name_field
 
-
 from ..structures.per_function_cfg import PerFunctionCFG, eventually_accessible_cfns
-
+from .compute_node_to_containing import compute_enclosed_variables
 from .ivm import (
     Argument,
     DefinedIn,
@@ -15,7 +14,6 @@ from .ivm import (
     Uninitialized,
 )
 from .renamer import name_vars
-from .compute_node_to_containing import compute_enclosed_variables
 
 
 class FunctionSSAAnnotator:
@@ -70,7 +68,6 @@ class FunctionSSAAnnotator:
             annotations: A mapping from node to its variable.
         """
         while True:
-
             start, end = self._start.copy(), self._end.copy()
             queue = [self.graph.first_cfn, *start]
             while queue:

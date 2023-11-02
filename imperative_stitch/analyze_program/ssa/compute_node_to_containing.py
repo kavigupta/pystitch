@@ -1,6 +1,5 @@
 import ast
 
-
 from ast_scope.group_similar_constructs import GroupSimilarConstructsVisitor
 from ast_scope.scope import FunctionScope
 

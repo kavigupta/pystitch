@@ -1,9 +1,12 @@
 import ast
 import copy
 import unittest
+
 import numpy as np
 from parameterized import parameterized
+from python_graphs import control_flow
 
+from imperative_stitch.analyze_program.extract import NotApplicable, do_extract
 from imperative_stitch.analyze_program.extract.errors import (
     BothYieldsAndReturns,
     ClosedVariablePassedDirectly,
@@ -16,16 +19,8 @@ from imperative_stitch.analyze_program.extract.extract_configuration import (
     ExtractConfiguration,
 )
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
-
 from imperative_stitch.data import parse_extract_pragma
-from imperative_stitch.analyze_program.extract import do_extract
-from imperative_stitch.analyze_program.extract import NotApplicable
-from imperative_stitch.utils.ast_utils import (
-    ast_nodes_in_order,
-    field_is_body,
-)
-from python_graphs import control_flow
-
+from imperative_stitch.utils.ast_utils import ast_nodes_in_order, field_is_body
 from tests.utils import canonicalize, small_set_examples
 
 

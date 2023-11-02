@@ -1,5 +1,7 @@
-import ast_scope
 import unittest
+
+import ast_scope
+
 from imperative_stitch.analyze_program.extract.errors import (
     ClosureOverVariableModifiedInExtractedCode,
     ModifiesVariableClosedOverInNonExtractedCode,
@@ -8,7 +10,6 @@ from imperative_stitch.analyze_program.extract.input_output_variables import (
     Variables,
     compute_variables,
 )
-
 from imperative_stitch.data.parse_extract import parse_extract_pragma
 
 from .utils import canonicalize
