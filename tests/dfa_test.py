@@ -1,17 +1,16 @@
 import ast
 import unittest
-from textwrap import dedent
 
 from parameterized import parameterized
 from s_expression_parser import Pair, nil
 
 from imperative_stitch.to_s import ParserConfig, parse, python_to_s_exp
-from imperative_stitch.utils.classify_nodes import export_dfa, transitions
+from imperative_stitch.utils.classify_nodes import export_dfa, TRANSITIONS
 from imperative_stitch.utils.recursion import recursionlimit
 
 from .utils import small_set_examples
 
-dfa = export_dfa(transitions)
+dfa = export_dfa(TRANSITIONS)
 
 reasonable_classifications = [
     ("AnnAssign", "S"),
@@ -118,6 +117,7 @@ class DFATest(unittest.TestCase):
             print(code)
             code = python_to_s_exp(code)
             print(code)
+            # pylint: disable=unbalanced-tuple-unpacking
             (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
             code = to_list_nested(code)
             result = sorted({(x, state) for ((x, *_), state) in classify(code, "M")})

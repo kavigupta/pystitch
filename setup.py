@@ -23,6 +23,7 @@ setuptools.setup(
         "datasets==2.10.1",
         "ast_scope>=0.4.2",
         "permacache>=3.7.0",
+        "frozendict==2.3.8",
         # my fork of python-graphs, update this to the latest commit hash
         "python-graphs @ https://github.com/kavigupta/python-graphs/archive/37af3499725c1cb63e4ad024a4db9f52d04f772d.zip",
     ],

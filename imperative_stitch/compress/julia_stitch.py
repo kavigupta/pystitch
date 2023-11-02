@@ -63,6 +63,7 @@ def run_julia_stitch(
         cmd,
         input=json.dumps(code).encode("utf-8"),
         capture_output=True,
+        check=False,
     ).stdout
     abstractions = abstractions.decode("utf-8")
     if not quiet:

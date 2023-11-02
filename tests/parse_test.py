@@ -1,7 +1,6 @@
 import ast
 import unittest
 
-import tqdm.auto as tqdm
 from parameterized import parameterized
 from s_expression_parser import ParserConfig, parse
 
@@ -30,6 +29,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         s_exp = python_to_s_exp(test_code, renderer_kwargs=dict(columns=80))
         # print(s_exp)
         with recursionlimit(max(1500, len(s_exp))):
+            # pylint: disable=unbalanced-tuple-unpacking
             [s_exp_parsed] = parse(
                 s_exp, ParserConfig(prefix_symbols=[], dots_are_cons=False)
             )
@@ -68,3 +68,4 @@ class ParseUnparseInverseTest(unittest.TestCase):
             self.check(small_set_examples()[i])
         except Exception as e:
             self.assertFalse(f"Error: {e}")
+            raise e
