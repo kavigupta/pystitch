@@ -18,7 +18,17 @@ from imperative_stitch.utils.classify_nodes import export_dfa
 application_utility_fixed = -3
 
 
-def run_julia_stitch(code, *, stitch_jl_dir, iters, max_arity, quiet=True, application_utility_metavar=-1, application_utility_symvar=-0.5):
+def run_julia_stitch(
+    code,
+    *,
+    stitch_jl_dir,
+    iters,
+    max_arity,
+    quiet=True,
+    application_utility_metavar=-1,
+    application_utility_symvar=-0.5,
+    include_dfa=True,
+):
     size_by_symbol = {
         "Name": 0.0,
         "Load": 0.0,
@@ -38,7 +48,7 @@ def run_julia_stitch(code, *, stitch_jl_dir, iters, max_arity, quiet=True, appli
         os.path.join(stitch_jl_dir, "src/cli.jl"),
         f"--iterations={iters}",
         f"--max-arity={max_arity}",
-        f"--dfa={os.path.abspath('data/dfa.json')}",
+        *([f"--dfa={os.path.abspath('data/dfa.json')}"] if include_dfa else []),
         f"--size-by-symbol={json.dumps(size_by_symbol)}",
         f"--application-utility-fixed={application_utility_fixed}",
         f"--application-utility-metavar={application_utility_metavar}",
