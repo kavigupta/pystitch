@@ -1,7 +1,7 @@
 import ast
 import copy
 from dataclasses import dataclass
-from typing import Callable, Dict
+from typing import Callable
 
 import ast_scope
 
@@ -17,9 +17,8 @@ from imperative_stitch.analyze_program.extract.pre_and_post_process import prepr
 from imperative_stitch.utils.ast_utils import name_field
 
 from ..ssa.annotator import run_ssa
-from ..ssa.ivm import Gamma
 from .generator import is_function_generator
-from .input_output_variables import compute_variables, traces_an_origin_to_node_set
+from .input_output_variables import compute_variables
 from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
 from .unused_return import remove_unnecessary_returns
@@ -35,35 +34,6 @@ class ExtractedCode:
     call: ast.AST
     metavariables: MetaVariables
     undo: Callable[[], None]
-
-
-def invalid_closure_over_variable_modified_in_non_extracted_code(
-    site, annotations, extracted_nodes, mapping
-):
-    """
-    Returns True if there is a closure over a variable that is modified in non-extracted
-
-    Arguments
-    ---------
-    site: ExtractionSite
-        The extraction site.
-    annotations: dict[AST, set[str]]
-        A mapping from node to the set of variables defined in the node.
-    extracted_nodes: set[AST]
-        The set of nodes in the extraction site.
-
-    Returns
-    -------
-    bool
-        Whether there is a Gamma node that is a closure over a variable that is modified
-    """
-    origins = [
-        mapping[k] for x in site.all_nodes if x in annotations for k in annotations[x]
-    ]
-    origins = [
-        mapping[down] for x in origins if isinstance(x, Gamma) for down in x.downstreams
-    ]
-    return traces_an_origin_to_node_set(origins, lambda x: x not in extracted_nodes)
 
 
 def create_target(variables, ctx):
