@@ -193,7 +193,7 @@ class SSAVariableIntermediateMapping:
         renamer = {}
         while True:
             done = True
-            for var, par in self.parents_of:
+            for var, par in self.parents_of.items():
                 replacement = par.without_parent(var)
                 if replacement is not par:
                     self.parents_of[var] = replacement
