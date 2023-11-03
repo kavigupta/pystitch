@@ -1,7 +1,5 @@
 import ast
 
-from ast_scope.annotator import name_of_alias
-
 
 def field_is_body(t, f):
     assert isinstance(t, type)
@@ -30,7 +28,7 @@ def name_field(x):
         if x.asname is None:
             return "name"
         return "asname"
-    raise Exception(f"Unexpected type: {t}")
+    raise NotImplementedError(f"Unexpected type: {t}")
 
 
 class AstNodesInOrder(ast.NodeVisitor):

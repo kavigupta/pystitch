@@ -109,7 +109,7 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
-    def test_rewrite_inside_comprehension(self):
+    def test_rewrite_inside_comprehension_1(self):
         code = """
         def f(x):
             y = x ** 7
@@ -133,7 +133,7 @@ class RewriteTest(GenericExtractTest):
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
 
-    def test_rewrite_inside_comprehension(self):
+    def test_rewrite_inside_comprehension_2(self):
         code = """
         def f(x):
             y = x ** 7

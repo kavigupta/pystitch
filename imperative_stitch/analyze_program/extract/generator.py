@@ -11,9 +11,11 @@ class CheckIfGenerator(ast.NodeVisitor):
             self.visit(node)
 
     def visit_Yield(self, node):
+        del node
         self.is_generator = True
 
     def visit_YieldFrom(self, node):
+        del node
         self.is_generator = True
 
     def visit_FunctionDef(self, node):

@@ -15,6 +15,7 @@ class Origin(ABC):
         """
         Remap the origin using the renaming map.
         """
+        del renaming_map
         return self
 
     @abstractmethod
@@ -22,16 +23,15 @@ class Origin(ABC):
         """
         Whether this is an initial value.
         """
-        pass
 
     @abstractmethod
     def initialized(self):
         """
         Whether this is an initialized value.
         """
-        pass
 
     def without_parent(self, parent):
+        del parent
         return self
 
     def reduce_if_possible(self):
@@ -150,8 +150,8 @@ class SSAVariableIntermediateMapping:
         return self.fresh_variable(original_symbol, parents)
 
     def fresh_uninitialized(self, name):
-        for var in self.original_symbol_of:
-            if self.original_symbol_of[var] != name:
+        for var, orig in self.original_symbol_of.items():
+            if orig != name:
                 continue
             if self.parents_of[var] != Uninitialized():
                 continue
@@ -193,9 +193,9 @@ class SSAVariableIntermediateMapping:
         renamer = {}
         while True:
             done = True
-            for var in self.parents_of:
-                replacement = self.parents_of[var].without_parent(var)
-                if replacement is not self.parents_of[var]:
+            for var, par in self.parents_of:
+                replacement = par.without_parent(var)
+                if replacement is not par:
                     self.parents_of[var] = replacement
                     done = False
 

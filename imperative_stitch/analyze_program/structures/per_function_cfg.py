@@ -131,10 +131,10 @@ class PerFunctionCFG:
             raise MultipleExits
         if len(exits) == 0:
             # every path raises an exception, we don't have to do anything special
-            exit = None
+            exit_node = None
         else:
-            [exit] = exits
-        return entry, exit, pre_exits
+            [exit_node] = exits
+        return entry, exit_node, pre_exits
 
 
 class NoControlFlowNode:
@@ -181,15 +181,15 @@ def compute_full_graph(first_cfn):
         first_cfn: The first control flow node of the function.
 
     Returns:
-        prev: A mapping from control flow node to its predecessors. first_cfn -> None is added.
+        prev_node: A mapping from control flow node to its predecessors. first_cfn -> None is added.
             Includes caught exceptions.
-        next: A mapping from control flow node to its successors.
+        next_node: A mapping from control flow node to its successors.
             Includes caught exceptions.
     """
-    prev = defaultdict(set)
-    next = defaultdict(set)
+    prev_node = defaultdict(set)
+    next_node = defaultdict(set)
     # prev of first is None
-    prev[first_cfn].add(("normal", None))
+    prev_node[first_cfn].add(("normal", None))
     seen = set()
     fringe = [first_cfn]
     while fringe:
@@ -204,8 +204,8 @@ def compute_full_graph(first_cfn):
         else:
             tag = "normal"
         for next_cfn in cfn.next:
-            prev[next_cfn].add((tag, cfn))
-            next[cfn].add((tag, next_cfn))
+            prev_node[next_cfn].add((tag, cfn))
+            next_node[cfn].add((tag, next_cfn))
             fringe.append(next_cfn)
         for next_cfn in cfn.next_from_end:
             if next_cfn == "<raise>":
@@ -214,7 +214,7 @@ def compute_full_graph(first_cfn):
                 # so don't affect the extraction operation
                 continue
             assert next_cfn in cfn.next or next_cfn == "<return>", next_cfn
-            next[cfn].add((tag, next_cfn))
+            next_node[cfn].add((tag, next_cfn))
         # exceptions
         if cannot_cause_exception(cfn):
             continue
@@ -230,15 +230,16 @@ def compute_full_graph(first_cfn):
         }
         for exc_causer in exception_causers:
             for exc_target in exception_targets:
-                prev[exc_target].add(("exception", exc_causer))
-                next[exc_causer].add(("exception", exc_target))
-    return prev, next
+                prev_node[exc_target].add(("exception", exc_causer))
+                next_node[exc_causer].add(("exception", exc_target))
+    return prev_node, next_node
 
 
 def cannot_cause_exception(cfn):
     """
     Returns True if the control flow node `cfn` cannot cause an exception.
     """
+    del cfn
     # TODO implement this
     return False
 

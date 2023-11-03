@@ -46,9 +46,9 @@ def get_ssa(code):
 def run_ssa_on_info(tree, scope_info, entry_point):
     _, _, phi_map, annotations = run_ssa(scope_info, PerFunctionCFG(entry_point))
     text = ast.unparse(rename_to_ssa(annotations, tree))
-    for ssa in phi_map:
+    for ssa, phi in phi_map.items():
         print(ssa)
-        print(phi_map[ssa])
+        print(phi)
     phi_map = render_phi_map(phi_map)
     return text, phi_map
 
@@ -781,7 +781,7 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
-    def test_nontrivial_control_flow_2(self):
+    def test_nontrivial_control_flow_2a(self):
         code = """
         def f():
             if True:
@@ -810,7 +810,7 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
-    def test_nontrivial_control_flow_2(self):
+    def test_nontrivial_control_flow_2b(self):
         code = """
         def f():
             x = 0
@@ -962,7 +962,7 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
-    def test_del(self):
+    def test_del_1(self):
         code = """
         def f(x, y):
             x = x + y
@@ -977,7 +977,7 @@ class SSATest(unittest.TestCase):
         """
         self.assert_ssa(code, expected)
 
-    def test_del(self):
+    def test_del_2(self):
         code = """
         def f(y):
             x = 2 + y

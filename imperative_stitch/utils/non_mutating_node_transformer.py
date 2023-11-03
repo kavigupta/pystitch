@@ -18,7 +18,7 @@ class NonMutatingNodeTransformer(ast.NodeTransformer):
                         value = self.visit(value)
                         if value is None:
                             continue
-                        elif not isinstance(value, ast.AST):
+                        if not isinstance(value, ast.AST):
                             new_values.extend(value)
                             continue
                     new_values.append(value)

@@ -54,8 +54,7 @@ def create_target(variables, ctx):
     """
     if len(variables) == 1:
         return ast.Name(id=variables[0], ctx=ctx)
-    else:
-        return ast.Tuple(elts=[ast.Name(id=x, ctx=ctx) for x in variables], ctx=ctx)
+    return ast.Tuple(elts=[ast.Name(id=x, ctx=ctx) for x in variables], ctx=ctx)
 
 
 def create_return_from_function(variables):
@@ -229,15 +228,15 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
     pfcfg = site.locate_entry_point(tree)
     start, _, _, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    _, exit, _ = pfcfg.extraction_entry_exit(extracted_nodes)
+    _, exit_node, _ = pfcfg.extraction_entry_exit(extracted_nodes)
 
     global_variables = [
         x for x in scope_info if scope_info[x] is scope_info.global_scope
     ]
-    vars = compute_variables(site, scope_info, pfcfg)
-    vars.raise_if_needed()
+    variables = compute_variables(site, scope_info, pfcfg)
+    variables.raise_if_needed()
 
-    metavariables = extract_metavariables(scope_info, site, annotations, vars)
+    metavariables = extract_metavariables(scope_info, site, annotations, variables)
 
     undo_metavariables = metavariables.act(pfcfg.function_astn)
     undos += [undo_metavariables]
@@ -246,14 +245,14 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
 
     pfcfg = site.locate_entry_point(tree)
 
-    vars = compute_variables(
+    variables = compute_variables(
         site,
         scope_info,
         pfcfg,
         error_on_closed=True,
-        guarantee_outputs_of=vars.output_vars_ssa,
+        guarantee_outputs_of=variables.output_vars_ssa,
     )
-    vars.raise_if_needed()
+    variables.raise_if_needed()
 
     undos.remove(undo_sentinel)
     undo_sentinel()
@@ -261,16 +260,16 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
     func_def, undo_replace = create_function_definition(
         extract_name,
         site,
-        vars.input_vars_without_ssa,
-        vars.output_vars_without_ssa,
+        variables.input_vars_without_ssa,
+        variables.output_vars_without_ssa,
         metavariables,
         global_variables,
     )
 
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
-        vars.input_vars_without_ssa,
-        vars.output_vars_without_ssa,
+        variables.input_vars_without_ssa,
+        variables.output_vars_without_ssa,
         metavariables,
         do_not_change_internal_args=config.do_not_change_internal_args,
     )
@@ -296,12 +295,12 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
         input_variables,
         output_variables,
         metavariables,
-        is_return=exit == "<return>",
+        is_return=exit_node == "<return>",
         is_generator=is_function_generator(func_def),
     )
     undos.remove(undo_preprocess)
     undo_preprocess()
-    return func_def, call, exit, metavariables
+    return func_def, call, exit_node, metavariables
 
 
 def do_extract(site, tree, *, config, extract_name):
@@ -345,12 +344,12 @@ def do_extract(site, tree, *, config, extract_name):
 
 
 def _do_extract(site, tree, *, config, extract_name, undos):
-    func_def, call, exit, metavariables = compute_extract_asts(
+    func_def, call, exit_node, metavariables = compute_extract_asts(
         tree, site, config=config, extract_name=extract_name, undos=undos
     )
 
     for calls in [*call], [*call, ast.Break()], [*call, ast.Continue()]:
-        success, undo_mutate = attempt_to_mutate(site, tree, calls, exit)
+        success, undo_mutate = attempt_to_mutate(site, tree, calls, exit_node)
         if success:
             undos += [undo_mutate]
             break
@@ -360,7 +359,7 @@ def _do_extract(site, tree, *, config, extract_name, undos):
     return func_def, call, metavariables
 
 
-def attempt_to_mutate(site, tree, calls, exit):
+def attempt_to_mutate(site, tree, calls, exit_node):
     """
     Attempt to mutate the AST to replace the extraction site with the given calls code.
 
@@ -374,7 +373,7 @@ def attempt_to_mutate(site, tree, calls, exit):
         The AST of the whole program.
     calls: list[AST]
         The code to replace the extraction site with.
-    exit: ControlFlowNode
+    exit_node: ControlFlowNode
         The exit of the extraction site.
 
     Returns
@@ -392,7 +391,7 @@ def attempt_to_mutate(site, tree, calls, exit):
     def undo():
         site.containing_sequence[site.start : site.start + len(calls)] = prev
 
-    if exit is None:
+    if exit_node is None:
         return True, undo
     new_pfcfg = site.locate_entry_point(tree)
     for call in calls[::-1]:
@@ -414,7 +413,7 @@ def attempt_to_mutate(site, tree, calls, exit):
         undo()
         raise MultipleExits
     [exit_cfn] = call_exits
-    if not same(exit_cfn, exit):
+    if not same(exit_cfn, exit_node):
         undo()
         return False, None
     return True, undo
@@ -425,6 +424,7 @@ def same(a, b):
         return False
     if isinstance(b, str) and not isinstance(a, str):
         return False
+    # pylint: disable=unidiomatic-typecheck
     assert type(a) == type(b)
     if isinstance(a, str):
         return a == b

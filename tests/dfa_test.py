@@ -5,7 +5,7 @@ from parameterized import parameterized
 from s_expression_parser import Pair, nil
 
 from imperative_stitch.to_s import ParserConfig, parse, python_to_s_exp
-from imperative_stitch.utils.classify_nodes import export_dfa, TRANSITIONS
+from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
 from imperative_stitch.utils.recursion import recursionlimit
 
 from .utils import small_set_examples

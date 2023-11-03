@@ -257,7 +257,7 @@ def get_nodes_for_write(node):
     elif isinstance(node, ast.alias):
         name = getattr(node, name_field(node))
     else:
-        raise Exception(f"Unexpected write: {node}")
+        raise NotImplementedError(f"Unexpected write: {node}")
     return [(node, name)]
 
 

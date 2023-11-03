@@ -31,26 +31,27 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
             print(code)
             print("=" * 80)
             print(new_code)
-            for input, output in zip(example["inputs"], example["outputs"]):
-                print(repr(input))
-                py_out = self.run_and_check_for_errors(new_code, input)
+            for inp, output in zip(example["inputs"], example["outputs"]):
+                print(repr(inp))
+                py_out = self.run_and_check_for_errors(new_code, inp)
                 py_out = normalize_output(py_out)
                 output = normalize_output(output)
                 if py_out != output:
-                    if not self.check_deterministic(code_original, input):
+                    if not self.check_deterministic(code_original, inp):
                         continue
                 self.assertEqual(py_out, output)
 
-    def run_and_check_for_errors(self, code, input):
-        py_out = run_python(code, input)
+    def run_and_check_for_errors(self, code, inp):
+        py_out = run_python(code, inp)
         if py_out is not None:
             return py_out
         code = self.add_header(code)
-        py_out = run_python(code, input)
+        py_out = run_python(code, inp)
         if py_out is not None:
             return py_out
-        run_python.function(code, input)
+        run_python.function(code, inp)
         self.fail("error")
+        return None
 
     def add_header(self, code):
         recursion_header = ast.parse(
@@ -61,10 +62,10 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
         code = ast.fix_missing_locations(code)
         return ast.unparse(code)
 
-    def check_deterministic(self, code, input):
+    def check_deterministic(self, code, inp):
         outputs = []
-        for i in range(20):
-            outputs.append(run_python.function(code, input))
+        for _ in range(20):
+            outputs.append(run_python.function(code, inp))
         outputs = set(outputs)
         return len(outputs) == 1
 

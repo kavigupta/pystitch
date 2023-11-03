@@ -97,10 +97,10 @@ def compute_variables(
     """
     start, end, ssa_to_origin, node_to_ssa = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    entry, exit, pre_exits = pfcfg.extraction_entry_exit(extracted_nodes)
+    entry_node, exit_node, pre_exits = pfcfg.extraction_entry_exit(extracted_nodes)
     ultimate_origins = compute_ultimate_origins(ssa_to_origin)
 
-    if exit is None or exit == "<return>":
+    if exit_node is None or exit_node == "<return>":
         output_variables = []
     else:
         output_variables = compute_output_variables(site, ssa_to_origin, node_to_ssa)
@@ -115,7 +115,7 @@ def compute_variables(
     )
     # renormalize the input variables to be the ones that are actually passed in
     # in case the ones used are the result of a phi node
-    input_variables = sorted({start[entry][x] for x, _ in input_variables})
+    input_variables = sorted({start[entry_node][x] for x, _ in input_variables})
 
     parent_variables = variables_from_parent(
         site, node_to_ssa, scope_info, pfcfg.function_astn
@@ -147,8 +147,8 @@ def compute_variables(
     )
 
     errors = []
-    if entry is not None and not all_initialized(
-        start[entry], [x for x, _ in input_variables], ultimate_origins
+    if entry_node is not None and not all_initialized(
+        start[entry_node], [x for x, _ in input_variables], ultimate_origins
     ):
         errors.append(NonInitializedInputsOrOutputs)
 
@@ -191,7 +191,7 @@ def compute_variables(
     )
 
 
-def all_initialized(lookup, vars, ultimate_origins):
+def all_initialized(lookup, variables, ultimate_origins):
     """
     Whether all the variables are initialized in their ultimate origin
 
@@ -199,7 +199,7 @@ def all_initialized(lookup, vars, ultimate_origins):
     ---------
     lookup: dict[str, (str, int)]
         A mapping from variable to its SSA entry.
-    vars: list[str]
+    variables: list[str]
         The variables to check.
     ultimate_origins: dict[(str, int), origin]
         A mapping from SSA entry to its ultimate origin.
@@ -209,8 +209,8 @@ def all_initialized(lookup, vars, ultimate_origins):
     bool
         True if all the variables are initialized in their ultimate origin.
     """
-    vars = [lookup[v] for v in vars]
-    return all(all(x.initialized() for x in ultimate_origins[var]) for var in vars)
+    variables = [lookup[v] for v in variables]
+    return all(all(x.initialized() for x in ultimate_origins[var]) for var in variables)
 
 
 def is_origin_defined_in_node_set(
@@ -235,16 +235,15 @@ def is_origin_defined_in_node_set(
     assert isinstance(origin, Origin)
     if isinstance(origin, DefinedIn):
         return node_set(origin.site)
-    elif isinstance(origin, Phi):
+    if isinstance(origin, Phi):
         return node_set(origin.node)
-    elif isinstance(origin, Gamma):
+    if isinstance(origin, Gamma):
         return include_gamma and any(
             is_origin_defined_in_node_set(node_to_origin, origin, node_set)
             for closed_var in origin.closed
             for origin in node_to_origin[closed_var]
         )  # do not include anywhere
-    else:
-        return node_set("<<function def>>")
+    return node_set("<<function def>>")
 
 
 def traces_an_origin_to_node_set(

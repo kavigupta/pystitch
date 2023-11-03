@@ -20,15 +20,13 @@ def errors_for(entry):
 
 def all_errors(code):
     return sorted(
-        set(
-            [
-                comp
-                for entry in control_flow.get_control_flow_graph(
-                    ast.parse(code)
-                ).get_enter_blocks()
-                for comp in errors_for(entry)
-            ]
-        )
+        {
+            comp
+            for entry in control_flow.get_control_flow_graph(
+                ast.parse(code)
+            ).get_enter_blocks()
+            for comp in errors_for(entry)
+        }
     )
 
 

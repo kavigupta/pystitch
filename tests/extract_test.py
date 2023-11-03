@@ -1,5 +1,4 @@
 import ast
-import copy
 import unittest
 
 import numpy as np
@@ -1112,8 +1111,8 @@ class GenericExtractRealisticTest(GenericExtractTest):
         code = small_set_examples()[i]
         return self.operate_on_code(i, code, use_full_tree=use_full_tree)
 
-    def operate_on_code(self, i, full_code, use_full_tree=False):
-        rng = np.random.RandomState(i)
+    def operate_on_code(self, seed, full_code, use_full_tree=False):
+        rng = np.random.RandomState(seed)
         tree = ast.parse(full_code)
         g = control_flow.get_control_flow_graph(tree)
         num_entry_points = len(list(g.get_enter_blocks()))
@@ -1161,6 +1160,7 @@ class GenericExtractRealisticTest(GenericExtractTest):
         return ast.unparse(tree), count
 
     def manipulate(self, body, rng):
+        del rng
         return body, 0
 
 

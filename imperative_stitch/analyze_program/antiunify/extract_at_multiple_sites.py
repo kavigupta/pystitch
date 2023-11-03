@@ -1,7 +1,7 @@
 import ast
 
 
-def reconfigure_parameter(parameter, vars, vars_all):
+def reconfigure_parameter(parameter, variables, vars_all):
     """
     Mutate the parameter to increase the number of variables.
 
@@ -10,11 +10,11 @@ def reconfigure_parameter(parameter, vars, vars_all):
 
     Args:
         parameter (ast.Lambda): The parameter to reconfigure.
-        vars (list[str]): The current variables used to call the parameter.
+        variables (list[str]): The current variables used to call the parameter.
         vars_all (list[str]): The eventual variables used to call the parameter.
     """
     arg_names = [x.arg for x in parameter.args.args]
-    assert len(arg_names) == len(vars)
+    assert len(arg_names) == len(variables)
     i = 0
 
     def unused():
@@ -24,8 +24,8 @@ def reconfigure_parameter(parameter, vars, vars_all):
 
     new_args_names = []
     for v in vars_all:
-        if v in vars:
-            new_args_names.append(arg_names[vars.index(v)])
+        if v in variables:
+            new_args_names.append(arg_names[variables.index(v)])
         else:
             new_args_names.append(unused())
     parameter.args.args = [ast.arg(name) for name in new_args_names]
@@ -72,8 +72,10 @@ def antiunify_metavariable_across_extractions(extrs, metavariable_name):
     for meta in metavariables:
         assert meta.call.func.id == metavariable_name
         vars_each.append([arg.id for arg in meta.call.args])
-    vars_all = sorted({var for vars in vars_each for var in vars})
-    for extr, parameter, meta, vars in zip(extrs, parameters, metavariables, vars_each):
+    vars_all = sorted({var for variables in vars_each for var in variables})
+    for extr, parameter, meta, variables in zip(
+        extrs, parameters, metavariables, vars_each
+    ):
         for meta in extr.metavariables.replacements_for_name(metavariable_name):
             meta.call.args = [ast.Name(var, ast.Load()) for var in vars_all]
-        reconfigure_parameter(parameter, vars, vars_all)
+        reconfigure_parameter(parameter, variables, vars_all)

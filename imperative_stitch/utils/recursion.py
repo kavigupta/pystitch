@@ -7,8 +7,9 @@ class recursionlimit:
         self.limit = limit
 
     def __enter__(self):
+        # pylint: disable=attribute-defined-outside-init
         self.old_limit = sys.getrecursionlimit()
         sys.setrecursionlimit(self.limit)
 
-    def __exit__(self, type, value, tb):
+    def __exit__(self, _1, _2, _3):
         sys.setrecursionlimit(self.old_limit)
