@@ -1,8 +1,8 @@
 import ast
 
 
-def wrap(code):
-    body = ast.parse(code).body
+def wrap_ast(code, fn_name="_main"):
+    body = code.body
     imports = []
     for node in body:
         if isinstance(node, ast.Import):
@@ -12,26 +12,34 @@ def wrap(code):
         else:
             break
     body = body[len(imports) :]
-    return ast.unparse(
-        ast.fix_missing_locations(
-            ast.Module(
-                body=[
-                    *imports,
-                    ast.FunctionDef(
-                        name="_main",
-                        args=[],
-                        body=body,
-                        decorator_list=[],
-                    ),
-                    ast.Expr(
-                        ast.Call(
-                            func=ast.Name(id="_main", ctx=ast.Load()),
-                            args=[],
-                            keywords=[],
-                        )
-                    ),
-                ],
-                type_ignores=[],
-            )
-        )
+    if not body:
+        body = [ast.Pass()]
+    return ast.Module(
+        body=[
+            *imports,
+            ast.FunctionDef(
+                name=fn_name,
+                args=ast.arguments(
+                    posonlyargs=[],
+                    args=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                ),
+                body=body,
+                decorator_list=[],
+            ),
+            ast.Expr(
+                ast.Call(
+                    func=ast.Name(id=fn_name, ctx=ast.Load()),
+                    args=[],
+                    keywords=[],
+                )
+            ),
+        ],
+        type_ignores=[],
     )
+
+
+def wrap(code, fn_name="_main"):
+    return ast.unparse(ast.fix_missing_locations(wrap_ast(ast.parse(code), fn_name)))

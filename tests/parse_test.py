@@ -44,6 +44,12 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.check("7")
         self.check("import abc")
 
+    def test_globals(self):
+        self.assertEqual(
+            python_to_s_exp("import os", renderer_kwargs=dict(columns=80)),
+            "(Module (semi (Import (list (alias g_os None))) nil) nil)",
+        )
+
     def test_builtins(self):
         self.check("print(True)")
         self.check("0")

@@ -1,4 +1,9 @@
 import ast
+import uuid
+
+import ast_scope
+
+from .wrap import wrap_ast
 
 
 def field_is_body(t, f):
@@ -55,3 +60,15 @@ class ReplaceNodes(ast.NodeTransformer):
         if node in self.node_map:
             return self.node_map[node]
         return super().visit(node)
+
+
+def true_globals(node):
+    name = "_" + uuid.uuid4().hex
+    wpd = wrap_ast(node, name)
+    scope_info = ast_scope.annotate(wpd)
+    return {
+        x
+        for x in scope_info
+        if scope_info[x] == scope_info.global_scope
+        if getattr(x, name_field(x)) != name
+    }

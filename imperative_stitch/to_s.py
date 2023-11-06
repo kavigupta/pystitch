@@ -5,7 +5,7 @@ import ast_scope
 import attr
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
-from imperative_stitch.utils.ast_utils import field_is_body, name_field
+from imperative_stitch.utils.ast_utils import field_is_body, name_field, true_globals
 from imperative_stitch.utils.recursion import recursionlimit
 
 
@@ -21,6 +21,8 @@ class Symbol:
         return cls(name, scope)
 
     def render(self):
+        if self.scope is None:
+            return f"g_{self.name}"
         return f"&{self.name}:{self.scope}"
 
 
@@ -144,6 +146,9 @@ def pair_to_s_exp(x):
     assert isinstance(x, str), str(type(x))
     if x.startswith("&"):
         return Symbol.parse(x).name
+    if x.startswith("g"):
+        assert x.startswith("g_")
+        return x[2:]
     if x.startswith("%"):
         return x
     if x.startswith("#"):
@@ -205,11 +210,15 @@ def s_exp_to_python(code):
 
 
 def create_descoper(code):
+    globs = true_globals(code)
     annot = ast_scope.annotate(code)
     scopes = []
     results = {}
     for node in ast.walk(code):
         if node in annot:
+            if node in globs:
+                results[node] = None
+                continue
             if annot[node] not in scopes:
                 scopes.append(annot[node])
             results[node] = scopes.index(annot[node])
