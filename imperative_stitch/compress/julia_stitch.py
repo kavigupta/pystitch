@@ -29,6 +29,7 @@ def run_julia_stitch(
     include_dfa=True,
 ):
     size_by_symbol = {
+        "Module": 0.0,
         "Name": 0.0,
         "Load": 0.0,
         "Store": 0.0,
