@@ -25,7 +25,6 @@ setuptools.setup(
         "permacache>=3.7.0",
         "frozendict==2.3.8",
         # my fork of python-graphs, update this to the latest commit hash
-        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/37af3499725c1cb63e4ad024a4db9f52d04f772d.zip",
-        "pygraphviz",
+        "python-graphs @ https://github.com/kavigupta/python-graphs/archive/693b2bc5e65a0f930617d75c3fb0c1750d35a622.zip",
     ],
 )

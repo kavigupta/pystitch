@@ -5,7 +5,6 @@ from textwrap import dedent
 
 import ast_scope
 import timeout_decorator
-from parameterized import parameterized
 from python_graphs import control_flow, program_utils
 
 from imperative_stitch.analyze_program.ssa import rename_to_ssa, run_ssa
@@ -13,7 +12,7 @@ from imperative_stitch.analyze_program.ssa.banned_component import BannedCompone
 from imperative_stitch.analyze_program.ssa.render import render_phi_map
 from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
 
-from .utils import small_set_examples
+from .utils import expand_with_slow_tests, small_set_examples
 
 
 def run_ssa_on_single_function(code):
@@ -1035,6 +1034,6 @@ class SSATest(unittest.TestCase):
 
 
 class SSARealisticTest(unittest.TestCase):
-    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         run_ssa_on_multiple_functions(small_set_examples()[i])

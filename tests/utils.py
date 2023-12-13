@@ -1,7 +1,11 @@
 import ast
+import inspect
 import json
 from functools import lru_cache
 from textwrap import dedent
+
+import pytest
+from parameterized import parameterized
 
 
 def canonicalize(code):
@@ -22,3 +26,20 @@ def small_set_runnable_code_examples():
     with open("data/small_set_runnable_code.json") as f:
         contents = json.load(f)
     return contents
+
+
+def expand_with_slow_tests(count, first_fast=10):
+    namespace = inspect.currentframe().f_back.f_locals
+    # return lambda f: parameterized.expand([(i,) for i in range(first_fast)], )(f)
+
+    def annotation(f):
+        parameterized.expand([(i,) for i in range(count)], namespace=namespace)(f)
+
+        name = f.__name__
+        for k in list(namespace.keys()):
+            if k.startswith(name + "_"):
+                idx = int(k[len(name + "_") :])
+                if idx > first_fast:
+                    namespace[k] = pytest.mark.slow_test(namespace[k])
+
+    return annotation

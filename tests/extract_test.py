@@ -2,7 +2,6 @@ import ast
 import unittest
 
 import numpy as np
-from parameterized import parameterized
 from python_graphs import control_flow
 
 from imperative_stitch.analyze_program.extract import NotApplicable, do_extract
@@ -20,7 +19,7 @@ from imperative_stitch.analyze_program.extract.extract_configuration import (
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 from imperative_stitch.data import parse_extract_pragma
 from imperative_stitch.utils.ast_utils import ast_nodes_in_order, field_is_body
-from tests.utils import canonicalize, small_set_examples
+from tests.utils import canonicalize, expand_with_slow_tests, small_set_examples
 
 
 class GenericExtractTest(unittest.TestCase):
@@ -1165,6 +1164,6 @@ class GenericExtractRealisticTest(GenericExtractTest):
 
 
 class ExtractRealisticTest(GenericExtractRealisticTest):
-    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         self.operate(i)
