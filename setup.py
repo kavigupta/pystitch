@@ -26,6 +26,5 @@ setuptools.setup(
         "frozendict==2.3.8",
         # my fork of python-graphs, update this to the latest commit hash
         "python-graphs @ https://github.com/kavigupta/python-graphs/archive/37af3499725c1cb63e4ad024a4db9f52d04f772d.zip",
-        "pygraphviz",
     ],
 )
