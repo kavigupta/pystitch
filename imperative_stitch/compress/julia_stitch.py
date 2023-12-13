@@ -36,7 +36,7 @@ def run_julia_stitch(
         "None": 0.0,
         "list": 0.0,
         "nil": 0.0,
-        "semi": 0.0,
+        "/seq": 0.0,
         "Constant": 0.0,
         "Attribute": 0.0,
     }

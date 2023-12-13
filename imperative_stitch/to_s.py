@@ -32,10 +32,7 @@ def to_list_s_expr(x, descoper, is_body=False):
         if not x:
             return []
         x = [to_list_s_expr(x, descoper) for x in x]
-        result = []
-        while x:
-            result = ["semi", x.pop(), result]
-        return result
+        return ["/seq", *x]
     if isinstance(x, ast.AST):
         if not x._fields:
             return type(x)
@@ -63,9 +60,9 @@ def to_python(x, is_body=False):
     if is_body:
         if x == []:
             return []
-        if isinstance(x, list) and x[0] == "semi":
-            _, first, second = x
-            return to_python(first, True) + to_python(second, True)
+        if isinstance(x, list) and x[0] == "/seq":
+            _, *rest = x
+            return [to_python(x) for x in rest]
         return [to_python(x)]
     if isinstance(x, list):
         if x and isinstance(x[0], type):
@@ -97,7 +94,7 @@ def s_exp_to_pair(x):
         return list_to_pair(x)
     if isinstance(x, type):
         return x.__name__
-    if x in {"semi"}:
+    if x in {"/seq"}:
         return x
     if x is True or x is False or x is None or x is Ellipsis:
         return str(x)
@@ -158,7 +155,7 @@ def pair_to_s_exp(x):
         return Ellipsis
     if x in {"True", "False", "None"}:
         return ast.literal_eval(x)
-    if x in {"semi"}:
+    if x in {"/seq"}:
         return x
     if x.startswith("i"):
         return int(x[1:])

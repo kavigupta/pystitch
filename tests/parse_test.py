@@ -17,7 +17,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         if not isinstance(s_exp, list) or not s_exp:
             return
         self.assertTrue(
-            isinstance(s_exp[0], type) or s_exp[0] in {"semi"}, repr(s_exp[0])
+            isinstance(s_exp[0], type) or s_exp[0] in {"/seq"}, repr(s_exp[0])
         )
         self.assertTrue(len(s_exp) > 1, repr(s_exp))
         for y in s_exp[1:]:
@@ -43,10 +43,18 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.check("7")
         self.check("import abc")
 
+    def test_sequence_of_statements(self):
+        self.maxDiff = None
+        self.check("x = 2\ny = 3\nz = 4")
+        self.assertEqual(
+            python_to_s_exp("x = 2\ny = 3\nz = 4", renderer_kwargs=dict(columns=80000)),
+            "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None) (Assign (list (Name &y:0 Store)) (Constant i3 None) None) (Assign (list (Name &z:0 Store)) (Constant i4 None) None)) nil)",
+        )
+
     def test_globals(self):
         self.assertEqual(
             python_to_s_exp("import os", renderer_kwargs=dict(columns=80)),
-            "(Module (semi (Import (list (alias g_os None))) nil) nil)",
+            "(Module (/seq (Import (list (alias g_os None)))) nil)",
         )
 
     def test_builtins(self):
