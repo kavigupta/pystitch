@@ -1,20 +1,17 @@
 import ast
 
-from parameterized import parameterized
 from permacache import stable_hash
 
 from imperative_stitch.utils.run_code import normalize_output, run_python
 from tests.rewrite_test import GenericRewriteRealisticTest
 
-from .utils import small_set_runnable_code_examples
+from .utils import expand_with_slow_tests, small_set_runnable_code_examples
 
 TEST_VERSION = 1
 
 
 class RewriteSemanticsTest(GenericRewriteRealisticTest):
-    @parameterized.expand(
-        [(i,) for i in range(5 * len(small_set_runnable_code_examples()))]
-    )
+    @expand_with_slow_tests(5 * len(small_set_runnable_code_examples()))
     def test_semantics(self, i):
         example = small_set_runnable_code_examples()[
             i % len(small_set_runnable_code_examples())

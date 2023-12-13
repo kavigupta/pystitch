@@ -1,13 +1,12 @@
 import ast
 import unittest
 
-from parameterized import parameterized
 from s_expression_parser import ParserConfig, parse
 
 from imperative_stitch.to_s import pair_to_s_exp, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.recursion import recursionlimit
 
-from .utils import small_set_examples
+from .utils import expand_with_slow_tests, small_set_examples
 
 
 class ParseUnparseInverseTest(unittest.TestCase):
@@ -67,7 +66,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def test_lambda(self):
         self.check("lambda: 1 + 2")
 
-    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         try:
             print(small_set_examples()[i])

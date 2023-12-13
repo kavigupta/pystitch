@@ -1,7 +1,5 @@
 import ast
 
-from parameterized import parameterized
-
 from imperative_stitch.analyze_program.antiunify.extract_at_multiple_sites import (
     antiunify_all_metavariables_across_extractions,
 )
@@ -17,7 +15,7 @@ from imperative_stitch.utils.ast_utils import (
 )
 from tests.extract_test import GenericExtractTest
 from tests.rewrite_test import GenericRewriteRealisticTest
-from tests.utils import canonicalize, small_set_examples
+from tests.utils import canonicalize, expand_with_slow_tests, small_set_examples
 
 
 def run_extract_from_tree(tree, site, *, config):
@@ -237,6 +235,6 @@ class AntiUnifyRealisticTest(GenericRewriteRealisticTest):
         print(code)
         return code, count
 
-    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         self.operate(i)

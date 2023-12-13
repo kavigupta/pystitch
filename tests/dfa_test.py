@@ -1,14 +1,13 @@
 import ast
 import unittest
 
-from parameterized import parameterized
 from s_expression_parser import Pair, nil
 
 from imperative_stitch.to_s import ParserConfig, parse, python_to_s_exp
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
 from imperative_stitch.utils.recursion import recursionlimit
 
-from .utils import small_set_examples
+from .utils import expand_with_slow_tests, small_set_examples
 
 dfa = export_dfa(TRANSITIONS)
 
@@ -126,7 +125,7 @@ class DFATest(unittest.TestCase):
                 print(sorted(extras | set(reasonable_classifications)))
                 self.fail(f"Extras found in classification {extras}")
 
-    @parameterized.expand([(i,) for i in range(len(small_set_examples()))])
+    @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         code = small_set_examples()[i]
         for element in ast.parse(code).body:
