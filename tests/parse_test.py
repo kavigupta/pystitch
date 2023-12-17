@@ -74,6 +74,22 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def test_lambda(self):
         self.check("lambda: 1 + 2")
 
+    def test_unparse_sequence(self):
+        # should work with or without the Module wrapper
+        self.assertEqual(
+            s_exp_to_python(
+                "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)"
+            ),
+            "x = 2",
+        )
+
+        self.assertEqual(
+            s_exp_to_python(
+                "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))"
+            ),
+            "x = 2",
+        )
+
     @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         try:

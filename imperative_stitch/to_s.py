@@ -57,6 +57,8 @@ def to_list_s_expr(x, descoper, is_body=False):
 
 
 def to_python(x, is_body=False):
+    if isinstance(x, list) and x and x[0] == "/seq":
+        is_body = True
     if is_body:
         if x == []:
             return []
@@ -148,7 +150,7 @@ def pair_to_s_exp(x):
         return x[2:]
     if x.startswith("%"):
         return x
-    if x.startswith("#"):
+    if x.startswith("#") or x.startswith("?"):
         return ast.Name(id=x)
 
     if x == "Ellipsis":
