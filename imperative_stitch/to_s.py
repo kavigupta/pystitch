@@ -60,6 +60,8 @@ def to_list_s_expr(x, descoper, is_body=False):
 
 
 def to_python(x, is_body=False):
+    if isinstance(x, list) and x and x[0] == "semi":
+        is_body = True
     if is_body:
         if x == []:
             return []

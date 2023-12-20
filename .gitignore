@@ -4,3 +4,4 @@
 *.egg-info
 Untitled.ipynb
 __test__.py
+.vscode
