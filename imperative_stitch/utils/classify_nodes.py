@@ -189,5 +189,6 @@ def export_dfa(transitions=TRANSITIONS):
     result["S"]["/splice"] = ["S"]
     return result
 
+
 if __name__ == "__main__":
     print(json.dumps(export_dfa(), indent=2))
