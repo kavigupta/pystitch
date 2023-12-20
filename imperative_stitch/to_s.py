@@ -57,17 +57,17 @@ def to_list_s_expr(x, descoper, is_body=False):
 
 
 def to_python(x, is_body=False):
-    if isinstance(x, list) and x and x[0] == "/seq":
+    if isinstance(x, list) and x and (x[0] == "/seq" or x[0] == "/subseq"):
         is_body = True
     if is_body:
         if x == []:
             return []
-        if isinstance(x, list) and x[0] == "/seq":
+        if isinstance(x, list) and (x[0] == "/seq" or x[0] == "/subseq"):
             _, *rest = x
             return [to_python(x) for x in rest]
         return [to_python(x)]
     if isinstance(x, list):
-        if x and isinstance(x[0], type):
+        if x and callable(x[0]):
             if x[0] is list:
                 return [to_python(x) for x in x[1:]]
             t, *x = x
@@ -96,7 +96,7 @@ def s_exp_to_pair(x):
         return list_to_pair(x)
     if isinstance(x, type):
         return x.__name__
-    if x in {"/seq"}:
+    if x in {"/seq", "/subseq"}:
         return x
     if x is True or x is False or x is None or x is Ellipsis:
         return str(x)
@@ -157,8 +157,10 @@ def pair_to_s_exp(x):
         return Ellipsis
     if x in {"True", "False", "None"}:
         return ast.literal_eval(x)
-    if x in {"/seq"}:
+    if x in {"/seq", "/subseq"}:
         return x
+    if x == "/splice":
+        return Splice
     if x.startswith("i"):
         return int(x[1:])
     if x.startswith("f"):
@@ -180,6 +182,13 @@ def pair_to_s_exp(x):
     if typ._fields:
         return typ
     return typ()
+
+
+class Splice:
+    _fields = ["target"]
+
+    def __new__(cls, target):
+        return target
 
 
 def python_to_s_exp(code, renderer_kwargs=None):
