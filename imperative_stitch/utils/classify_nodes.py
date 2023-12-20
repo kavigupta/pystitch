@@ -1,4 +1,5 @@
 import ast
+import json
 
 from frozendict import frozendict
 
@@ -183,5 +184,10 @@ def export_dfa(transitions=TRANSITIONS):
         result[state]["list"] = [state]
     for state in transitions:
         result[state]["/seq"] = ["X"]
+        result[state]["/splice"] = ["X"]
     result["S"]["/seq"] = ["S"]
+    result["S"]["/splice"] = ["S"]
     return result
+
+if __name__ == "__main__":
+    print(json.dumps(export_dfa(), indent=2))
