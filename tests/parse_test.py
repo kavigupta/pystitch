@@ -43,6 +43,14 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.check("7")
         self.check("import abc")
 
+    def test_sequence_of_statements(self):
+        self.maxDiff = None
+        self.check("x = 2\ny = 3\nz = 4")
+        self.assertEqual(
+            python_to_s_exp("x = 2\ny = 3\nz = 4", renderer_kwargs=dict(columns=80000)),
+            "(Module (semi (Assign (list (Name &x:0 Store)) (Constant i2 None) None) (semi (Assign (list (Name &y:0 Store)) (Constant i3 None) None) (semi (Assign (list (Name &z:0 Store)) (Constant i4 None) None) nil))) nil)",
+        )
+
     def test_globals(self):
         self.assertEqual(
             python_to_s_exp("import os", renderer_kwargs=dict(columns=80)),
@@ -65,6 +73,22 @@ class ParseUnparseInverseTest(unittest.TestCase):
 
     def test_lambda(self):
         self.check("lambda: 1 + 2")
+
+    def test_unparse_sequence(self):
+        # should work with or without the Module wrapper
+        self.assertEqual(
+            s_exp_to_python(
+                "(Module (semi (Assign (list (Name &x:0 Store)) (Constant i2 None) None) nil) nil)"
+            ),
+            "x = 2",
+        )
+
+        self.assertEqual(
+            s_exp_to_python(
+                "(semi (Assign (list (Name &x:0 Store)) (Constant i2 None) None) nil)"
+            ),
+            "x = 2",
+        )
 
     @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
