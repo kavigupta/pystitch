@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 import base64
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
@@ -60,7 +60,12 @@ class LeafAST(ParsedAST):
     leaf: object
 
     def to_pair_s_exp(self):
-        if self.leaf is True or self.leaf is False or self.leaf is None or self.leaf is Ellipsis:
+        if (
+            self.leaf is True
+            or self.leaf is False
+            or self.leaf is None
+            or self.leaf is Ellipsis
+        ):
             return str(self.leaf)
         if isinstance(self.leaf, Symbol):
             return self.leaf.render()
