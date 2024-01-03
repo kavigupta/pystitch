@@ -4,7 +4,7 @@ import os
 import fire
 from datasets import load_dataset
 
-from imperative_stitch.to_s import python_to_s_exp
+from imperative_stitch.parser import python_to_s_exp
 
 
 def compression_testing_code(amount):

@@ -3,7 +3,7 @@ import unittest
 
 from s_expression_parser import ParserConfig, parse
 
-from imperative_stitch.to_s import pair_to_s_exp, python_to_s_exp, s_exp_to_python
+from imperative_stitch.parser import pair_to_s_exp, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.recursion import recursionlimit
 
 from .utils import expand_with_slow_tests, small_set_examples
