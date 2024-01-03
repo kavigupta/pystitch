@@ -10,50 +10,19 @@ import ast
 import base64
 
 import ast_scope
-import attr
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
 from imperative_stitch.utils.ast_utils import field_is_body, name_field, true_globals
 from imperative_stitch.utils.recursion import recursionlimit
+from .symbol import Symbol
 
 
-@attr.s(hash=True)
-class Symbol:
-    """
-    Represents a symbol, like &x:3. This means the symbol x in static frame 3.
-    Can also represent a global symbol that's either a builtin or an imported
-        value. This differs from a symbol defined in the block of code that happens
-        to be in global scope, which will be given a static frame number.
-    """
-
-    name = attr.ib()
-    scope = attr.ib()
-
-    @classmethod
-    def parse(cls, x):
-        """
-        Parses a symbol.
-        """
-        if x.startswith("&"):
-            name, scope = x[1:].split(":")
-            return cls(name, scope)
-        if x.startswith("g"):
-            assert x.startswith("g_")
-            return cls(x[2:], None)
-        return None
-
-    def render(self):
-        if self.scope is None:
-            return f"g_{self.name}"
-        return f"&{self.name}:{self.scope}"
-
-
-def to_list_s_expr(x, descoper, is_body=False):
+def python_ast_to_parsed_ast(x, descoper, is_body=False):
     if is_body:
         assert isinstance(x, list), str(x)
         if not x:
             return []
-        x = [to_list_s_expr(x, descoper) for x in x]
+        x = [python_ast_to_parsed_ast(x, descoper) for x in x]
         result = []
         while x:
             result = ["semi", x.pop(), result]
@@ -69,13 +38,15 @@ def to_list_s_expr(x, descoper, is_body=False):
                 result.append(Symbol(el, descoper[x]))
             else:
                 result.append(
-                    to_list_s_expr(el, descoper, is_body=field_is_body(type(x), f))
+                    python_ast_to_parsed_ast(
+                        el, descoper, is_body=field_is_body(type(x), f)
+                    )
                 )
         return result
     if x == []:
         return []
     if isinstance(x, list):
-        return [list] + [to_list_s_expr(x, descoper) for x in x]
+        return [list] + [python_ast_to_parsed_ast(x, descoper) for x in x]
     if x is None or x is Ellipsis or isinstance(x, (int, float, complex, str, bytes)):
         return x
     raise ValueError(f"Unsupported node {x}")
@@ -210,7 +181,7 @@ def python_to_s_exp(code, renderer_kwargs=None):
         renderer_kwargs = {}
     with recursionlimit(max(1500, len(code))):
         code = ast.parse(code)
-        code = to_list_s_expr(code, create_descoper(code))
+        code = python_ast_to_parsed_ast(code, create_descoper(code))
         code = s_exp_to_pair(code)
         code = Renderer(**renderer_kwargs, nil_as_word=True).render(code)
         return code
