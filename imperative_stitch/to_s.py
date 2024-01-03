@@ -191,8 +191,12 @@ class Splice:
         return target
 
 
+def recursion_guard(code):
+    return recursionlimit(max(1500, len(code)))
+
+
 def parse_to_list_s_expression(code):
-    with recursionlimit(max(1500, len(code))):
+    with recursion_guard(code):
         code = ast.parse(code)
         code = to_list_s_expr(code, create_descoper(code))
         return code
@@ -202,7 +206,7 @@ def python_to_s_exp(code, renderer_kwargs=None):
     if renderer_kwargs is None:
         renderer_kwargs = {}
     code = parse_to_list_s_expression(code)
-    with recursionlimit(max(1500, len(code))):
+    with recursion_guard(code):
         code = s_exp_to_pair(code)
         code = Renderer(**renderer_kwargs, nil_as_word=True).render(code)
         return code
@@ -214,10 +218,16 @@ def s_exp_parse(code):
     return code
 
 
-def s_exp_to_python(code):
-    with recursionlimit(max(1500, len(code))):
+def s_exp_to_list_s_expression(code):
+    with recursion_guard(code):
         code = s_exp_parse(code)
         code = pair_to_s_exp(code)
+        return code
+
+
+def s_exp_to_python(code):
+    with recursion_guard(code):
+        code = s_exp_to_list_s_expression(code)
         code = to_python(code)
         code = ast.unparse(code)
         return code
