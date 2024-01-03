@@ -23,10 +23,7 @@ def python_ast_to_parsed_ast(x, descoper, is_body=False):
         if not x:
             return []
         x = [python_ast_to_parsed_ast(x, descoper) for x in x]
-        result = []
-        while x:
-            result = ["semi", x.pop(), result]
-        return result
+        return ["/seq", *x]
     if isinstance(x, ast.AST):
         if not x._fields:
             return type(x)
@@ -53,17 +50,17 @@ def python_ast_to_parsed_ast(x, descoper, is_body=False):
 
 
 def to_python(x, is_body=False):
-    if isinstance(x, list) and x and x[0] == "semi":
+    if isinstance(x, list) and x and (x[0] == "/seq" or x[0] == "/subseq"):
         is_body = True
     if is_body:
         if x == []:
             return []
-        if isinstance(x, list) and x[0] == "semi":
-            _, first, second = x
-            return to_python(first, True) + to_python(second, True)
+        if isinstance(x, list) and (x[0] == "/seq" or x[0] == "/subseq"):
+            _, *rest = x
+            return [to_python(x) for x in rest]
         return [to_python(x)]
     if isinstance(x, list):
-        if x and isinstance(x[0], type):
+        if x and callable(x[0]):
             if x[0] is list:
                 return [to_python(x) for x in x[1:]]
             t, *x = x
@@ -92,7 +89,7 @@ def s_exp_to_pair(x):
         return list_to_pair(x)
     if isinstance(x, type):
         return x.__name__
-    if x in {"semi"}:
+    if x in {"/seq", "/subseq"}:
         return x
     if x is True or x is False or x is None or x is Ellipsis:
         return str(x)
@@ -144,15 +141,17 @@ def pair_to_s_exp(x):
         return sym_x.name
     if x.startswith("%"):
         return x
-    if x.startswith("#"):
+    if x.startswith("#") or x.startswith("?"):
         return ast.Name(id=x)
 
     if x == "Ellipsis":
         return Ellipsis
     if x in {"True", "False", "None"}:
         return ast.literal_eval(x)
-    if x in {"semi"}:
+    if x in {"/seq", "/subseq"}:
         return x
+    if x == "/splice":
+        return Splice
     if x.startswith("i"):
         return int(x[1:])
     if x.startswith("f"):
@@ -174,6 +173,12 @@ def pair_to_s_exp(x):
     if typ._fields:
         return typ
     return typ()
+
+class Splice:
+    _fields = ["target"]
+
+    def __new__(cls, target):
+        return target
 
 
 def python_to_s_exp(code, renderer_kwargs=None):

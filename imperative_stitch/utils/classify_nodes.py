@@ -183,8 +183,10 @@ def export_dfa(transitions=TRANSITIONS):
     for state in transitions:
         result[state]["list"] = [state]
     for state in transitions:
-        result[state]["semi"] = ["X", "X"]
-    result["S"]["semi"] = ["S", "S"]
+        result[state]["/seq"] = ["X"]
+        result[state]["/splice"] = ["X"]
+    result["S"]["/seq"] = ["S"]
+    result["S"]["/splice"] = ["S"]
     return result
 
 

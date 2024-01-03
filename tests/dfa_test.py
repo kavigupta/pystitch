@@ -88,7 +88,7 @@ reasonable_classifications = [
     ("list", "L"),
     ("list", "W"),
     ("list", "X"),
-    ("semi", "S"),
+    ("/seq", "S"),
     ("withitem", "W"),
 ]
 
