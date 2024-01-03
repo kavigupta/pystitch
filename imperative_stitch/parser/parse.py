@@ -14,6 +14,7 @@ from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
 from imperative_stitch.utils.ast_utils import field_is_body, name_field, true_globals
 from imperative_stitch.utils.recursion import recursionlimit
+
 from .symbol import Symbol
 
 
@@ -173,6 +174,7 @@ def pair_to_s_exp(x):
     if typ._fields:
         return typ
     return typ()
+
 
 class Splice:
     _fields = ["target"]

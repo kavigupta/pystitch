@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from ast_scope.scope import Scope
 
+
 @dataclass(frozen=True)
 class Symbol:
     """
