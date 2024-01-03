@@ -12,7 +12,7 @@ import base64
 import ast_scope
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
-from imperative_stitch.parser.parsed_ast import ParsedAST, SequenceAST
+from imperative_stitch.parser.parsed_ast import LeafAST, ListAST, NodeAST, ParsedAST, SequenceAST
 from imperative_stitch.utils.ast_utils import field_is_body, name_field, true_globals
 from imperative_stitch.utils.recursion import recursionlimit
 
@@ -25,27 +25,23 @@ def python_ast_to_parsed_ast(x, descoper, is_body=False):
         x = [python_ast_to_parsed_ast(x, descoper) for x in x]
         return SequenceAST("/seq", x)
     if isinstance(x, ast.AST):
-        if not x._fields:
-            return type(x)
-        result = [type(x)]
+        result = []
         for f in x._fields:
             el = getattr(x, f)
             if x in descoper and f == name_field(x):
                 assert isinstance(el, str), (x, f, el)
-                result.append(Symbol(el, descoper[x]))
+                result.append(LeafAST(Symbol(el, descoper[x])))
             else:
                 result.append(
                     python_ast_to_parsed_ast(
                         el, descoper, is_body=field_is_body(type(x), f)
                     )
                 )
-        return result
-    if x == []:
-        return []
+        return NodeAST(type(x), result)
     if isinstance(x, list):
-        return [list] + [python_ast_to_parsed_ast(x, descoper) for x in x]
+        return ListAST([python_ast_to_parsed_ast(x, descoper) for x in x])
     if x is None or x is Ellipsis or isinstance(x, (int, float, complex, str, bytes)):
-        return x
+        return LeafAST(x)
     raise ValueError(f"Unsupported node {x}")
 
 
@@ -79,43 +75,6 @@ def list_to_pair(x):
     while x:
         result = Pair(x.pop(), result)
     return result
-
-
-def s_exp_to_pair(x):
-    if x == []:
-        return nil
-    if isinstance(x, ParsedAST):
-        return x.to_pair_s_exp()
-    if isinstance(x, list):
-        x = [s_exp_to_pair(x) for x in x]
-        return list_to_pair(x)
-    if isinstance(x, type):
-        return x.__name__
-    if x in {"/seq", "/subseq"}:
-        return x
-    if x is True or x is False or x is None or x is Ellipsis:
-        return str(x)
-    if isinstance(x, Symbol):
-        return x.render()
-    if isinstance(x, float):
-        return f"f{x}"
-    if isinstance(x, int):
-        return f"i{x}"
-    if isinstance(x, complex):
-        return f"j{x}"
-    if isinstance(x, str):
-        # if all are renderable directly without whitespace, just use that
-        if all(
-            c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
-            for c in x
-        ):
-            return "s_" + x
-        return "s-" + base64.b64encode(str([ord(x) for x in x]).encode("ascii")).decode(
-            "utf-8"
-        )
-    if isinstance(x, bytes):
-        return "b" + base64.b64encode(x).decode("utf-8")
-    raise ValueError(f"Unsupported: {type(x)}")
 
 
 def pair_to_s_exp(x):
@@ -194,9 +153,9 @@ def parse_to_list_s_expression(code):
 def python_to_s_exp(code, renderer_kwargs=None):
     if renderer_kwargs is None:
         renderer_kwargs = {}
-    code = parse_to_list_s_expression(code)
     with recursionlimit(max(1500, len(code))):
-        code = s_exp_to_pair(code)
+        code = parse_to_list_s_expression(code)
+        code = code.to_pair_s_exp()
         code = Renderer(**renderer_kwargs, nil_as_word=True).render(code)
         return code
 
