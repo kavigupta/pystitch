@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
-from s_expression_parser import nil
+from s_expression_parser import Pair, nil
 
 from .symbol import Symbol
 
@@ -20,8 +20,6 @@ class SequenceAST(ParsedAST):
     elements: List[ParsedAST]
 
     def to_pair_s_exp(self):
-        from imperative_stitch.parser.parse import list_to_pair
-
         result = [self.head] + [x.to_pair_s_exp() for x in self.elements]
         return list_to_pair(result)
 
@@ -32,8 +30,6 @@ class NodeAST(ParsedAST):
     children: List[ParsedAST]
 
     def to_pair_s_exp(self):
-        from imperative_stitch.parser.parse import list_to_pair
-
         if not self.children:
             return self.typ.__name__
 
@@ -47,8 +43,6 @@ class ListAST(ParsedAST):
     children: List[ParsedAST]
 
     def to_pair_s_exp(self):
-        from imperative_stitch.parser.parse import list_to_pair
-
         if not self.children:
             return nil
 
@@ -88,3 +82,11 @@ class LeafAST(ParsedAST):
         if isinstance(self.leaf, bytes):
             return "b" + base64.b64encode(self.leaf).decode("utf-8")
         raise RuntimeError(f"invalid leaf: {self.leaf}")
+
+
+def list_to_pair(x):
+    x = x[:]
+    result = nil
+    while x:
+        result = Pair(x.pop(), result)
+    return result
