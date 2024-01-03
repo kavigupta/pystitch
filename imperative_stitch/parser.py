@@ -11,14 +11,28 @@ from imperative_stitch.utils.recursion import recursionlimit
 
 @attr.s(hash=True)
 class Symbol:
+    """
+    Represents a symbol, like &x:3. This means the symbol x in static frame 3.
+    Can also represent a global symbol that's either a builtin or an imported
+        value. This differs from a symbol defined in the block of code that happens
+        to be in global scope, which will be given a static frame number.
+    """
+
     name = attr.ib()
     scope = attr.ib()
 
     @classmethod
     def parse(cls, x):
-        assert x.startswith("&")
-        name, scope = x[1:].split(":")
-        return cls(name, scope)
+        """
+        Parses a symbol.
+        """
+        if x.startswith("&"):
+            name, scope = x[1:].split(":")
+            return cls(name, scope)
+        if x.startswith("g"):
+            assert x.startswith("g_")
+            return cls(x[2:], None)
+        return None
 
     def render(self):
         if self.scope is None:
@@ -146,11 +160,9 @@ def pair_to_s_exp(x):
             ]
         return [pair_to_s_exp(x.car)] + pair_to_s_exp(x.cdr)
     assert isinstance(x, str), str(type(x))
-    if x.startswith("&"):
-        return Symbol.parse(x).name
-    if x.startswith("g"):
-        assert x.startswith("g_")
-        return x[2:]
+    sym_x = Symbol.parse(x)
+    if sym_x is not None:
+        return sym_x.name
     if x.startswith("%"):
         return x
     if x.startswith("#"):
