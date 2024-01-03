@@ -3,7 +3,8 @@ import unittest
 
 from s_expression_parser import Pair, nil
 
-from imperative_stitch.parser import ParserConfig, parse, python_to_s_exp
+# TODO fix this
+from imperative_stitch.parser.parse import ParserConfig, parse, python_to_s_exp
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
 from imperative_stitch.utils.recursion import recursionlimit
 
