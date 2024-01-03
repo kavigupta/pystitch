@@ -12,6 +12,7 @@ import base64
 import ast_scope
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
+from imperative_stitch.parser.parsed_ast import ParsedAST, SequenceAST
 from imperative_stitch.utils.ast_utils import field_is_body, name_field, true_globals
 from imperative_stitch.utils.recursion import recursionlimit
 
@@ -22,7 +23,7 @@ def python_ast_to_parsed_ast(x, descoper, is_body=False):
     if is_body:
         assert isinstance(x, list), str(x)
         x = [python_ast_to_parsed_ast(x, descoper) for x in x]
-        return ["/seq", *x]
+        return SequenceAST("/seq", x)
     if isinstance(x, ast.AST):
         if not x._fields:
             return type(x)
@@ -83,6 +84,8 @@ def list_to_pair(x):
 def s_exp_to_pair(x):
     if x == []:
         return nil
+    if isinstance(x, ParsedAST):
+        return x.to_pair_s_exp()
     if isinstance(x, list):
         x = [s_exp_to_pair(x) for x in x]
         return list_to_pair(x)
