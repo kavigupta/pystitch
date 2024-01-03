@@ -52,9 +52,7 @@ class ListAST(ParsedAST):
         if not self.children:
             return nil
 
-        return list_to_pair(
-            ["list"] + [x.to_pair_s_exp() for x in self.children]
-        )
+        return list_to_pair(["list"] + [x.to_pair_s_exp() for x in self.children])
 
 
 @dataclass
@@ -62,27 +60,26 @@ class LeafAST(ParsedAST):
     leaf: object
 
     def to_pair_s_exp(self):
-        x = self.leaf
-        if x is True or x is False or x is None or x is Ellipsis:
-            return str(x)
-        if isinstance(x, Symbol):
-            return x.render()
-        if isinstance(x, float):
-            return f"f{x}"
-        if isinstance(x, int):
-            return f"i{x}"
-        if isinstance(x, complex):
-            return f"j{x}"
-        if isinstance(x, str):
+        if self.leaf is True or self.leaf is False or self.leaf is None or self.leaf is Ellipsis:
+            return str(self.leaf)
+        if isinstance(self.leaf, Symbol):
+            return self.leaf.render()
+        if isinstance(self.leaf, float):
+            return f"f{self.leaf}"
+        if isinstance(self.leaf, int):
+            return f"i{self.leaf}"
+        if isinstance(self.leaf, complex):
+            return f"j{self.leaf}"
+        if isinstance(self.leaf, str):
             # if all are renderable directly without whitespace, just use that
             if all(
                 c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
-                for c in x
+                for c in self.leaf
             ):
-                return "s_" + x
+                return "s_" + self.leaf
             return "s-" + base64.b64encode(
-                str([ord(x) for x in x]).encode("ascii")
+                str([ord(x) for x in self.leaf]).encode("ascii")
             ).decode("utf-8")
-        if isinstance(x, bytes):
-            return "b" + base64.b64encode(x).decode("utf-8")
-        raise RuntimeError("bad")
+        if isinstance(self.leaf, bytes):
+            return "b" + base64.b64encode(self.leaf).decode("utf-8")
+        raise RuntimeError(f"invalid leaf: {self.leaf}")
