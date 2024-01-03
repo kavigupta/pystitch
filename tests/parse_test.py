@@ -17,7 +17,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         if not isinstance(s_exp, list) or not s_exp:
             return
         self.assertTrue(
-            isinstance(s_exp[0], type) or s_exp[0] in {"semi"}, repr(s_exp[0])
+            isinstance(s_exp[0], type) or s_exp[0] in {"/seq"}, repr(s_exp[0])
         )
         self.assertTrue(len(s_exp) > 1, repr(s_exp))
         for y in s_exp[1:]:
@@ -48,13 +48,13 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.check("x = 2\ny = 3\nz = 4")
         self.assertEqual(
             python_to_s_exp("x = 2\ny = 3\nz = 4", renderer_kwargs=dict(columns=80000)),
-            "(Module (semi (Assign (list (Name &x:0 Store)) (Constant i2 None) None) (semi (Assign (list (Name &y:0 Store)) (Constant i3 None) None) (semi (Assign (list (Name &z:0 Store)) (Constant i4 None) None) nil))) nil)",
+            "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None) (Assign (list (Name &y:0 Store)) (Constant i3 None) None) (Assign (list (Name &z:0 Store)) (Constant i4 None) None)) nil)",
         )
 
     def test_globals(self):
         self.assertEqual(
             python_to_s_exp("import os", renderer_kwargs=dict(columns=80)),
-            "(Module (semi (Import (list (alias g_os None))) nil) nil)",
+            "(Module (/seq (Import (list (alias g_os None)))) nil)",
         )
 
     def test_builtins(self):
@@ -78,14 +78,14 @@ class ParseUnparseInverseTest(unittest.TestCase):
         # should work with or without the Module wrapper
         self.assertEqual(
             s_exp_to_python(
-                "(Module (semi (Assign (list (Name &x:0 Store)) (Constant i2 None) None) nil) nil)"
+                "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)"
             ),
             "x = 2",
         )
 
         self.assertEqual(
             s_exp_to_python(
-                "(semi (Assign (list (Name &x:0 Store)) (Constant i2 None) None) nil)"
+                "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))"
             ),
             "x = 2",
         )
