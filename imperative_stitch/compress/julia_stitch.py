@@ -3,7 +3,6 @@ import os
 import shlex
 import subprocess
 
-from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.utils.classify_nodes import export_dfa
 
 # a, b = f(c, d)
@@ -76,6 +75,5 @@ def run_julia_stitch(
     assert tildes2 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     assert newline == ""
     abstractions = json.loads(abstractions)
-    abstractions = [Abstraction(**x) for x in abstractions]
     rewritten = json.loads(rewritten)
     return abstractions, rewritten
