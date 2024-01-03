@@ -16,10 +16,9 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def assert_valid_s_exp(self, s_exp):
         if not isinstance(s_exp, list) or not s_exp:
             return
-        self.assertTrue(
-            isinstance(s_exp[0], type) or s_exp[0] in {"/seq"}, repr(s_exp[0])
-        )
-        self.assertTrue(len(s_exp) > 1, repr(s_exp))
+        if s_exp[0] not in {"/seq"}:
+            self.assertTrue(isinstance(s_exp[0], type), repr(s_exp[0]))
+            self.assertTrue(len(s_exp) > 1, repr(s_exp))
         for y in s_exp[1:]:
             self.assert_valid_s_exp(y)
 
@@ -73,6 +72,9 @@ class ParseUnparseInverseTest(unittest.TestCase):
 
     def test_lambda(self):
         self.check("lambda: 1 + 2")
+
+    def test_if(self):
+        self.check("if True: pass")
 
     def test_unparse_sequence(self):
         # should work with or without the Module wrapper

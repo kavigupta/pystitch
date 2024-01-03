@@ -21,8 +21,6 @@ from .symbol import Symbol
 def python_ast_to_parsed_ast(x, descoper, is_body=False):
     if is_body:
         assert isinstance(x, list), str(x)
-        if not x:
-            return []
         x = [python_ast_to_parsed_ast(x, descoper) for x in x]
         return ["/seq", *x]
     if isinstance(x, ast.AST):
