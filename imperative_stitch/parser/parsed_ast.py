@@ -16,6 +16,7 @@ from .splice import Splice
 class ParsedAST(ABC):
     @classmethod
     def parse_python_code(cls, code):
+            # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
 
         with limit_to_size(code):
@@ -26,6 +27,7 @@ class ParsedAST(ABC):
     @classmethod
     def parse_s_expression(cls, code):
         with limit_to_size(code):
+            # pylint: disable=R0401
             from .parse_s_exp import s_exp_to_parsed_ast
 
             (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
