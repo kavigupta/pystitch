@@ -19,6 +19,9 @@ from .symbol import Symbol
 
 
 def pair_to_list(x):
+    """
+    Convert a pair to a list.
+    """
     result = []
     while x is not nil:
         result.append(x.car)
@@ -59,6 +62,9 @@ def s_exp_leaf_to_value(x):
 
 
 def s_exp_to_parsed_ast(x):
+    """
+    Convert an s-expression (as pairs) to a parsed AST
+    """
     if x is nil or x == "nil":
         return ListAST([])
     if isinstance(x, str):

@@ -14,6 +14,9 @@ from .splice import Splice
 
 
 class ParsedAST(ABC):
+    """
+    Represents a Parsed AST.
+    """
     @classmethod
     def parse_python_code(cls, code):
         # pylint: disable=R0401

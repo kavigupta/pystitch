@@ -12,6 +12,9 @@ from .symbol import Symbol
 
 
 def python_ast_to_parsed_ast(x, descoper, is_body=False):
+    """
+    Convert an ast.AST object to a ParsedAST object.
+    """
     if is_body:
         assert isinstance(x, list), str(x)
         x = [python_ast_to_parsed_ast(x, descoper) for x in x]

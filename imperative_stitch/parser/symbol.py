@@ -37,6 +37,9 @@ class Symbol:
 
 
 def create_descoper(code):
+    """
+    Creates a mapping from nodes to numerical ids for scopes.
+    """
     globs = true_globals(code)
     annot = ast_scope.annotate(code)
     scopes = []
