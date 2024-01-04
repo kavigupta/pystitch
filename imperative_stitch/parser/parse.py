@@ -12,7 +12,17 @@ import base64
 import ast_scope
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
-from imperative_stitch.parser.parsed_ast import LeafAST, ListAST, NodeAST, SequenceAST
+from imperative_stitch.parser.parsed_ast import (
+    AbstractionCallAST,
+    ChoicevarAST,
+    LeafAST,
+    ListAST,
+    MetavarAST,
+    NodeAST,
+    SequenceAST,
+    SpliceAST,
+    SymvarAST,
+)
 from imperative_stitch.utils.ast_utils import field_is_body, name_field, true_globals
 from imperative_stitch.utils.recursion import recursionlimit
 
@@ -45,94 +55,78 @@ def python_ast_to_parsed_ast(x, descoper, is_body=False):
     raise ValueError(f"Unsupported node {x}")
 
 
-def to_python(x, is_body=False):
-    if isinstance(x, list) and x and (x[0] == "/seq" or x[0] == "/subseq"):
-        is_body = True
-    if is_body:
-        if x == []:
-            return []
-        if isinstance(x, list) and (x[0] == "/seq" or x[0] == "/subseq"):
-            _, *rest = x
-            return [to_python(x) for x in rest]
-        return [to_python(x)]
-    if isinstance(x, list):
-        if x and callable(x[0]):
-            if x[0] is list:
-                return [to_python(x) for x in x[1:]]
-            t, *x = x
-            f = t._fields
-            assert len(x) == len(f)
-            x = t(*[to_python(x, field_is_body(t, f)) for x, f in zip(x, f)])
-            x.lineno = 0
-            return x
-        return [to_python(x) for x in x]
-    return x
+def pair_to_list(x):
+    result = []
+    while x is not nil:
+        result.append(x.car)
+        x = x.cdr
+    return result
 
 
-def pair_to_s_exp(x):
-    if x == "list":
-        return list
-    if x is nil or x == "nil":
-        return []
-    if isinstance(x, Pair):
-        if isinstance(x.car, str) and x.car.startswith("fn"):
-            args = pair_to_s_exp(x.cdr)
-            args = [
-                [ast.Name, sym, [ast.Load]] if isinstance(sym, str) else sym
-                for sym in args
-            ]
-            return [
-                ast.Call,
-                [ast.Name, x.car, [ast.Load]],
-                [list, *args],
-                [],
-            ]
-        return [pair_to_s_exp(x.car)] + pair_to_s_exp(x.cdr)
-    assert isinstance(x, str), str(type(x))
+def s_exp_leaf_to_value(x):
+    """
+    Returns (True, a python representation of the leaf) if it is a leaf, or (False, None) otherwise.
+    """
     sym_x = Symbol.parse(x)
     if sym_x is not None:
-        return sym_x.name
-    if x.startswith("%"):
-        return x
-    if x.startswith("#") or x.startswith("?"):
-        return ast.Name(id=x)
-
+        return True, sym_x
     if x == "Ellipsis":
-        return Ellipsis
+        return True, Ellipsis
     if x in {"True", "False", "None"}:
-        return ast.literal_eval(x)
-    if x in {"/seq", "/subseq"}:
-        return x
-    if x == "/splice":
-        return Splice
+        return True, ast.literal_eval(x)
     if x.startswith("i"):
-        return int(x[1:])
+        return True, int(x[1:])
     if x.startswith("f"):
-        return float(x[1:])
+        return True, float(x[1:])
     if x.startswith("j"):
-        return complex(x[1:])
+        return True, complex(x[1:])
     if x.startswith("s_"):
-        return x[2:]
+        return True, x[2:]
     if x.startswith("s-"):
-        return "".join(
+        return True, "".join(
             chr(x)
             for x in ast.literal_eval(
                 base64.b64decode(x[2:].encode("utf-8")).decode("ascii")
             )
         )
     if x.startswith("b"):
-        return base64.b64decode(x[1:].encode("utf-8"))
-    typ = getattr(ast, x)
-    if typ._fields:
-        return typ
-    return typ()
+        return True, base64.b64decode(x[1:].encode("utf-8"))
+
+    return False, None
 
 
-class Splice:
-    _fields = ["target"]
+def pair_to_s_exp(x):
+    if x is nil or x == "nil":
+        return ListAST([])
+    if isinstance(x, str):
+        if x.startswith("%"):
+            return SymvarAST(x)
+        if x.startswith("#"):
+            return MetavarAST(x)
+        if x.startswith("?"):
+            return ChoicevarAST(x)
 
-    def __new__(cls, target):
-        return target
+        is_leaf, leaf = s_exp_leaf_to_value(x)
+        if is_leaf:
+            return LeafAST(leaf)
+        typ = getattr(ast, x)
+        assert not typ._fields
+        return NodeAST(typ, [])
+    assert isinstance(x, Pair), str(type(x))
+    tag, *args = pair_to_list(x)
+    assert isinstance(tag, str), str(tag)
+    args = [pair_to_s_exp(x) for x in args]
+    if tag in {"/seq", "/subseq"}:
+        return SequenceAST(tag, args)
+    if tag in {"/splice"}:
+        [arg] = args
+        return SpliceAST(arg)
+    if tag in {"list"}:
+        print(args)
+        return ListAST(args)
+    if tag.startswith("fn"):
+        return AbstractionCallAST(tag, args)
+    return NodeAST(getattr(ast, tag), args)
 
 
 def parse_to_list_s_expression(code):
@@ -162,7 +156,7 @@ def s_exp_to_python(code):
     with recursionlimit(max(1500, len(code))):
         code = s_exp_parse(code)
         code = pair_to_s_exp(code)
-        code = to_python(code)
+        code = code.to_python_ast()
         code = ast.unparse(code)
         return code
 
