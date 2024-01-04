@@ -45,8 +45,9 @@ def run_python_with_timeout(code, inp, *, timeout=10):
 
 
 @permacache(
-    "imperative_stitch/data/runnable_code_set/run_python_2",
+    "imperative_stitch/data/runnable_code_set/run_python_3",
     key_function=dict(code=stable_hash, input=stable_hash),
+    multiprocess_safe=True,
 )
 def run_python(code, inp):
     """
