@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import List
 
 from s_expression_parser import Pair, nil
-
+from s_expression_parser import ParserConfig, parse
 
 from ..utils.recursion import limit_to_size
 
@@ -21,6 +21,15 @@ class ParsedAST(ABC):
         with limit_to_size(code):
             code = ast.parse(code)
             code = python_ast_to_parsed_ast(code, create_descoper(code))
+            return code
+
+    @classmethod
+    def parse_s_expression(cls, code):
+        with limit_to_size(code):
+            from .parse_s_exp import s_exp_to_parsed_ast
+
+            (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+            code = s_exp_to_parsed_ast(code)
             return code
 
     @abstractmethod

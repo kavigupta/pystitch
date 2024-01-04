@@ -3,8 +3,7 @@ import unittest
 
 from s_expression_parser import ParserConfig, parse
 
-from imperative_stitch.parser import python_to_s_exp, s_exp_to_python
-from imperative_stitch.parser.parse_s_exp import s_exp_to_parsed_ast
+from imperative_stitch.parser import python_to_s_exp, s_exp_to_python, ParsedAST
 from imperative_stitch.utils.recursion import recursionlimit
 
 from .utils import expand_with_slow_tests, small_set_examples
@@ -27,12 +26,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         test_code = self.canonicalize(test_code)
         s_exp = python_to_s_exp(test_code, renderer_kwargs=dict(columns=80))
         # print(s_exp)
-        with recursionlimit(max(1500, len(s_exp))):
-            # pylint: disable=unbalanced-tuple-unpacking
-            [s_exp_parsed] = parse(
-                s_exp, ParserConfig(prefix_symbols=[], dots_are_cons=False)
-            )
-            s_exp_parsed = s_exp_to_parsed_ast(s_exp_parsed)
+        s_exp_parsed = ParsedAST.parse_s_expression(s_exp)
         print(repr(s_exp_parsed))
         self.assert_valid_s_exp(s_exp_parsed)
         modified = s_exp_to_python(s_exp)
