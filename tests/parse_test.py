@@ -3,7 +3,8 @@ import unittest
 
 from s_expression_parser import ParserConfig, parse
 
-from imperative_stitch.parser import pair_to_s_exp, python_to_s_exp, s_exp_to_python
+from imperative_stitch.parser import python_to_s_exp, s_exp_to_python
+from imperative_stitch.parser.parse_s_exp import s_exp_to_parsed_ast
 from imperative_stitch.utils.recursion import recursionlimit
 
 from .utils import expand_with_slow_tests, small_set_examples
@@ -31,7 +32,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
             [s_exp_parsed] = parse(
                 s_exp, ParserConfig(prefix_symbols=[], dots_are_cons=False)
             )
-            s_exp_parsed = pair_to_s_exp(s_exp_parsed)
+            s_exp_parsed = s_exp_to_parsed_ast(s_exp_parsed)
         print(repr(s_exp_parsed))
         self.assert_valid_s_exp(s_exp_parsed)
         modified = s_exp_to_python(s_exp)

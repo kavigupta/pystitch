@@ -13,3 +13,7 @@ class recursionlimit:
 
     def __exit__(self, _1, _2, _3):
         sys.setrecursionlimit(self.old_limit)
+
+
+def limit_to_size(code):
+    return recursionlimit(max(1500, len(code)))

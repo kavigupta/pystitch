@@ -6,11 +6,23 @@ from typing import List
 
 from s_expression_parser import Pair, nil
 
-from .symbol import Symbol
+
+from ..utils.recursion import limit_to_size
+
+from .symbol import Symbol, create_descoper
 from .splice import Splice
 
 
 class ParsedAST(ABC):
+    @classmethod
+    def parse_python_code(cls, code):
+        from .parse_python import python_ast_to_parsed_ast
+
+        with limit_to_size(code):
+            code = ast.parse(code)
+            code = python_ast_to_parsed_ast(code, create_descoper(code))
+            return code
+
     @abstractmethod
     def to_pair_s_exp(self):
         pass

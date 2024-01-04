@@ -1,6 +1,8 @@
+import ast
 from dataclasses import dataclass
 
-from ast_scope.scope import Scope
+import ast_scope
+from imperative_stitch.utils.ast_utils import true_globals
 
 
 @dataclass(frozen=True)
@@ -13,7 +15,7 @@ class Symbol:
     """
 
     name: str
-    scope: Scope
+    scope: ast_scope.scope.Scope
 
     @classmethod
     def parse(cls, x):
@@ -32,3 +34,19 @@ class Symbol:
         if self.scope is None:
             return f"g_{self.name}"
         return f"&{self.name}:{self.scope}"
+
+
+def create_descoper(code):
+    globs = true_globals(code)
+    annot = ast_scope.annotate(code)
+    scopes = []
+    results = {}
+    for node in ast.walk(code):
+        if node in annot:
+            if node in globs:
+                results[node] = None
+                continue
+            if annot[node] not in scopes:
+                scopes.append(annot[node])
+            results[node] = scopes.index(annot[node])
+    return results
