@@ -16,7 +16,7 @@ from .splice import Splice
 class ParsedAST(ABC):
     @classmethod
     def parse_python_code(cls, code):
-            # pylint: disable=R0401
+        # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
 
         with limit_to_size(code):
