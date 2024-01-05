@@ -1,11 +1,12 @@
 import ast
 import unittest
 
-from s_expression_parser import Pair, nil
+# TODO fix this
+from s_expression_parser import Pair, nil, ParserConfig, parse
 
-from imperative_stitch.to_s import ParserConfig, parse, python_to_s_exp
+from imperative_stitch.parser import python_to_s_exp
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
-from imperative_stitch.utils.recursion import recursionlimit
+from imperative_stitch.utils.recursion import limit_to_size
 
 from .utils import expand_with_slow_tests, small_set_examples
 
@@ -111,7 +112,7 @@ def classify(x, state):
 
 class DFATest(unittest.TestCase):
     def classify_elements_in_code(self, code):
-        with recursionlimit(max(1500, len(code))):
+        with limit_to_size(code):
             print("#" * 80)
             print(code)
             code = python_to_s_exp(code)

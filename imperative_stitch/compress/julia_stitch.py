@@ -16,7 +16,6 @@ from imperative_stitch.utils.classify_nodes import export_dfa
 #     = assign_size + call_size + fn_name + 2 * n_returns * sym_size
 
 
-
 def run_julia_stitch(
     code,
     *,
@@ -26,7 +25,7 @@ def run_julia_stitch(
     quiet=True,
     application_utility_metavar=-1,
     application_utility_symvar=-0.5,
-    application_utility_fixed = -3, # see reasoning above
+    application_utility_fixed=-3,  # see reasoning above
     include_dfa=True,
 ):
     size_by_symbol = {
