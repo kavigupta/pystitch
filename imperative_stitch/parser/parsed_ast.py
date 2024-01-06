@@ -18,6 +18,9 @@ class ParsedAST(ABC):
 
     @classmethod
     def parse_python_code(cls, code):
+        """
+        Parse the given python code into a ParsedAST.
+        """
         # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
 
@@ -28,6 +31,9 @@ class ParsedAST(ABC):
 
     @classmethod
     def parse_s_expression(cls, code):
+        """
+        Parse the given s-expression into a ParsedAST.
+        """
         with limit_to_size(code):
             # pylint: disable=R0401
             from .parse_s_exp import s_exp_to_parsed_ast
@@ -38,24 +44,37 @@ class ParsedAST(ABC):
 
     @abstractmethod
     def to_pair_s_exp(self):
-        pass
+        """
+        Convert this ParsedAST into a pair s-expression.
+        """
 
     @abstractmethod
     def to_python_ast(self):
-        pass
+        """
+        Convert this ParsedAST into a python AST.
+        """
 
     @abstractmethod
     def substitute(self, arguments):
-        pass
+        """
+        Substitute the given arguments into this ParsedAST.
+        """
 
     @classmethod
     def constant(cls, leaf):
+        """
+        Create a constant ParsedAST from the given leaf value (which must be a python constant).
+        """
+        assert not isinstance(leaf, ParsedAST), leaf
         return NodeAST(
             typ=ast.Constant, children=[LeafAST(leaf=leaf), LeafAST(leaf=None)]
         )
 
     @classmethod
     def name(cls, name_node):
+        """
+        Create a name ParsedAST from the given name node containing a symbol.
+        """
         assert isinstance(name_node, LeafAST) and isinstance(
             name_node.leaf, Symbol
         ), name_node
@@ -69,6 +88,11 @@ class ParsedAST(ABC):
 
     @classmethod
     def call(cls, name_sym, *arguments):
+        """
+        Create a call ParsedAST from the given symbol and arguments.
+
+        In this case, the symbol must be a symbol representing a name.
+        """
         assert isinstance(name_sym, Symbol), name_sym
         return NodeAST(
             typ=ast.Call,
@@ -80,9 +104,17 @@ class ParsedAST(ABC):
         )
 
     def render_symvar(self):
+        """
+        Render this ParsedAST as a __ref__ variable for stub display, i.e.,
+            `a` -> `__ref__(a)`
+        """
         return ParsedAST.call(Symbol(name="__ref__", scope=None), ParsedAST.name(self))
 
     def render_codevar(self):
+        """
+        Render this ParsedAST as a __code__ variable for stub display, i.e.,
+            `a` -> `__code__("a")`
+        """
         return ParsedAST.call(
             Symbol(name="__code__", scope=None),
             ParsedAST.constant(ast.unparse(self.to_python_ast())),
