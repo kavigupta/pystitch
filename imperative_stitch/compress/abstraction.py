@@ -27,6 +27,7 @@ class Arguments:
             + [x.render_codevar() for x in self.choicevars]
         )
 
+
 @dataclass
 class Abstraction:
     name: str

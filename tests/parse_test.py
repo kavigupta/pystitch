@@ -1,7 +1,7 @@
 import ast
 import unittest
 
-from imperative_stitch.parser import python_to_s_exp, s_exp_to_python, ParsedAST
+from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
 
 from .utils import expand_with_slow_tests, small_set_examples
 
