@@ -10,6 +10,7 @@ from imperative_stitch.parser.parsed_ast import (
     ListAST,
     MetavarAST,
     NodeAST,
+    NothingAST,
     SequenceAST,
     SpliceAST,
     SymvarAST,
@@ -74,6 +75,8 @@ def s_exp_to_parsed_ast(x):
             return MetavarAST(x)
         if x.startswith("?"):
             return ChoicevarAST(x)
+        if x in {"/nothing"}:
+            return NothingAST()
 
         is_leaf, leaf = s_exp_leaf_to_value(x)
         if is_leaf:
