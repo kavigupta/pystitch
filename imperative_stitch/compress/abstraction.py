@@ -1,11 +1,6 @@
-import ast
 from dataclasses import dataclass
-from functools import cached_property
-
-from s_expression_parser import Pair, nil
 
 from imperative_stitch.parser import ParsedAST
-from imperative_stitch.parser.parsed_ast import NodeAST
 from imperative_stitch.parser.symbol import Symbol
 
 

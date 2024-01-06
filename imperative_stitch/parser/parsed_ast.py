@@ -267,11 +267,12 @@ class AbstractionCallAST(ParsedAST):
         return list_to_pair([self.tag] + [x.to_pair_s_exp() for x in self.args])
 
     def to_python_ast(self):
-        args = [
-            ast.Name(sym, ast.Load) if isinstance(sym, str) else sym
-            for sym in self.args
-        ]
-        return ast.Call(ast.Name(self.tag, ast.Load()), args, [])
+        raise RuntimeError("cannot convert abstraction call to python")
+
+    def substitute(self, arguments):
+        return AbstractionCallAST(
+            self.tag, [x.substitute(arguments) for x in self.args]
+        )
 
 
 @dataclass

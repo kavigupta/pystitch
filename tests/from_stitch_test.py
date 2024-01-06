@@ -39,6 +39,7 @@ class SequenceTest(unittest.TestCase):
     """
 
     fn_1 = Abstraction(
+        name="fn_1",
         body=fn_1_body,
         arity=0,
         sym_arity=2,
@@ -94,6 +95,7 @@ class SequenceTest(unittest.TestCase):
 
 class MultiKindTest(unittest.TestCase):
     fn_1 = Abstraction(
+        name="fn_1",
         body="(/seq (If (BinOp (BinOp (BinOp (BinOp (Constant i1 None) Mult (Constant i2 None)) Mult (Constant i3 None)) Mult (Constant i4 None)) Mult (Constant i5 None)) (/seq (Assign (list (Name %1 Store)) (BinOp (Name %1 Load) Add #0) None) (Assign (list (Name %2 Store)) (List (list (Name g_print Load) (Name g_sum Load) (Name g_u Load)) Load) None) ?0) nil))",
         arity=1,
         sym_arity=2,
