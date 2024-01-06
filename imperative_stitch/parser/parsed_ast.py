@@ -55,10 +55,25 @@ class ParsedAST(ABC):
         """
 
     @abstractmethod
+    def map(self, fn):
+        """
+        Map the given function over this ParsedAST. fn is run in post-order,
+            i.e., run on all the children and then on the new object.
+        """
+
+    def replace_with_substitute(self, arguments):
+        """
+        Replace this ParsedAST with the corresponding argument from the given arguments.
+        """
+        del arguments
+        # by default, do nothing
+        return self
+
     def substitute(self, arguments):
         """
         Substitute the given arguments into this ParsedAST.
         """
+        return self.map(lambda x: x.replace_with_substitute(arguments))
 
     @classmethod
     def constant(cls, leaf):
@@ -131,8 +146,8 @@ class SpliceAST(ParsedAST):
     def to_python_ast(self):
         return Splice(self.content.to_python_ast())
 
-    def substitute(self, arguments):
-        return SpliceAST(self.content.substitute(arguments))
+    def map(self, fn):
+        return fn(SpliceAST(self.content.map(fn)))
 
 
 @dataclass
@@ -154,8 +169,8 @@ class SequenceAST(ParsedAST):
                 result += [x]
         return result
 
-    def substitute(self, arguments):
-        return SequenceAST(self.head, [x.substitute(arguments) for x in self.elements])
+    def map(self, fn):
+        return fn(SequenceAST(self.head, [x.map(fn) for x in self.elements]))
 
 
 @dataclass
@@ -176,8 +191,8 @@ class NodeAST(ParsedAST):
         out.lineno = 0
         return out
 
-    def substitute(self, arguments):
-        return NodeAST(self.typ, [x.substitute(arguments) for x in self.children])
+    def map(self, fn):
+        return fn(NodeAST(self.typ, [x.map(fn) for x in self.children]))
 
 
 @dataclass
@@ -193,8 +208,8 @@ class ListAST(ParsedAST):
     def to_python_ast(self):
         return [x.to_python_ast() for x in self.children]
 
-    def substitute(self, arguments):
-        return ListAST([x.substitute(arguments) for x in self.children])
+    def map(self, fn):
+        return fn(ListAST([x.map(fn) for x in self.children]))
 
 
 @dataclass
@@ -239,8 +254,8 @@ class LeafAST(ParsedAST):
             return self.leaf.name
         return self.leaf
 
-    def substitute(self, arguments):
-        return self
+    def map(self, fn):
+        return fn(LeafAST(self.leaf))
 
 
 @dataclass
@@ -251,6 +266,9 @@ class Variable(ParsedAST):
     def idx(self):
         return int(self.sym[1:])
 
+    def map(self, fn):
+        return fn(self)
+
 
 @dataclass
 class SymvarAST(Variable):
@@ -260,7 +278,7 @@ class SymvarAST(Variable):
     def to_python_ast(self):
         return self.sym
 
-    def substitute(self, arguments):
+    def replace_with_substitute(self, arguments):
         return arguments.symvars[self.idx - 1]
 
 
@@ -272,7 +290,7 @@ class MetavarAST(Variable):
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
-    def substitute(self, arguments):
+    def replace_with_substitute(self, arguments):
         return arguments.metavars[self.idx - 1]
 
 
@@ -284,7 +302,7 @@ class ChoicevarAST(Variable):
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
-    def substitute(self, arguments):
+    def replace_with_substitute(self, arguments):
         return arguments.choicevars[self.idx - 1]
 
 
@@ -299,10 +317,8 @@ class AbstractionCallAST(ParsedAST):
     def to_python_ast(self):
         raise RuntimeError("cannot convert abstraction call to python")
 
-    def substitute(self, arguments):
-        return AbstractionCallAST(
-            self.tag, [x.substitute(arguments) for x in self.args]
-        )
+    def map(self, fn):
+        return fn(AbstractionCallAST(self.tag, [x.map(fn) for x in self.args]))
 
 
 @dataclass
@@ -315,6 +331,9 @@ class NothingAST(ParsedAST):
 
     def substitute(self, arguments):
         return self
+
+    def map(self, fn):
+        return fn(self)
 
     def render_codevar(self):
         return ParsedAST.name(LeafAST(Symbol(name="None", scope=None)))
