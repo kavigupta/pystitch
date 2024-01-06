@@ -2,7 +2,7 @@ import unittest
 from textwrap import dedent
 
 from imperative_stitch.compress.abstraction import Abstraction, handle_abstractions
-from imperative_stitch.to_s import s_exp_to_python
+from imperative_stitch.parser import s_exp_to_python
 
 
 def assertSameCode(test, actual, expected):

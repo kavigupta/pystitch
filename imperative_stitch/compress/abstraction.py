@@ -1,14 +1,41 @@
+import ast
 from dataclasses import dataclass
 from functools import cached_property
 
 from s_expression_parser import Pair, nil
 
-from imperative_stitch.to_s import s_exp_parse
+from imperative_stitch.parser import ParsedAST
+from imperative_stitch.parser.parsed_ast import NodeAST
+from imperative_stitch.parser.symbol import Symbol
 
 
 @dataclass
+class Arguments:
+    metavars: list[ParsedAST]
+    symvars: list[ParsedAST]
+    choicevars: list[ParsedAST]
+
+    @classmethod
+    def from_list(cls, arguments, arity, sym_arity, choice_arity):
+        assert len(arguments) == arity + sym_arity + choice_arity
+        metavars, symvars, choicevars = (
+            arguments[:arity],
+            arguments[arity : arity + sym_arity],
+            arguments[arity + sym_arity :],
+        )
+        return cls(metavars, symvars, choicevars)
+
+    def render_list(self):
+        return (
+            [x.render_codevar() for x in self.metavars]
+            + [x.render_symvar() for x in self.symvars]
+            + [x.render_codevar() for x in self.choicevars]
+        )
+
+@dataclass
 class Abstraction:
-    body: str
+    name: str
+    body: ParsedAST
     arity: int
 
     sym_arity: int
@@ -19,41 +46,22 @@ class Abstraction:
     dfa_metavars: list[str]
     dfa_choicevars: list[str]
 
-    @cached_property
-    def body_s_expr_direct(self):
-        return s_exp_parse(self.body)
+    def process_arguments(self, arguments):
+        return Arguments.from_list(
+            arguments, self.arity, self.sym_arity, self.choice_arity
+        )
 
-    def render_stub(self, arguments):
-        print(arguments)
-        assert len(arguments) == self.sym_arity + self.arity + self.choice_arity
-        substitution = {}
-        arguments = list(arguments)[::-1]
-        for i in range(self.arity):
-            substitution[f"#{i}"] = s_exp_parse(arguments.pop())
-        for i in range(self.sym_arity):
-            substitution[f"%{i+1}"] = arguments.pop()
-            # Pair(
-            #     "Name", Pair(arguments.pop(), Pair("Load", nil))
-            # )
-        for i in range(self.choice_arity):
-            substitution[f"?{i}"] = arguments.pop()
-        x = self.body_s_expr_direct
-        x = substitute(x, substitution)
-        return x
+    def create_stub(self, arguments):
+        arguments = self.process_arguments(arguments)
+        args_list = arguments.render_list()
+        return ParsedAST.call(
+            Symbol(name=self.name, scope=None),
+            *args_list,
+        )
 
-    @property
-    def is_subseq(self):
-        return self.body_s_expr_direct.car == "/subseq"
-
-
-def substitute(x, substitution):
-    if isinstance(x, Pair):
-        return Pair(substitute(x.car, substitution), substitute(x.cdr, substitution))
-    if isinstance(x, str):
-        return substitution.get(x, x)
-    if x is nil:
-        return nil
-    raise ValueError(f"Unsupported node {x}")
+    def substitute_body(self, arguments):
+        arguments = self.process_arguments(arguments)
+        return self.body.substitute(arguments)
 
 
 def handle_abstractions(name_to_abstr):
