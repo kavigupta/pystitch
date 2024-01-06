@@ -4,19 +4,18 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
-from s_expression_parser import Pair, nil
-from s_expression_parser import ParserConfig, parse
+from s_expression_parser import Pair, ParserConfig, nil, parse
 
 from ..utils.recursion import limit_to_size
-
-from .symbol import Symbol, create_descoper
 from .splice import Splice
+from .symbol import Symbol, create_descoper
 
 
 class ParsedAST(ABC):
     """
     Represents a Parsed AST.
     """
+
     @classmethod
     def parse_python_code(cls, code):
         # pylint: disable=R0401

@@ -2,7 +2,7 @@ import ast
 import unittest
 
 # TODO fix this
-from s_expression_parser import Pair, nil, ParserConfig, parse
+from s_expression_parser import Pair, ParserConfig, nil, parse
 
 from imperative_stitch.parser import python_to_s_exp
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
