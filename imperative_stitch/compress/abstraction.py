@@ -6,6 +6,11 @@ from imperative_stitch.parser.symbol import Symbol
 
 @dataclass
 class Arguments:
+    """
+    Represents the arguments to an abstraction function. This is a list of metavariables,
+        symbol variables, and choice variables.
+    """
+
     metavars: list[ParsedAST]
     symvars: list[ParsedAST]
     choicevars: list[ParsedAST]
@@ -43,11 +48,20 @@ class Abstraction:
     dfa_choicevars: list[str]
 
     def process_arguments(self, arguments):
+        """
+        Produce an Arguments object from a list of arguments.
+        """
         return Arguments.from_list(
             arguments, self.arity, self.sym_arity, self.choice_arity
         )
 
     def create_stub(self, arguments):
+        """
+        Create a stub of this abstraction with the given arguments. The stub looks something
+            like `fn_1(__code__("a + b"), __ref__(a), __ref__(z), __code("x = 2 + 3"))`,
+            where the metavariables and choice variables are __code__, and the symbol
+            variables are __ref__.
+        """
         arguments = self.process_arguments(arguments)
         args_list = arguments.render_list()
         return ParsedAST.call(
@@ -56,11 +70,19 @@ class Abstraction:
         )
 
     def substitute_body(self, arguments):
+        """
+        Substitute the given arguments into the body of this abstraction.
+        """
         arguments = self.process_arguments(arguments)
         return self.body.substitute(arguments)
 
 
 def handle_abstractions(name_to_abstr):
+    """
+    Given a dictionary mapping abstraction names to Abstraction objects, return a function
+        that can be used to inject abstractions into a ParsedAST.
+    """
+
     def inject(abstr_name, abstr_args, pair_to_s_exp):
         abst = name_to_abstr[abstr_name]
         o = pair_to_s_exp(abst.body_s_expr(abstr_args))
