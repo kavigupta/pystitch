@@ -18,6 +18,9 @@ class ParsedAST(ABC):
 
     @classmethod
     def parse_python_code(cls, code):
+        """
+        Parse the given python code into a ParsedAST.
+        """
         # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
 
@@ -28,6 +31,9 @@ class ParsedAST(ABC):
 
     @classmethod
     def parse_s_expression(cls, code):
+        """
+        Parse the given s-expression into a ParsedAST.
+        """
         with limit_to_size(code):
             # pylint: disable=R0401
             from .parse_s_exp import s_exp_to_parsed_ast
@@ -38,11 +44,15 @@ class ParsedAST(ABC):
 
     @abstractmethod
     def to_pair_s_exp(self):
-        pass
+        """
+        Convert this ParsedAST into a pair s-expression.
+        """
 
     @abstractmethod
     def to_python_ast(self):
-        pass
+        """
+        Convert this ParsedAST into a python AST.
+        """
 
 
 class SpliceAST(ParsedAST):
