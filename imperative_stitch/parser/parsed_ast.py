@@ -209,6 +209,15 @@ class AbstractionCallAST(ParsedAST):
         raise RuntimeError("cannot convert abstraction call to python")
 
 
+@dataclass
+class NothingAST(ParsedAST):
+    def to_pair_s_exp(self):
+        return "/nothing"
+
+    def to_python_ast(self):
+        return Splice([])
+
+
 def list_to_pair(x):
     x = x[:]
     result = nil
