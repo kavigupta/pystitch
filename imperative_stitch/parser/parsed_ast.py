@@ -162,9 +162,16 @@ class LeafAST(ParsedAST):
 
 
 @dataclass
-class SymvarAST(ParsedAST):
+class Variable(ParsedAST):
     sym: str
 
+    @property
+    def idx(self):
+        return int(self.sym[1:])
+
+
+@dataclass
+class SymvarAST(Variable):
     def to_pair_s_exp(self):
         return self.sym
 
@@ -173,9 +180,7 @@ class SymvarAST(ParsedAST):
 
 
 @dataclass
-class MetavarAST(ParsedAST):
-    sym: str
-
+class MetavarAST(Variable):
     def to_pair_s_exp(self):
         return self.sym
 
@@ -184,9 +189,7 @@ class MetavarAST(ParsedAST):
 
 
 @dataclass
-class ChoicevarAST(ParsedAST):
-    sym: str
-
+class ChoicevarAST(Variable):
     def to_pair_s_exp(self):
         return self.sym
 
