@@ -122,6 +122,9 @@ class ListAST(ParsedAST):
 class LeafAST(ParsedAST):
     leaf: object
 
+    def __post_init__(self):
+        assert not isinstance(self.leaf, ParsedAST)
+
     def to_pair_s_exp(self):
         if (
             self.leaf is True
