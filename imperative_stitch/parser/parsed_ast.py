@@ -79,7 +79,7 @@ class SequenceAST(ParsedAST):
         for x in self.elements:
             x = x.to_python_ast()
             if isinstance(x, Splice):
-                result += x.elements
+                result += x.target
             else:
                 result += [x]
         return result
