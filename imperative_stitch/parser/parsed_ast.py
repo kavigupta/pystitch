@@ -54,7 +54,89 @@ class ParsedAST(ABC):
         Convert this ParsedAST into a python AST.
         """
 
+    @abstractmethod
+    def map(self, fn):
+        """
+        Map the given function over this ParsedAST. fn is run in post-order,
+            i.e., run on all the children and then on the new object.
+        """
 
+    def replace_with_substitute(self, arguments):
+        """
+        Replace this ParsedAST with the corresponding argument from the given arguments.
+        """
+        del arguments
+        # by default, do nothing
+        return self
+
+    def substitute(self, arguments):
+        """
+        Substitute the given arguments into this ParsedAST.
+        """
+        return self.map(lambda x: x.replace_with_substitute(arguments))
+
+    @classmethod
+    def constant(cls, leaf):
+        """
+        Create a constant ParsedAST from the given leaf value (which must be a python constant).
+        """
+        assert not isinstance(leaf, ParsedAST), leaf
+        return NodeAST(
+            typ=ast.Constant, children=[LeafAST(leaf=leaf), LeafAST(leaf=None)]
+        )
+
+    @classmethod
+    def name(cls, name_node):
+        """
+        Create a name ParsedAST from the given name node containing a symbol.
+        """
+        assert isinstance(name_node, LeafAST) and isinstance(
+            name_node.leaf, Symbol
+        ), name_node
+        return NodeAST(
+            typ=ast.Name,
+            children=[
+                name_node,
+                NodeAST(typ=ast.Load, children=[]),
+            ],
+        )
+
+    @classmethod
+    def call(cls, name_sym, *arguments):
+        """
+        Create a call ParsedAST from the given symbol and arguments.
+
+        In this case, the symbol must be a symbol representing a name.
+        """
+        assert isinstance(name_sym, Symbol), name_sym
+        return NodeAST(
+            typ=ast.Call,
+            children=[
+                cls.name(LeafAST(name_sym)),
+                ListAST(children=arguments),
+                ListAST(children=[]),
+            ],
+        )
+
+    def render_symvar(self):
+        """
+        Render this ParsedAST as a __ref__ variable for stub display, i.e.,
+            `a` -> `__ref__(a)`
+        """
+        return ParsedAST.call(Symbol(name="__ref__", scope=None), ParsedAST.name(self))
+
+    def render_codevar(self):
+        """
+        Render this ParsedAST as a __code__ variable for stub display, i.e.,
+            `a` -> `__code__("a")`
+        """
+        return ParsedAST.call(
+            Symbol(name="__code__", scope=None),
+            ParsedAST.constant(ast.unparse(self.to_python_ast())),
+        )
+
+
+@dataclass
 class SpliceAST(ParsedAST):
     content: ParsedAST
 
@@ -63,6 +145,9 @@ class SpliceAST(ParsedAST):
 
     def to_python_ast(self):
         return Splice(self.content.to_python_ast())
+
+    def map(self, fn):
+        return fn(SpliceAST(self.content.map(fn)))
 
 
 @dataclass
@@ -84,6 +169,9 @@ class SequenceAST(ParsedAST):
                 result += [x]
         return result
 
+    def map(self, fn):
+        return fn(SequenceAST(self.head, [x.map(fn) for x in self.elements]))
+
 
 @dataclass
 class NodeAST(ParsedAST):
@@ -103,6 +191,9 @@ class NodeAST(ParsedAST):
         out.lineno = 0
         return out
 
+    def map(self, fn):
+        return fn(NodeAST(self.typ, [x.map(fn) for x in self.children]))
+
 
 @dataclass
 class ListAST(ParsedAST):
@@ -116,6 +207,9 @@ class ListAST(ParsedAST):
 
     def to_python_ast(self):
         return [x.to_python_ast() for x in self.children]
+
+    def map(self, fn):
+        return fn(ListAST([x.map(fn) for x in self.children]))
 
 
 @dataclass
@@ -160,6 +254,9 @@ class LeafAST(ParsedAST):
             return self.leaf.name
         return self.leaf
 
+    def map(self, fn):
+        return fn(LeafAST(self.leaf))
+
 
 @dataclass
 class Variable(ParsedAST):
@@ -168,6 +265,9 @@ class Variable(ParsedAST):
     @property
     def idx(self):
         return int(self.sym[1:])
+
+    def map(self, fn):
+        return fn(self)
 
 
 @dataclass
@@ -178,6 +278,9 @@ class SymvarAST(Variable):
     def to_python_ast(self):
         return self.sym
 
+    def replace_with_substitute(self, arguments):
+        return arguments.symvars[self.idx - 1]
+
 
 @dataclass
 class MetavarAST(Variable):
@@ -187,6 +290,9 @@ class MetavarAST(Variable):
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
+    def replace_with_substitute(self, arguments):
+        return arguments.metavars[self.idx - 1]
+
 
 @dataclass
 class ChoicevarAST(Variable):
@@ -195,6 +301,9 @@ class ChoicevarAST(Variable):
 
     def to_python_ast(self):
         return ast.Name(id=self.sym)
+
+    def replace_with_substitute(self, arguments):
+        return arguments.choicevars[self.idx - 1]
 
 
 @dataclass
@@ -208,6 +317,9 @@ class AbstractionCallAST(ParsedAST):
     def to_python_ast(self):
         raise RuntimeError("cannot convert abstraction call to python")
 
+    def map(self, fn):
+        return fn(AbstractionCallAST(self.tag, [x.map(fn) for x in self.args]))
+
 
 @dataclass
 class NothingAST(ParsedAST):
@@ -216,6 +328,15 @@ class NothingAST(ParsedAST):
 
     def to_python_ast(self):
         return Splice([])
+
+    def substitute(self, arguments):
+        return self
+
+    def map(self, fn):
+        return fn(self)
+
+    def render_codevar(self):
+        return ParsedAST.name(LeafAST(Symbol(name="None", scope=None)))
 
 
 def list_to_pair(x):
