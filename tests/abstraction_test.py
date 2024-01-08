@@ -131,7 +131,7 @@ class AbstractionTest(unittest.TestCase):
         ]
     ]
     fn_2_args = fn_2_args_w_nothing[:-1] + [
-        ParsedAST.parse_python_code("if x == 3: pass").children[0]
+        ParsedAST.parse_python_statements("if x == 3: pass")
     ]
 
     def test_stub_rendering_simple(self):
