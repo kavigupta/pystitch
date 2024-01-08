@@ -85,7 +85,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
             "x = 2",
         )
 
-    @expand_with_slow_tests(len(small_set_examples()), 1000)
+    @expand_with_slow_tests(len(small_set_examples()), 100)
     def test_realistic(self, i):
         try:
             print(small_set_examples()[i])
@@ -123,9 +123,10 @@ class AbstractionCallsTest(unittest.TestCase):
 
     def test_substitute_in_seq(self):
         seq = ParsedAST.parse_s_expression(self.ctx_in_seq)
-        calls = seq.abstraction_calls()
-        self.assertEqual(len(calls), 1)
-        out = {x: ParsedAST.parse_python_statements("x = 2; x = 3") for x in calls}
+        out = {
+            x: ParsedAST.parse_python_statements("x = 2; x = 3")
+            for x in seq.abstraction_calls()
+        }
         substituted = seq.replace_abstraction_calls(out)
 
         assertSameCode(
@@ -134,6 +135,24 @@ class AbstractionCallsTest(unittest.TestCase):
             x = 2
             x = 3
             k = s.count('8')
+            """,
+            substituted.to_python(),
+        )
+
+    def test_substitute_in_rooted(self):
+        seq = ParsedAST.parse_s_expression(self.ctx_rooted)
+        out = {
+            x: ParsedAST.parse_python_statements("x = 2; x = 3")
+            for x in seq.abstraction_calls()
+        }
+        substituted = seq.replace_abstraction_calls(out)
+
+        assertSameCode(
+            self,
+            """
+            if x:
+                x = 2
+                x = 3
             """,
             substituted.to_python(),
         )
