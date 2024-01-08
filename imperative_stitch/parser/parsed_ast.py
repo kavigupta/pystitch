@@ -55,17 +55,41 @@ class ParsedAST(ABC):
         """
 
     @abstractmethod
+    def map(self, fn):
+        """
+        Map the given function over this ParsedAST. fn is run in post-order,
+            i.e., run on all the children and then on the new object.
+        """
+
+    def replace_with_substitute(self, arguments):
+        """
+        Replace this ParsedAST with the corresponding argument from the given arguments.
+        """
+        del arguments
+        # by default, do nothing
+        return self
+
     def substitute(self, arguments):
-        pass
+        """
+        Substitute the given arguments into this ParsedAST.
+        """
+        return self.map(lambda x: x.replace_with_substitute(arguments))
 
     @classmethod
     def constant(cls, leaf):
+        """
+        Create a constant ParsedAST from the given leaf value (which must be a python constant).
+        """
+        assert not isinstance(leaf, ParsedAST), leaf
         return NodeAST(
             typ=ast.Constant, children=[LeafAST(leaf=leaf), LeafAST(leaf=None)]
         )
 
     @classmethod
     def name(cls, name_node):
+        """
+        Create a name ParsedAST from the given name node containing a symbol.
+        """
         assert isinstance(name_node, LeafAST) and isinstance(
             name_node.leaf, Symbol
         ), name_node
@@ -79,6 +103,11 @@ class ParsedAST(ABC):
 
     @classmethod
     def call(cls, name_sym, *arguments):
+        """
+        Create a call ParsedAST from the given symbol and arguments.
+
+        In this case, the symbol must be a symbol representing a name.
+        """
         assert isinstance(name_sym, Symbol), name_sym
         return NodeAST(
             typ=ast.Call,
@@ -90,9 +119,17 @@ class ParsedAST(ABC):
         )
 
     def render_symvar(self):
+        """
+        Render this ParsedAST as a __ref__ variable for stub display, i.e.,
+            `a` -> `__ref__(a)`
+        """
         return ParsedAST.call(Symbol(name="__ref__", scope=None), ParsedAST.name(self))
 
     def render_codevar(self):
+        """
+        Render this ParsedAST as a __code__ variable for stub display, i.e.,
+            `a` -> `__code__("a")`
+        """
         return ParsedAST.call(
             Symbol(name="__code__", scope=None),
             ParsedAST.constant(ast.unparse(self.to_python_ast())),
