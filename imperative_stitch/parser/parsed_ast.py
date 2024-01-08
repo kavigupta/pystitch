@@ -1,9 +1,9 @@
 import ast
 import base64
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
-import uuid
 
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
