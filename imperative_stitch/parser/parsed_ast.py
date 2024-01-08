@@ -1,7 +1,7 @@
 import ast
 import base64
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 import uuid
 
