@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
-from s_expression_parser import Pair, ParserConfig, nil, parse
+from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
-from ..utils.recursion import limit_to_size
+from ..utils.recursion import limit_to_size, no_recursionlimit
 from .splice import Splice
 from .symbol import Symbol, create_descoper
 
@@ -42,11 +42,29 @@ class ParsedAST(ABC):
             code = s_exp_to_parsed_ast(code)
             return code
 
+    def to_s_exp(self, renderer_kwargs=None):
+        """
+        Convert this ParsedAST into an s-expression.
+        """
+        if renderer_kwargs is None:
+            renderer_kwargs = {}
+        with no_recursionlimit():
+            return Renderer(**renderer_kwargs, nil_as_word=True).render(
+                self.to_pair_s_exp()
+            )
+
     @abstractmethod
     def to_pair_s_exp(self):
         """
         Convert this ParsedAST into a pair s-expression.
         """
+
+    def to_python(self):
+        """
+        Convert this ParsedAST into python code.
+        """
+        with no_recursionlimit():
+            return ast.unparse(self.to_python_ast())
 
     @abstractmethod
     def to_python_ast(self):
@@ -132,7 +150,7 @@ class ParsedAST(ABC):
         """
         return ParsedAST.call(
             Symbol(name="__code__", scope=None),
-            ParsedAST.constant(ast.unparse(self.to_python_ast())),
+            ParsedAST.constant(self.to_python()),
         )
 
 
