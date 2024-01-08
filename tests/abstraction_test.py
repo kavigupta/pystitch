@@ -139,7 +139,7 @@ class AbstractionTest(unittest.TestCase):
         stub = self.fn_1.create_stub(self.fn_1_args)
         assertSameCode(
             self,
-            ast.unparse(stub.to_python_ast()),
+            stub.to_python(),
             """
             fn_1(__ref__(a), __ref__(z))
             """,
@@ -149,7 +149,7 @@ class AbstractionTest(unittest.TestCase):
         stub = self.fn_2.create_stub(self.fn_2_args)
         assertSameCode(
             self,
-            ast.unparse(stub.to_python_ast()),
+            stub.to_python(),
             """
             fn_2(__code__('print(2)'), __ref__(c), __ref__(a), __ref__(b), __ref__(d), __code__('if x == 3:\\n    pass'))
             """,
@@ -159,7 +159,7 @@ class AbstractionTest(unittest.TestCase):
         stub = self.fn_2.create_stub(self.fn_2_args_w_nothing)
         assertSameCode(
             self,
-            ast.unparse(stub.to_python_ast()),
+            stub.to_python(),
             """
             fn_2(__code__('print(2)'), __ref__(c), __ref__(a), __ref__(b), __ref__(d), None)
             """,
@@ -169,7 +169,7 @@ class AbstractionTest(unittest.TestCase):
         stub = self.fn_1.substitute_body(self.fn_1_args)
         assertSameCode(
             self,
-            ast.unparse(stub.to_python_ast()),
+            stub.to_python(),
             """
             a = int(input())
             z = input()
@@ -178,10 +178,10 @@ class AbstractionTest(unittest.TestCase):
 
     def test_body_rendering_multi(self):
         stub = self.fn_2.substitute_body(self.fn_2_args)
-        print(ast.unparse(stub.to_python_ast()))
+        print(stub.to_python())
         assertSameCode(
             self,
-            ast.unparse(stub.to_python_ast()),
+            stub.to_python(),
             """
             if a == 0:
                 if b == 0:
@@ -210,7 +210,7 @@ class AbstractionTest(unittest.TestCase):
         stub = self.fn_2.substitute_body(self.fn_2_args_w_nothing)
         assertSameCode(
             self,
-            ast.unparse(stub.to_python_ast()),
+            stub.to_python(),
             """
             if a == 0:
                 if b == 0:
