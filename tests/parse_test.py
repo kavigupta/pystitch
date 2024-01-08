@@ -2,7 +2,6 @@ import ast
 import unittest
 
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
-from imperative_stitch.parser.parsed_ast import SequenceAST
 from tests.abstraction_test import assertSameCode
 
 from .utils import expand_with_slow_tests, small_set_examples
