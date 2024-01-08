@@ -97,7 +97,7 @@ class ParsedAST(ABC):
             i.e., run on all the children and then on the new object.
         """
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         """
         Replace this ParsedAST with the corresponding argument from the given arguments.
         """
@@ -109,7 +109,8 @@ class ParsedAST(ABC):
         """
         Substitute the given arguments into this ParsedAST.
         """
-        return self.map(lambda x: x.replace_with_substitute(arguments))
+        # pylint: disable=protected-access
+        return self.map(lambda x: x._replace_with_substitute(arguments))
 
     @classmethod
     def constant(cls, leaf):
@@ -314,7 +315,7 @@ class SymvarAST(Variable):
     def to_python_ast(self):
         return self.sym
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         return arguments.symvars[self.idx - 1]
 
 
@@ -326,7 +327,7 @@ class MetavarAST(Variable):
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         return arguments.metavars[self.idx - 1]
 
 
@@ -338,7 +339,7 @@ class ChoicevarAST(Variable):
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         return arguments.choicevars[self.idx - 1]
 
 
