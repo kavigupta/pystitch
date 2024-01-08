@@ -2,6 +2,7 @@ import ast
 import unittest
 
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
+from tests.abstraction_test import assertSameCode
 
 from .utils import expand_with_slow_tests, small_set_examples
 
@@ -92,3 +93,66 @@ class ParseUnparseInverseTest(unittest.TestCase):
         except Exception as e:
             self.assertFalse(f"Error: {e}")
             raise e
+
+
+class AbstractionCallsTest(unittest.TestCase):
+    ctx_in_seq = """
+    (Module
+        (/seq
+            (/splice
+                (fn_1 &n:0 &s:0))
+            (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &s:0 Load) s_count Load) (list (Constant s_8 None)) nil) None))
+        nil)
+    """
+
+    ctx_rooted = """
+    (Module
+        (/seq
+            (If
+                (Name g_x Load)
+                (fn_1 &a:0 &z:0)
+                nil))
+        nil)
+    """
+
+    def test_gather_calls(self):
+        calls = ParsedAST.parse_s_expression(self.ctx_in_seq).abstraction_calls()
+        self.assertEqual(len(calls), 1)
+        abstraction_calls = [x.to_s_exp() for x in calls.values()]
+        self.assertEqual(sorted(abstraction_calls), ["(fn_1 &n:0 &s:0)"])
+
+    def test_substitute_in_seq(self):
+        seq = ParsedAST.parse_s_expression(self.ctx_in_seq)
+        out = {
+            x: ParsedAST.parse_python_statements("x = 2; x = 3")
+            for x in seq.abstraction_calls()
+        }
+        substituted = seq.replace_abstraction_calls(out)
+
+        assertSameCode(
+            self,
+            """
+            x = 2
+            x = 3
+            k = s.count('8')
+            """,
+            substituted.to_python(),
+        )
+
+    def test_substitute_in_rooted(self):
+        seq = ParsedAST.parse_s_expression(self.ctx_rooted)
+        out = {
+            x: ParsedAST.parse_python_statements("x = 2; x = 3")
+            for x in seq.abstraction_calls()
+        }
+        substituted = seq.replace_abstraction_calls(out)
+
+        assertSameCode(
+            self,
+            """
+            if x:
+                x = 2
+                x = 3
+            """,
+            substituted.to_python(),
+        )
