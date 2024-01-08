@@ -76,6 +76,24 @@ class ParsedAST(ABC):
         """
         return self.map(lambda x: x.replace_with_substitute(arguments))
 
+    def abstraction_calls(self):
+        """
+        Collect all abstraction calls in this ParsedAST. Returns a dictionary
+            from handle to abstraction call object.
+        """
+        result = {}
+        self.map(lambda x: x.collect_abstraction_calls(result))
+        return result
+
+    def collect_abstraction_calls(self, result):
+        """
+        Collect all abstraction calls in this ParsedAST. Adds them to the given
+            dictionary from handle to abstraction call object.
+        """
+        del result
+        # by default, do nothing
+        return
+
     @classmethod
     def constant(cls, leaf):
         """
@@ -321,6 +339,10 @@ class AbstractionCallAST(ParsedAST):
 
     def map(self, fn):
         return fn(AbstractionCallAST(self.tag, [x.map(fn) for x in self.args]))
+
+    def collect_abstraction_calls(self, result):
+        result[self.handle] = self
+        return super().collect_abstraction_calls(result)
 
 
 @dataclass
