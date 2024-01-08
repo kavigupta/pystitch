@@ -1,8 +1,9 @@
 import ast
 import base64
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
+import uuid
 
 from s_expression_parser import Pair, ParserConfig, nil, parse
 
@@ -310,6 +311,7 @@ class ChoicevarAST(Variable):
 class AbstractionCallAST(ParsedAST):
     tag: str
     args: List[ParsedAST]
+    handle: uuid.UUID = field(default_factory=uuid.uuid4)
 
     def to_pair_s_exp(self):
         return list_to_pair([self.tag] + [x.to_pair_s_exp() for x in self.args])
