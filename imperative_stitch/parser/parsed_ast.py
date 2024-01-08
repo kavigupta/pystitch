@@ -17,7 +17,7 @@ class ParsedAST(ABC):
     """
 
     @classmethod
-    def parse_python_code(cls, code):
+    def parse_python_module(cls, code):
         """
         Parse the given python code into a ParsedAST.
         """
@@ -28,6 +28,24 @@ class ParsedAST(ABC):
             code = ast.parse(code)
             code = python_ast_to_parsed_ast(code, create_descoper(code))
             return code
+
+    @classmethod
+    def parse_python_statements(cls, code):
+        code = cls.parse_python_module(code)
+        assert isinstance(code, NodeAST) and code.typ is ast.Module
+        assert len(code.children) == 2
+        code = code.children[0]
+        return code
+
+    @classmethod
+    def parse_python_statement(cls, code):
+        code = cls.parse_python_statements(code)
+        assert isinstance(code, SequenceAST), code
+        assert (
+            len(code.elements) == 1
+        ), f"expected only one statement; got: [{[x.to_python() for x in code.elements]}]]"
+        code = code.elements[0]
+        return code
 
     @classmethod
     def parse_s_expression(cls, code):
@@ -79,7 +97,7 @@ class ParsedAST(ABC):
             i.e., run on all the children and then on the new object.
         """
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         """
         Replace this ParsedAST with the corresponding argument from the given arguments.
         """
@@ -91,7 +109,8 @@ class ParsedAST(ABC):
         """
         Substitute the given arguments into this ParsedAST.
         """
-        return self.map(lambda x: x.replace_with_substitute(arguments))
+        # pylint: disable=protected-access
+        return self.map(lambda x: x._replace_with_substitute(arguments))
 
     @classmethod
     def constant(cls, leaf):
@@ -296,7 +315,7 @@ class SymvarAST(Variable):
     def to_python_ast(self):
         return self.sym
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         return arguments.symvars[self.idx - 1]
 
 
@@ -308,7 +327,7 @@ class MetavarAST(Variable):
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         return arguments.metavars[self.idx - 1]
 
 
@@ -320,7 +339,7 @@ class ChoicevarAST(Variable):
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
-    def replace_with_substitute(self, arguments):
+    def _replace_with_substitute(self, arguments):
         return arguments.choicevars[self.idx - 1]
 
 

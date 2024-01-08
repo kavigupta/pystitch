@@ -13,26 +13,7 @@ def assertSameCode(test, actual, expected):
     )
 
 
-class AbstractionTest(unittest.TestCase):
-    ctx_in_seq = """
-    (Module
-        (/seq
-            (/splice
-                (fn_1 &n:0 &s:0))
-            (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &s:0 Load) s_count Load) (list (Constant s_8 None)) nil) None))
-        nil)
-    """
-
-    ctx_rooted = """
-    (Module
-        (/seq
-            (If
-                (Name g_x Load)
-                (fn_1 &a:0 &z:0)
-                nil))
-        nil)
-    """
-
+class AbstractionRenderingTest(unittest.TestCase):
     fn_1_body = """
     (/subseq
         (Assign (list (Name %1 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None)
@@ -131,7 +112,7 @@ class AbstractionTest(unittest.TestCase):
         ]
     ]
     fn_2_args = fn_2_args_w_nothing[:-1] + [
-        ParsedAST.parse_python_code("if x == 3: pass").children[0]
+        ParsedAST.parse_python_statements("if x == 3: pass")
     ]
 
     def test_stub_rendering_simple(self):

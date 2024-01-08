@@ -84,7 +84,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
             "x = 2",
         )
 
-    @expand_with_slow_tests(len(small_set_examples()))
+    @expand_with_slow_tests(len(small_set_examples()), 100)
     def test_realistic(self, i):
         try:
             print(small_set_examples()[i])
