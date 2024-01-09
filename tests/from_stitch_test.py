@@ -3,6 +3,7 @@ from textwrap import dedent
 
 from imperative_stitch.compress.abstraction import Abstraction, handle_abstractions
 from imperative_stitch.parser import s_exp_to_python
+from imperative_stitch.parser.parsed_ast import ParsedAST
 
 
 def assertSameCode(test, actual, expected):
@@ -50,20 +51,26 @@ class SequenceTest(unittest.TestCase):
         dfa_choicevars=[],
     )
 
-    def test_default_insertion_subseq(self):
+    abtractions = {"fn_1": fn_1}
+
+    def test_stub_insertion_subseq(self):
         assertSameCode(
             self,
-            s_exp_to_python(self.ctx_in_seq),
+            ParsedAST.parse_s_expression(self.ctx_in_seq)
+            .abstraction_calls_to_stubs(self.abtractions)
+            .to_python(),
             """
             fn_1(n, s)
             k = s.count('8')
             """,
         )
 
-    def test_default_insertion_rooted(self):
+    def test_stub_insertion_rooted(self):
         assertSameCode(
             self,
-            s_exp_to_python(self.ctx_rooted),
+            ParsedAST.parse_s_expression(self.ctx_rooted)
+            .abstraction_calls_to_stubs(self.abtractions)
+            .to_python(),
             """
             if x:
                 fn_1(a, z)

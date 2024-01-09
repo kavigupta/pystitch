@@ -146,6 +146,24 @@ class ParsedAST(ABC):
         # pylint: disable=protected-access
         return self.map(lambda x: x._replace_abstraction_calls(handle_to_replacement))
 
+    def map_abstraction_calls(self, replace_fn):
+        """
+        Map each abstraction call through the given function.
+        """
+        handle_to_replacement = self.abstraction_calls()
+        handle_to_replacement = {
+            handle: replace_fn(call) for handle, call in handle_to_replacement.items()
+        }
+        return self.replace_abstraction_calls(handle_to_replacement)
+
+    def abstraction_calls_to_stubs(self, abstractions):
+        """
+        Replace all abstraction calls with stubs.
+        """
+        return self.map_abstraction_calls(
+            lambda call: abstractions[call.tag].create_stub(call.args)
+        )
+
     @classmethod
     def constant(cls, leaf):
         """
