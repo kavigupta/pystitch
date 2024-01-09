@@ -1,5 +1,6 @@
 import ast
 import base64
+import uuid
 
 from s_expression_parser import Pair, nil
 
@@ -97,5 +98,5 @@ def s_exp_to_parsed_ast(x):
         print(args)
         return ListAST(args)
     if tag.startswith("fn"):
-        return AbstractionCallAST(tag, args)
+        return AbstractionCallAST(tag, args, uuid.uuid4())
     return NodeAST(getattr(ast, tag), args)

@@ -1,5 +1,6 @@
 import ast
 import base64
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
@@ -111,6 +112,39 @@ class ParsedAST(ABC):
         """
         # pylint: disable=protected-access
         return self.map(lambda x: x._replace_with_substitute(arguments))
+
+    def _collect_abstraction_calls(self, result):
+        """
+        Collect all abstraction calls in this ParsedAST. Adds them to the given
+            dictionary from handle to abstraction call object.
+        """
+        del result
+        # by default, do nothing
+        return self
+
+    def abstraction_calls(self):
+        """
+        Collect all abstraction calls in this ParsedAST. Returns a dictionary
+            from handle to abstraction call object.
+        """
+        result = {}
+        # pylint: disable=protected-access
+        self.map(lambda x: x._collect_abstraction_calls(result))
+        return result
+
+    def _replace_abstraction_calls(self, handle_to_replacement):
+        """
+        Replace the abstraction call with the given handle with the given replacement.
+        """
+        del handle_to_replacement
+        return self
+
+    def replace_abstraction_calls(self, handle_to_replacement):
+        """
+        Replace the abstraction call with the given handle with the given replacement.
+        """
+        # pylint: disable=protected-access
+        return self.map(lambda x: x._replace_abstraction_calls(handle_to_replacement))
 
     @classmethod
     def constant(cls, leaf):
@@ -347,6 +381,7 @@ class ChoicevarAST(Variable):
 class AbstractionCallAST(ParsedAST):
     tag: str
     args: List[ParsedAST]
+    handle: uuid.UUID
 
     def to_pair_s_exp(self):
         return list_to_pair([self.tag] + [x.to_pair_s_exp() for x in self.args])
@@ -355,7 +390,16 @@ class AbstractionCallAST(ParsedAST):
         raise RuntimeError("cannot convert abstraction call to python")
 
     def map(self, fn):
-        return fn(AbstractionCallAST(self.tag, [x.map(fn) for x in self.args]))
+        return fn(
+            AbstractionCallAST(self.tag, [x.map(fn) for x in self.args], self.handle)
+        )
+
+    def _collect_abstraction_calls(self, result):
+        result[self.handle] = self
+        return super()._collect_abstraction_calls(result)
+
+    def _replace_abstraction_calls(self, handle_to_replacement):
+        return handle_to_replacement[self.handle]
 
 
 @dataclass
