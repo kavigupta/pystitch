@@ -1,8 +1,5 @@
 import json
-import os
 
-import fire
-from datasets import load_dataset
 from permacache import permacache, stable_hash
 import tqdm
 
