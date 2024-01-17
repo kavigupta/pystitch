@@ -9,8 +9,8 @@ TRANSITIONS = frozendict(
         "S": {
             (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef): {
                 "body": "seqS",
-                "decorator_list": "E",
-                "bases": "E",
+                "decorator_list": "listE",
+                "bases": "listE",
                 "name": "X",
                 "args": "As",
                 "returns": "E",
@@ -57,6 +57,8 @@ TRANSITIONS = frozendict(
             (ast.BoolOp, ast.BinOp, ast.UnaryOp, ast.Compare): {
                 "op": "X",
                 "ops": "X",
+                "comparators": "listE",
+                "values": "listE",
                 all: "E",
             },
             ast.NamedExpr: {"value": "E", "target": "X"},
@@ -70,13 +72,20 @@ TRANSITIONS = frozendict(
                 ast.Await,
                 ast.Yield,
                 ast.YieldFrom,
-            ): {"ctx": "X", all: "E"},
+            ): {
+                "ctx": "X",
+                "elts": "listE",
+                "keys": "listE",
+                "values": "listE",
+                all: "E",
+            },
             (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp): {
                 "generators": "C",
                 all: "E",
             },
             ast.Call: {
                 "keywords": "K",
+                "args": "listE",
                 all: "E",
             },
             ast.JoinedStr: {"values": "F"},
@@ -90,7 +99,7 @@ TRANSITIONS = frozendict(
         },
         "As": {
             ast.arguments: {
-                ("kw_defaults", "defaults"): "E",
+                ("kw_defaults", "defaults"): "listE",
                 all: "A",
             }
         },
@@ -103,7 +112,12 @@ TRANSITIONS = frozendict(
             ast.Constant: {all: "X"},
         },
         "C": {
-            ast.comprehension: {"target": "L", "iter": "E", "ifs": "E", "is_async": "X"}
+            ast.comprehension: {
+                "target": "L",
+                "iter": "E",
+                "ifs": "listE",
+                "is_async": "X",
+            }
         },
         "K": {ast.keyword: {"value": "E", "arg": "X"}},
         "EH": {
@@ -125,6 +139,7 @@ TRANSITIONS = frozendict(
             ast.Attribute: {"value": "E", "attr": "X"},
         },
         "seqS": {},
+        "listE": {"list": "E"},
     }
 )
 
@@ -181,8 +196,7 @@ def export_dfa(transitions=TRANSITIONS):
             t = getattr(ast, tag)
             for f in t._fields:
                 result[state][tag].append(compute_transition(transitions, state, t, f))
-    for state in transitions:
-        result[state]["list"] = [state]
+        result[state]["list"] = [transitions[state].get("list", state)]
     for state in transitions:
         result[state]["/seq"] = ["X"]
         result[state]["/splice"] = ["X"]
