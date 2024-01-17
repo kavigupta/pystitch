@@ -10,7 +10,7 @@ from imperative_stitch.compress.julia_stitch import run_julia_stitch
 
 
 @permacache(
-    "imperative_stitch/data/stitch_output_set/run_stitch_cached",
+    "imperative_stitch/data/stitch_output_set/run_stitch_cached_3",
     key_function=dict(c=stable_hash),
 )
 def run_stitch_cached(c):
@@ -25,7 +25,7 @@ def run_stitch_cached(c):
 
 
 @permacache(
-    "imperative_stitch/data/stitch_output_set/stitch_output_set_3",
+    "imperative_stitch/data/stitch_output_set/stitch_output_set_5",
 )
 def stitch_output_set(amount):
     sets = compression_testing_code(amount * 10)
@@ -59,5 +59,10 @@ def stitch_output_set(amount):
 
 
 if __name__ == "__main__":
+    small = stitch_output_set(10)
+    with open("data/stitch_output_set_small.json", "w") as f:
+        json.dump(small, f, indent=2)
+
+    full = stitch_output_set(100)
     with open("data/stitch_output_set.json", "w") as f:
-        json.dump(stitch_output_set(100), f, indent=2)
+        json.dump(full, f, indent=2)

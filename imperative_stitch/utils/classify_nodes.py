@@ -5,10 +5,10 @@ from frozendict import frozendict
 
 TRANSITIONS = frozendict(
     {
-        "M": {ast.Module: {"body": "S", "type_ignores": "X"}},
+        "M": {ast.Module: {"body": "seqS", "type_ignores": "X"}},
         "S": {
             (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef): {
-                "body": "S",
+                "body": "seqS",
                 "decorator_list": "E",
                 "bases": "E",
                 "name": "X",
@@ -39,9 +39,9 @@ TRANSITIONS = frozendict(
             ): {
                 "iter": "E",
                 "test": "E",
-                "body": "S",
-                "orelse": "S",
-                "finalbody": "S",
+                "body": "seqS",
+                "orelse": "seqS",
+                "finalbody": "seqS",
                 "items": "W",
                 "handlers": "EH",
                 "target": "L",
@@ -110,7 +110,7 @@ TRANSITIONS = frozendict(
             ast.ExceptHandler: {
                 "type": "E",
                 "name": "X",
-                "body": "S",
+                "body": "seqS",
             }
         },
         "W": {
@@ -124,6 +124,7 @@ TRANSITIONS = frozendict(
             ast.Subscript: {"value": "E", "slice": "E"},
             ast.Attribute: {"value": "E", "attr": "X"},
         },
+        "seqS": {}
     }
 )
 
@@ -185,8 +186,8 @@ def export_dfa(transitions=TRANSITIONS):
     for state in transitions:
         result[state]["/seq"] = ["X"]
         result[state]["/splice"] = ["X"]
-    result["S"]["/seq"] = ["S"]
-    result["S"]["/splice"] = ["S"]
+    result["seqS"]["/seq"] = ["S"]
+    result["S"]["/splice"] = ["seqS"]
     return result
 
 

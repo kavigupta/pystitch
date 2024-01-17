@@ -27,7 +27,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -68,7 +68,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -116,7 +116,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 3,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -157,7 +157,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -206,7 +206,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -366,7 +366,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -413,7 +413,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -531,7 +531,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -651,7 +651,7 @@
         ],
         "choice_arity": 1,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -695,7 +695,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -738,7 +738,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -788,7 +788,7 @@
         ],
         "choice_arity": 2,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -900,7 +900,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1054,7 +1054,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 3,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1092,7 +1092,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1139,7 +1139,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 4,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1177,14 +1177,14 @@
           "X"
         ],
         "dfa_metavars": [
-          "S"
+          "seqS"
         ],
         "dfa_choicevars": [
           "S"
         ],
         "choice_arity": 1,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1225,7 +1225,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1386,7 +1386,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1434,7 +1434,7 @@
         ],
         "choice_arity": 1,
         "arity": 3,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1477,7 +1477,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1521,7 +1521,7 @@
         ],
         "choice_arity": 1,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1608,7 +1608,7 @@
         ],
         "choice_arity": 2,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1646,7 +1646,7 @@
           "X"
         ],
         "dfa_metavars": [
-          "S"
+          "seqS"
         ],
         "dfa_choicevars": [],
         "choice_arity": 0,
@@ -1700,7 +1700,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1747,7 +1747,7 @@
         ],
         "choice_arity": 2,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1778,28 +1778,26 @@
     ],
     "abstractions": [
       {
-        "body": "(/seq (Assign (list (Name %1 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None) (Assign (list (Name %2 Store)) (Subscript (Call (Name g_hex Load) (list (Name %1 Load)) nil) (Slice (Constant i2 None) None None) Load) None) (Expr (Call (Name g_print Load) (list (BinOp (BinOp (BinOp (BinOp (BinOp (BinOp (BinOp (Call #0 (list (Constant s_0 None)) nil) Add (Call #0 (list (Constant s_4 None)) nil)) Add (Call #0 (list (Constant s_6 None)) nil)) Add (BinOp (Call #0 (list (Constant s_8 None)) nil) Mult (Constant i2 None))) Add (Call #0 (list (Constant s_a None)) nil)) Add (Call #0 (list (Constant s_9 None)) nil)) Add (BinOp (Call #0 (list (Constant s_b None)) nil) Mult (Constant i2 None))) Add (Call #0 (list (Constant s_d None)) nil))) nil)))",
+        "body": "(/seq (Assign (list (Name %1 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None) (Assign (list (Name %2 Store)) (Subscript (Call (Name g_hex Load) (list (Name %1 Load)) nil) (Slice (Constant i2 None) None None) Load) None) (Expr (Call (Name g_print Load) (list (BinOp (BinOp (BinOp (BinOp (BinOp (BinOp (BinOp (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_0 None)) nil) Add (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_4 None)) nil)) Add (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_6 None)) nil)) Add (BinOp (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_8 None)) nil) Mult (Constant i2 None))) Add (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_a None)) nil)) Add (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_9 None)) nil)) Add (BinOp (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_b None)) nil) Mult (Constant i2 None))) Add (Call (Attribute (Name %2 Load) s_count Load) (list (Constant s_d None)) nil))) nil)))",
         "sym_arity": 2,
         "dfa_symvars": [
           "X",
           "X"
         ],
-        "dfa_metavars": [
-          "E"
-        ],
+        "dfa_metavars": [],
         "dfa_choicevars": [],
         "choice_arity": 0,
-        "arity": 1,
-        "dfa_root": "S"
+        "arity": 0,
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
       "(Module (/seq (Assign (list (Name &a:0 Store)) (Call (Name g_str Load) (list (Call (Name g_hex Load) (list (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil)) nil)) nil) None) (Assign (list (Name &b:0 Store)) (Constant i0 None) None) (For (Name &i:0 Store) (Call (Name g_range Load) (list (Constant i2 None) (Call (Name g_len Load) (list (Name &a:0 Load)) nil)) nil) (/seq (If (BoolOp Or (list (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_0 None))) (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_4 None))) (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_6 None))) (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_9 None))) (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_a None))) (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_d None))))) (/seq (AugAssign (Name &b:0 Store) Add (Constant i1 None))) (/seq (If (BoolOp Or (list (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_8 None))) (Compare (Subscript (Name &a:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_b None))))) (/seq (AugAssign (Name &b:0 Store) Add (Constant i2 None))) (/seq))))) (/seq) None) (Expr (Call (Name g_print Load) (list (Name &b:0 Load)) nil))) nil)",
-      "(Module (fn_1 (Attribute (Name &a:0 Load) s_count Load) &s:0 &a:0) nil)",
+      "(Module (fn_1 &s:0 &a:0) nil)",
       "(Module (/seq (Assign (list (Name &cnt:0 Store)) (Dict (list (Constant s_0 None) (Constant s_1 None) (Constant s_2 None) (Constant s_3 None) (Constant s_4 None) (Constant s_5 None) (Constant s_6 None) (Constant s_7 None) (Constant s_8 None) (Constant s_9 None) (Constant s_A None) (Constant s_B None) (Constant s_C None) (Constant s_D None) (Constant s_E None) (Constant s_F None)) (list (Constant i1 None) (Constant i0 None) (Constant i0 None) (Constant i0 None) (Constant i1 None) (Constant i0 None) (Constant i1 None) (Constant i0 None) (Constant i2 None) (Constant i1 None) (Constant i1 None) (Constant i2 None) (Constant i0 None) (Constant i1 None) (Constant i0 None) (Constant i0 None))) None) (Assign (list (Name &a:0 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None) (Assign (list (Name &hexStr:0 Store)) (Call (Attribute (Call (Attribute (Call (Name g_hex Load) (list (Name &a:0 Load)) nil) s_replace Load) (list (Constant s_0x None) (Constant s_ None)) nil) s_upper Load) nil nil) None) (Assign (list (Name &ans:0 Store)) (Call (Name g_sum Load) (list (ListComp (Subscript (Name &cnt:0 Load) (Name &x:1 Load) Load) (list (comprehension (Name &x:1 Store) (Name &hexStr:0 Load) nil i0)))) nil) None) (Expr (Call (Name g_print Load) (list (Name &ans:0 Load)) nil))) nil)",
       "(Module (/seq (Assign (list (Name &a:0 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None) (Assign (list (Name &b:0 Store)) (Call (Attribute (Call (Name g_str Load) (list (Call (Name g_hex Load) (list (Name &a:0 Load)) nil)) nil) s_upper Load) nil nil) None) (Assign (list (Name &l:0 Store)) (Call (Name g_list Load) (list (Name &b:0 Load)) nil) None) (Assign (list (Name &count:0 Store)) (UnaryOp USub (Constant i1 None)) None) (For (Name &i:0 Store) (Name &l:0 Load) (/seq (If (BoolOp Or (list (Compare (Name &i:0 Load) (list Eq) (list (Constant s_8 None))) (Compare (Name &i:0 Load) (list Eq) (list (Constant s_B None))))) (/seq (AugAssign (Name &count:0 Store) Add (Constant i2 None)) Continue) (/seq)) (If (BoolOp Or (list (Compare (Name &i:0 Load) (list Eq) (list (Constant s_0 None))) (Compare (Name &i:0 Load) (list Eq) (list (Constant s_4 None))) (Compare (Name &i:0 Load) (list Eq) (list (Constant s_6 None))) (Compare (Name &i:0 Load) (list Eq) (list (Constant s_9 None))) (Compare (Name &i:0 Load) (list Eq) (list (Constant s_A None))) (Compare (Name &i:0 Load) (list Eq) (list (Constant s_D None))))) (/seq (AugAssign (Name &count:0 Store) Add (Constant i1 None)) Continue) (/seq))) (/seq) None) (If (Compare (Name &count:0 Load) (list Lt) (list (Constant i0 None))) (/seq (Assign (list (Name &count:0 Store)) (Constant i0 None) None)) (/seq)) (Expr (Call (Name g_print Load) (list (Name &count:0 Load)) nil))) nil)",
       "(Module (/seq (Assign (list (Name &n:0 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None) (Assign (list (Name &r:0 Store)) (Tuple (list (Tuple (list (Constant i1 None) (Constant i0 None)) Load) (Tuple (list (Constant i2 None) (Constant i0 None)) Load) (Tuple (list (Constant i3 None) (Constant i0 None)) Load) (Tuple (list (Constant i4 None) (Constant i1 None)) Load) (Tuple (list (Constant i5 None) (Constant i0 None)) Load) (Tuple (list (Constant i6 None) (Constant i1 None)) Load) (Tuple (list (Constant i7 None) (Constant i0 None)) Load) (Tuple (list (Constant i8 None) (Constant i2 None)) Load) (Tuple (list (Constant i9 None) (Constant i1 None)) Load) (Tuple (list (Constant i10 None) (Constant i1 None)) Load) (Tuple (list (Constant i11 None) (Constant i2 None)) Load) (Tuple (list (Constant i12 None) (Constant i0 None)) Load) (Tuple (list (Constant i13 None) (Constant i1 None)) Load) (Tuple (list (Constant i14 None) (Constant i0 None)) Load) (Tuple (list (Constant i15 None) (Constant i0 None)) Load) (Tuple (list (Constant i0 None) (Constant i1 None)) Load)) Load) None) (Assign (list (Name &d:0 Store)) (Call (Name g_dict Load) (list (Name &r:0 Load)) nil) None) (If (Compare (Name &n:0 Load) (list Eq) (list (Constant i0 None))) (/seq (Expr (Call (Name g_print Load) (list (Constant i1 None)) nil))) (/seq (Assign (list (Name &ans:0 Store)) (Constant i0 None) None) (While (Compare (Name &n:0 Load) (list Gt) (list (Constant i0 None))) (/seq (Assign (list (Name &p:0 Store)) (BinOp (Name &n:0 Load) Sub (BinOp (BinOp (Name &n:0 Load) FloorDiv (Constant i16 None)) Mult (Constant i16 None))) None) (AugAssign (Name &n:0 Store) FloorDiv (Constant i16 None)) (AugAssign (Name &ans:0 Store) Add (Subscript (Name &d:0 Load) (Name &p:0 Load) Load))) (/seq)) (Expr (Call (Name g_print Load) (list (Name &ans:0 Load)) nil))))) nil)",
-      "(Module (fn_1 (Attribute (Name &l:0 Load) s_count Load) &n:0 &l:0) nil)",
+      "(Module (fn_1 &n:0 &l:0) nil)",
       "(Module (/seq (Assign (list (Name &n:0 Store)) (Call (Name g_hex Load) (list (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil)) nil) None) (Assign (list (Name &n:0 Store)) (Subscript (Name &n:0 Load) (Slice (Constant i2 None) None None) Load) None) (Assign (list (Name &t:0 Store)) (Constant i0 None) None) (For (Name &i:0 Store) (Call (Name g_range Load) (list (Constant i0 None) (Call (Name g_len Load) (list (Name &n:0 Load)) nil)) nil) (/seq (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_a None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i1 None))) (/seq)) (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_b None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i2 None))) (/seq)) (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_d None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i1 None))) (/seq)) (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_0 None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i1 None))) (/seq)) (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_4 None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i1 None))) (/seq)) (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_6 None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i1 None))) (/seq)) (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_8 None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i2 None))) (/seq)) (If (Compare (Subscript (Name &n:0 Load) (Name &i:0 Load) Load) (list Eq) (list (Constant s_9 None))) (/seq (AugAssign (Name &t:0 Store) Add (Constant i1 None))) (/seq))) (/seq) None) (Expr (Call (Name g_print Load) (list (Name &t:0 Load)) nil))) nil)",
       "(Module (/seq (FunctionDef &count:0 (arguments nil (list (arg &x:1 None None)) None nil nil None nil) (/seq (If (BoolOp Or (list (Compare (Name &x:1 Load) (list Eq) (list (Constant s_0 None))) (Compare (Name &x:1 Load) (list Eq) (list (Constant s_4 None))) (Compare (Name &x:1 Load) (list Eq) (list (Constant s_6 None))) (Compare (Name &x:1 Load) (list Eq) (list (Constant s_9 None))) (Compare (Name &x:1 Load) (list Eq) (list (Constant s_a None))) (Compare (Name &x:1 Load) (list Eq) (list (Constant s_d None))))) (/seq (Return (Constant i1 None))) (/seq)) (If (BoolOp Or (list (Compare (Name &x:1 Load) (list Eq) (list (Constant s_8 None))) (Compare (Name &x:1 Load) (list Eq) (list (Constant s_b None))))) (/seq (Return (Constant i2 None))) (/seq)) (Return (Constant i0 None))) nil None None) (Expr (Call (Name g_print Load) (list (Call (Name g_sum Load) (list (ListComp (Call (Name &count:0 Load) (list (Name &x:2 Load)) nil) (list (comprehension (Name &x:2 Store) (Subscript (Call (Name g_hex Load) (list (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil) (Constant i10 None)) nil)) nil) (Slice (Constant i2 None) None None) Load) nil i0)))) nil)) nil))) nil)",
       "(Module (/seq (Import (list (alias g_sys None))) (Assign (list (Name &mp:0 Store)) (Dict (list (Constant s_0 None) (Constant s_1 None) (Constant s_2 None) (Constant s_3 None) (Constant s_4 None) (Constant s_5 None) (Constant s_6 None) (Constant s_7 None) (Constant s_8 None) (Constant s_9 None) (Constant s_A None) (Constant s_B None) (Constant s_C None) (Constant s_D None) (Constant s_E None) (Constant s_F None)) (list (Constant i1 None) (Constant i0 None) (Constant i0 None) (Constant i0 None) (Constant i1 None) (Constant i0 None) (Constant i1 None) (Constant i0 None) (Constant i2 None) (Constant i1 None) (Constant i1 None) (Constant i2 None) (Constant i0 None) (Constant i1 None) (Constant i0 None) (Constant i0 None))) None) (For (Name &line:0 Store) (Attribute (Name g_sys Load) s_stdin Load) (/seq (Assign (list (Name &N:0 Store)) (Call (Attribute (Call (Name g_hex Load) (list (Call (Name g_int Load) (list (Name &line:0 Load)) nil)) nil) s_upper Load) nil nil) None) (Assign (list (Name &ans:0 Store)) (Constant i0 None) None) (For (Name &c:0 Store) (Subscript (Name &N:0 Load) (Slice (Constant i2 None) None None) Load) (/seq (AugAssign (Name &ans:0 Store) Add (Subscript (Name &mp:0 Load) (Name &c:0 Load) Load))) (/seq) None) (Expr (Call (Name g_print Load) (list (Name &ans:0 Load)) nil))) (/seq) None)) nil)",
@@ -1919,7 +1917,7 @@
         ],
         "choice_arity": 1,
         "arity": 3,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -1964,7 +1962,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2055,7 +2053,7 @@
         ],
         "choice_arity": 2,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2103,7 +2101,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 4,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2147,7 +2145,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 3,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2187,7 +2185,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2239,7 +2237,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 4,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2446,7 +2444,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 3,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2516,7 +2514,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2559,7 +2557,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2744,14 +2742,14 @@
           "X"
         ],
         "dfa_metavars": [
-          "S"
+          "seqS"
         ],
         "dfa_choicevars": [
           "S"
         ],
         "choice_arity": 1,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2793,7 +2791,7 @@
         ],
         "choice_arity": 1,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2835,7 +2833,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2879,7 +2877,7 @@
         ],
         "choice_arity": 1,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -2992,7 +2990,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3033,7 +3031,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3080,7 +3078,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3121,7 +3119,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3202,7 +3200,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3267,7 +3265,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3307,7 +3305,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3390,7 +3388,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3431,7 +3429,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3474,7 +3472,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3519,7 +3517,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3559,7 +3557,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3604,7 +3602,7 @@
         ],
         "choice_arity": 2,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3773,7 +3771,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 4,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3819,7 +3817,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3863,7 +3861,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3909,7 +3907,7 @@
         ],
         "choice_arity": 1,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -3950,7 +3948,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -4033,7 +4031,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -4077,7 +4075,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 2,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [

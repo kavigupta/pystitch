@@ -27,7 +27,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -68,7 +68,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -116,7 +116,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 3,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -157,7 +157,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -206,7 +206,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -366,7 +366,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 1,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
@@ -413,7 +413,7 @@
         "dfa_choicevars": [],
         "choice_arity": 0,
         "arity": 0,
-        "dfa_root": "S"
+        "dfa_root": "seqS"
       }
     ],
     "rewritten": [
