@@ -1,8 +1,7 @@
 import unittest
 from textwrap import dedent
 
-from imperative_stitch.compress.abstraction import Abstraction, handle_abstractions
-from imperative_stitch.parser import s_exp_to_python
+from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
 
 
