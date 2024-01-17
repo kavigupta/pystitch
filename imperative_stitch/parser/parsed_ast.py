@@ -164,6 +164,14 @@ class ParsedAST(ABC):
             lambda call: abstractions[call.tag].create_stub(call.args)
         )
 
+    def abstraction_calls_to_bodies(self, abstractions):
+        """
+        Replace all abstraction calls with their bodies.
+        """
+        return self.map_abstraction_calls(
+            lambda call: abstractions[call.tag].substitute_body(call.args)
+        )
+
     @classmethod
     def constant(cls, leaf):
         """
@@ -206,6 +214,13 @@ class ParsedAST(ABC):
                 ListAST(children=[]),
             ],
         )
+
+    @classmethod
+    def expr_stmt(cls, expr):
+        """
+        Create an expression statement ParsedAST from the given expression.
+        """
+        return NodeAST(typ=ast.Expr, children=[expr])
 
     def render_symvar(self):
         """

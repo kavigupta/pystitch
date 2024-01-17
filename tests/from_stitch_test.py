@@ -41,11 +41,11 @@ class SequenceTest(unittest.TestCase):
 
     fn_1 = Abstraction(
         name="fn_1",
-        body=fn_1_body,
+        body=ParsedAST.parse_s_expression(fn_1_body),
         arity=0,
         sym_arity=2,
         choice_arity=0,
-        dfa_root="S",
+        dfa_root="seqS",
         dfa_symvars=["X", "X"],
         dfa_metavars=[],
         dfa_choicevars=[],
@@ -60,7 +60,7 @@ class SequenceTest(unittest.TestCase):
             .abstraction_calls_to_stubs(self.abtractions)
             .to_python(),
             """
-            fn_1(n, s)
+            fn_1(__ref__(n), __ref__(s))
             k = s.count('8')
             """,
         )
@@ -73,14 +73,16 @@ class SequenceTest(unittest.TestCase):
             .to_python(),
             """
             if x:
-                fn_1(a, z)
+                fn_1(__ref__(a), __ref__(z))
             """,
         )
 
     def test_injection_subseq(self):
         assertSameCode(
             self,
-            s_exp_to_python(self.ctx_in_seq, handle_abstractions({"fn_1": self.fn_1})),
+            ParsedAST.parse_s_expression(self.ctx_in_seq)
+            .abstraction_calls_to_bodies(self.abtractions)
+            .to_python(),
             """
             n = int(input())
             s = input()
@@ -91,7 +93,9 @@ class SequenceTest(unittest.TestCase):
     def test_injection_rooted(self):
         assertSameCode(
             self,
-            s_exp_to_python(self.ctx_rooted, handle_abstractions({"fn_1": self.fn_1})),
+            ParsedAST.parse_s_expression(self.ctx_rooted)
+            .abstraction_calls_to_bodies(self.abtractions)
+            .to_python(),
             """
             if x:
                 a = int(input())
@@ -103,11 +107,13 @@ class SequenceTest(unittest.TestCase):
 class MultiKindTest(unittest.TestCase):
     fn_1 = Abstraction(
         name="fn_1",
-        body="(/seq (If (BinOp (BinOp (BinOp (BinOp (Constant i1 None) Mult (Constant i2 None)) Mult (Constant i3 None)) Mult (Constant i4 None)) Mult (Constant i5 None)) (/seq (Assign (list (Name %1 Store)) (BinOp (Name %1 Load) Add #0) None) (Assign (list (Name %2 Store)) (List (list (Name g_print Load) (Name g_sum Load) (Name g_u Load)) Load) None) ?0) nil))",
+        body=ParsedAST.parse_s_expression(
+            "(/seq (If (BinOp (BinOp (BinOp (BinOp (Constant i1 None) Mult (Constant i2 None)) Mult (Constant i3 None)) Mult (Constant i4 None)) Mult (Constant i5 None)) (/seq (Assign (list (Name %1 Store)) (BinOp (Name %1 Load) Add #0) None) (Assign (list (Name %2 Store)) (List (list (Name g_print Load) (Name g_sum Load) (Name g_u Load)) Load) None) ?0) nil))"
+        ),
         arity=1,
         sym_arity=2,
         choice_arity=1,
-        dfa_root="S",
+        dfa_root="seqS",
         dfa_symvars=["X", "X"],
         dfa_metavars=["E"],
         dfa_choicevars=["S"],
@@ -133,34 +139,54 @@ class MultiKindTest(unittest.TestCase):
         nil)
     """
 
+    abstractions = {"fn_1": fn_1}
+
     def test_stub_includes_choicevar(self):
         assertSameCode(
             self,
-            s_exp_to_python(self.ctx_includes_choicevar),
+            ParsedAST.parse_s_expression(self.ctx_includes_choicevar)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python(),
             """
-            fn_1(1 * 2, x, y, __code__("z = x"))
+            fn_1(__code__('1 * 2'), __ref__(x), __ref__(y), __code__('z = x'))
             """,
         )
 
     def test_stub_no_choicevar(self):
         assertSameCode(
             self,
-            s_exp_to_python(self.ctx_no_choicevar),
+            ParsedAST.parse_s_expression(self.ctx_no_choicevar)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python(),
             """
-            fn_1(4 * 3, x, y, __no_code__)
+            fn_1(__code__('4 * 3'), __ref__(x), __ref__(y), None)
             """,
         )
 
     def test_injection_includes_choicevar(self):
         assertSameCode(
             self,
-            s_exp_to_python(
-                self.ctx_includes_choicevar, handle_abstractions({"fn_1": self.fn_1})
-            ),
+            ParsedAST.parse_s_expression(self.ctx_includes_choicevar)
+            .abstraction_calls_to_bodies(self.abstractions)
+            .to_python(),
             """
-            x = 1 * 2
-            y = x
-            z = x
+            if 1 * 2 * 3 * 4 * 5:
+                x = x + 1 * 2
+                y = [print, sum, u]
+                z = x
+            """,
+        )
+
+    def test_injection_doesnt_include_choicevar(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_no_choicevar)
+            .abstraction_calls_to_bodies(self.abstractions)
+            .to_python(),
+            """
+            if 1 * 2 * 3 * 4 * 5:
+                x = x + 4 * 3
+                y = [print, sum, u]
             """,
         )
 

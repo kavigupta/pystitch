@@ -124,7 +124,7 @@ TRANSITIONS = frozendict(
             ast.Subscript: {"value": "E", "slice": "E"},
             ast.Attribute: {"value": "E", "attr": "X"},
         },
-        "seqS": {}
+        "seqS": {},
     }
 )
 

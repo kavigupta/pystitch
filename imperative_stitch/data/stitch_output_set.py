@@ -1,12 +1,11 @@
 import json
 
-from permacache import permacache, stable_hash
 import tqdm
+from permacache import permacache, stable_hash
 
-from imperative_stitch.parser import python_to_s_exp
-
-from imperative_stitch.data.compression_testing_code import compression_testing_code
 from imperative_stitch.compress.julia_stitch import run_julia_stitch
+from imperative_stitch.data.compression_testing_code import compression_testing_code
+from imperative_stitch.parser import python_to_s_exp
 
 
 @permacache(
