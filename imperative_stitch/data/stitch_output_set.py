@@ -57,12 +57,14 @@ def stitch_output_set(amount):
 
     return results
 
+
 @lru_cache(maxsize=1)
 def load_stitch_output_set():
     with open("data/stitch_output_set.json") as f:
         return json.load(f)
 
-if __name__ == "__main__":
+
+def main():
     small = stitch_output_set(10)
     with open("data/stitch_output_set_small.json", "w") as f:
         json.dump(small, f, indent=2)
@@ -70,3 +72,7 @@ if __name__ == "__main__":
     full = stitch_output_set(100)
     with open("data/stitch_output_set.json", "w") as f:
         json.dump(full, f, indent=2)
+
+
+if __name__ == "__main__":
+    main()
