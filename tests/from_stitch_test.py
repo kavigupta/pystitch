@@ -2,7 +2,10 @@ import unittest
 from textwrap import dedent
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
+from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import ParsedAST
+from tests.utils import expand_with_slow_tests
 
 
 def assertSameCode(test, actual, expected):
@@ -368,3 +371,31 @@ class MultiKindTest(unittest.TestCase):
             print(a * (a + 1) // 2 + b * (b + 1) // 2)
             """,
         )
+
+
+class RealDataTest(unittest.TestCase):
+    @expand_with_slow_tests(len(load_stitch_output_set()))
+    def test_realistic(self, i):
+        eg = load_stitch_output_set()[i]
+        abstr_dict = eg["abstractions"][0].copy()
+        print(abstr_dict)
+        abstr_dict["body"] = ParsedAST.parse_s_expression(abstr_dict["body"])
+        abstr = dict(fn_1=Abstraction(name="fn_1", **abstr_dict))
+        for code, rewritten in zip(eg["code"], eg["rewritten"]):
+            code = s_exp_to_python(code)
+            ParsedAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(abstr)
+            out = (
+                ParsedAST.parse_s_expression(rewritten)
+                .abstraction_calls_to_bodies(abstr)
+                .to_python()
+            )
+            print("#" * 80)
+            print(code)
+            print("*" * 80)
+            print(out)
+            print("#" * 80)
+            assertSameCode(
+                self,
+                out,
+                code,
+            )

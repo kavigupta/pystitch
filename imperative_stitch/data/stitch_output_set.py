@@ -1,3 +1,4 @@
+from functools import lru_cache
 import json
 
 import tqdm
@@ -56,6 +57,10 @@ def stitch_output_set(amount):
 
     return results
 
+@lru_cache(maxsize=1)
+def load_stitch_output_set():
+    with open("data/stitch_output_set.json") as f:
+        return json.load(f)
 
 if __name__ == "__main__":
     small = stitch_output_set(10)
