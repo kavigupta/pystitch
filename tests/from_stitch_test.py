@@ -6,8 +6,10 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 
 
 def assertSameCode(test, actual, expected):
+    actual = dedent(actual).strip()
+    print(actual)
     test.assertEqual(
-        dedent(actual).strip(),
+        actual,
         dedent(expected).strip(),
     )
 
@@ -138,7 +140,106 @@ class MultiKindTest(unittest.TestCase):
         nil)
     """
 
-    abstractions = {"fn_1": fn_1}
+    fn_2 = Abstraction(
+        name="fn_2",
+        body=ParsedAST.parse_s_expression(
+            """
+            (If
+                (Compare #1 (list Eq) (list (Constant i0 None)))
+                (/seq (Expr (Call (Name g_print Load) (list #2) nil)))
+                (/seq
+                    (If
+                        (Compare #1 (list Eq) (list (Constant i1 None)))
+                        (/seq (Expr (Call (Name g_print Load) (list #0) nil)))
+                        (/seq (Expr (Call (Name g_print Load) (list (Constant i0 None)) nil)))
+                    )
+                )
+            )
+            """
+        ),
+        arity=3,
+        sym_arity=0,
+        choice_arity=0,
+        dfa_root="S",
+        dfa_symvars=[],
+        dfa_metavars=["E", "E", "E"],
+        dfa_choicevars=[],
+    )
+
+    ctx_for_fn2_1 = """
+    (Module
+        (/seq
+            (Assign
+                (list (Name &n:0 Store))
+                (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil)
+                None
+            )
+            (Assign (list (Name &c:0 Store)) (Call (Name g_input Load) nil nil) None)
+            (fn_2
+                (Constant i1 None)
+                (Call (Attribute (Name &c:0 Load) s_count Load) (list (Constant s_I None)) nil)
+                (Call (Attribute (Name &c:0 Load) s_count Load) (list (Constant s_A None)) nil)
+            )
+        )
+        nil
+    )
+    """
+
+    fn_3 = Abstraction(
+        name="fn_3",
+        body=ParsedAST.parse_s_expression(
+            "(BinOp (BinOp #0 Mult (BinOp #0 Add (Constant i1 None))) FloorDiv (Constant i2 None))"
+        ),
+        arity=1,
+        sym_arity=0,
+        choice_arity=0,
+        dfa_root="E",
+        dfa_metavars=["E"],
+        dfa_symvars=[],
+        dfa_choicevars=[],
+    )
+
+    ctx_for_fn3_1 = """
+    (Module
+        (/seq
+            (Assign
+                (list (Name &a:0 Store))
+                (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil)
+                None
+            )
+            (Assign
+                (list (Name &b:0 Store))
+                (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil)
+                None
+            )
+            (Assign
+                (list (Name &mid:0 Store))
+                (BinOp (BinOp (Name &a:0 Load) Add (Name &b:0 Load)) FloorDiv (Constant i2 None))
+                None
+            )
+            (Assign
+                (list (Name &a:0 Store))
+                (Call (Name g_abs Load) (list (BinOp (Name &mid:0 Load) Sub (Name &a:0 Load))) nil)
+                None
+            )
+            (Assign
+                (list (Name &b:0 Store))
+                (Call (Name g_abs Load) (list (BinOp (Name &mid:0 Load) Sub (Name &b:0 Load))) nil)
+                None
+            )
+            (Expr
+                (Call
+                    (Name g_print Load)
+                    (list (BinOp (fn_3 (Name &a:0 Load)) Add (fn_3 (Name &b:0 Load))))
+                    nil
+                )
+            )
+        )
+        nil
+    )
+    """
+
+    abstractions = {"fn_1": fn_1, "fn_2": fn_2, "fn_3": fn_3}
 
     def test_stub_includes_choicevar(self):
         assertSameCode(
@@ -189,8 +290,81 @@ class MultiKindTest(unittest.TestCase):
             """,
         )
 
+    def test_stub_fn2_1(self):
+        out = (
+            ParsedAST.parse_s_expression(self.ctx_for_fn2_1)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python()
+        )
+        self.maxDiff = None
+        assertSameCode(
+            self,
+            out,
+            r"""
+            n = int(input())
+            c = input()
+            fn_2(__code__('1'), __code__("c.count('I')"), __code__("c.count('A')"))
+            """,
+        )
 
-# TODO add test: abstraction with symvar, metavariable, choice variable
+    def test_injection_fn2_1(self):
+        out = (
+            ParsedAST.parse_s_expression(self.ctx_for_fn2_1)
+            .abstraction_calls_to_bodies(self.abstractions)
+            .to_python()
+        )
+        self.maxDiff = None
+        assertSameCode(
+            self,
+            out,
+            r"""
+            n = int(input())
+            c = input()
+            if c.count('I') == 0:
+                print(c.count('A'))
+            elif c.count('I') == 1:
+                print(1)
+            else:
+                print(0)
+            """,
+        )
 
+    def test_stub_fn3_1(self):
+        out = (
+            ParsedAST.parse_s_expression(self.ctx_for_fn3_1)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python()
+        )
+        self.maxDiff = None
+        assertSameCode(
+            self,
+            out,
+            r"""
+            a = int(input())
+            b = int(input())
+            mid = (a + b) // 2
+            a = abs(mid - a)
+            b = abs(mid - b)
+            print(fn_3(__code__('a')) + fn_3(__code__('b')))
+            """,
+        )
 
-# TODO add test: abstraction rooted at an Expr node
+    def test_injection_fn3_1(self):
+        out = (
+            ParsedAST.parse_s_expression(self.ctx_for_fn3_1)
+            .abstraction_calls_to_bodies(self.abstractions)
+            .to_python()
+        )
+        self.maxDiff = None
+        assertSameCode(
+            self,
+            out,
+            r"""
+            a = int(input())
+            b = int(input())
+            mid = (a + b) // 2
+            a = abs(mid - a)
+            b = abs(mid - b)
+            print(a * (a + 1) // 2 + b * (b + 1) // 2)
+            """,
+        )

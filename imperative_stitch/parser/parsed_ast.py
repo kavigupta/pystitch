@@ -395,7 +395,7 @@ class MetavarAST(Variable):
         return ast.Name(id=self.sym)
 
     def _replace_with_substitute(self, arguments):
-        return arguments.metavars[self.idx - 1]
+        return arguments.metavars[self.idx]
 
 
 @dataclass
@@ -407,7 +407,7 @@ class ChoicevarAST(Variable):
         return ast.Name(id=self.sym)
 
     def _replace_with_substitute(self, arguments):
-        return arguments.choicevars[self.idx - 1]
+        return arguments.choicevars[self.idx]
 
 
 @dataclass
