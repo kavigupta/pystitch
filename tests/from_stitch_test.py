@@ -4,7 +4,7 @@ from textwrap import dedent
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.convert import s_exp_to_python
-from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.parser.parsed_ast import AbstractionCallAST, ParsedAST
 from tests.utils import expand_with_slow_tests
 
 
@@ -78,6 +78,32 @@ class SequenceTest(unittest.TestCase):
             """
             if x:
                 fn_1(__ref__(a), __ref__(z))
+            """,
+        )
+
+    def test_stub_insertion_rooted_substitute_variables(self):
+        parsed = ParsedAST.parse_s_expression(self.ctx_rooted)
+        abstracts = parsed.abstraction_calls()
+        [handle] = abstracts.keys()
+        ac = abstracts[handle]
+        new_abstraction_call = AbstractionCallAST(
+            tag=ac.tag,
+            handle=ac.handle,
+            args=[
+                ParsedAST.parse_s_expression(x)
+                for x in [
+                    "&u:0",
+                    "&v:0",
+                ]
+            ]
+        )
+        parsed = parsed.replace_abstraction_calls({handle: new_abstraction_call})
+        assertSameCode(
+            self,
+            parsed.abstraction_calls_to_stubs(self.abtractions).to_python(),
+            """
+            if x:
+                fn_1(__ref__(u), __ref__(v))
             """,
         )
 
