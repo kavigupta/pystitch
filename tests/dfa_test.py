@@ -1,4 +1,5 @@
 import ast
+from textwrap import dedent
 import unittest
 
 # TODO fix this
@@ -81,14 +82,14 @@ reasonable_classifications = [
     ("keyword", "K"),
     ("list", "A"),
     ("list", "C"),
-    ("list", "E"),
+    ("list", "listE"),
     ("list", "EH"),
     ("list", "F"),
     ("list", "K"),
     ("list", "L"),
     ("list", "W"),
     ("list", "X"),
-    ("/seq", "S"),
+    ("/seq", "seqS"),
     ("withitem", "W"),
 ]
 
@@ -131,3 +132,39 @@ class DFATest(unittest.TestCase):
         code = small_set_examples()[i]
         for element in ast.parse(code).body:
             self.classify_elements_in_code(ast.unparse(element))
+
+    def test_annotation(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                @asyncio.coroutine
+                def onOpen(self):
+                    pass
+                """
+            )
+        )
+
+    def test_class(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                class MyClientProtocol(WebSocketClientProtocol):
+                    pass
+                """
+            )
+        )
+
+    def test_comparison(self):
+        self.classify_elements_in_code("x == 2")
+
+    def test_tuple(self):
+        self.classify_elements_in_code("(2, 3)")
+
+    def test_code(self):
+        self.classify_elements_in_code(
+            dedent(
+                r"""
+                {x: 2 for x in range(10)}
+                """
+            )
+        )

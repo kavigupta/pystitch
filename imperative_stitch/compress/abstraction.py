@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from imperative_stitch.parser import ParsedAST
+from imperative_stitch.parser.parsed_ast import SequenceAST
 from imperative_stitch.parser.symbol import Symbol
 
 
@@ -47,6 +48,15 @@ class Abstraction:
     dfa_metavars: list[str]
     dfa_choicevars: list[str]
 
+    def __post_init__(self):
+        assert self.arity == len(self.dfa_metavars)
+        assert self.sym_arity == len(self.dfa_symvars)
+        assert self.choice_arity == len(self.dfa_choicevars)
+
+        assert self.dfa_root in ["E", "S", "seqS"]
+
+        assert isinstance(self.body, ParsedAST), self.body
+
     def process_arguments(self, arguments):
         """
         Produce an Arguments object from a list of arguments.
@@ -64,10 +74,18 @@ class Abstraction:
         """
         arguments = self.process_arguments(arguments)
         args_list = arguments.render_list()
-        return ParsedAST.call(
+        e_stub = ParsedAST.call(
             Symbol(name=self.name, scope=None),
             *args_list,
         )
+        if self.dfa_root == "E":
+            return e_stub
+        s_stub = ParsedAST.expr_stmt(e_stub)
+        if self.dfa_root == "S":
+            return s_stub
+        seq_stub = SequenceAST("/seq", [s_stub])
+        assert self.dfa_root == "seqS"
+        return seq_stub
 
     def substitute_body(self, arguments):
         """

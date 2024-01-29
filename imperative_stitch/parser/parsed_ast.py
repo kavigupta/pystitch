@@ -146,6 +146,32 @@ class ParsedAST(ABC):
         # pylint: disable=protected-access
         return self.map(lambda x: x._replace_abstraction_calls(handle_to_replacement))
 
+    def map_abstraction_calls(self, replace_fn):
+        """
+        Map each abstraction call through the given function.
+        """
+        handle_to_replacement = self.abstraction_calls()
+        handle_to_replacement = {
+            handle: replace_fn(call) for handle, call in handle_to_replacement.items()
+        }
+        return self.replace_abstraction_calls(handle_to_replacement)
+
+    def abstraction_calls_to_stubs(self, abstractions):
+        """
+        Replace all abstraction calls with stubs.
+        """
+        return self.map_abstraction_calls(
+            lambda call: abstractions[call.tag].create_stub(call.args)
+        )
+
+    def abstraction_calls_to_bodies(self, abstractions):
+        """
+        Replace all abstraction calls with their bodies.
+        """
+        return self.map_abstraction_calls(
+            lambda call: abstractions[call.tag].substitute_body(call.args)
+        )
+
     @classmethod
     def constant(cls, leaf):
         """
@@ -188,6 +214,13 @@ class ParsedAST(ABC):
                 ListAST(children=[]),
             ],
         )
+
+    @classmethod
+    def expr_stmt(cls, expr):
+        """
+        Create an expression statement ParsedAST from the given expression.
+        """
+        return NodeAST(typ=ast.Expr, children=[expr])
 
     def render_symvar(self):
         """
@@ -362,7 +395,7 @@ class MetavarAST(Variable):
         return ast.Name(id=self.sym)
 
     def _replace_with_substitute(self, arguments):
-        return arguments.metavars[self.idx - 1]
+        return arguments.metavars[self.idx]
 
 
 @dataclass
@@ -374,7 +407,7 @@ class ChoicevarAST(Variable):
         return ast.Name(id=self.sym)
 
     def _replace_with_substitute(self, arguments):
-        return arguments.choicevars[self.idx - 1]
+        return arguments.choicevars[self.idx]
 
 
 @dataclass

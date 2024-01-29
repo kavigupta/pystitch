@@ -95,7 +95,6 @@ def s_exp_to_parsed_ast(x):
         [arg] = args
         return SpliceAST(arg)
     if tag in {"list"}:
-        print(args)
         return ListAST(args)
     if tag.startswith("fn"):
         return AbstractionCallAST(tag, args, uuid.uuid4())

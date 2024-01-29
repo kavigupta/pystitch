@@ -41,7 +41,7 @@ def run_julia_stitch(
         "Attribute": 0.0,
     }
     with open("data/dfa.json", "w") as f:
-        json.dump(export_dfa(), f)
+        json.dump(export_dfa(), f, indent=2)
     cmd = [
         "julia",
         "--project=" + stitch_jl_dir,
