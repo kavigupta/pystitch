@@ -120,6 +120,21 @@ class SequenceTest(unittest.TestCase):
             """,
         )
 
+    def test_injection_subseq_pragmas(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_in_seq)
+            .abstraction_calls_to_bodies(self.abtractions, pragmas=True)
+            .to_python(),
+            """
+            __start_extract__
+            n = int(input())
+            s = input()
+            __end_extract__
+            k = s.count('8')
+            """,
+        )
+
     def test_injection_rooted(self):
         assertSameCode(
             self,
@@ -130,6 +145,21 @@ class SequenceTest(unittest.TestCase):
             if x:
                 a = int(input())
                 z = input()
+            """,
+        )
+
+    def test_injection_rooted_pragmas(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_rooted)
+            .abstraction_calls_to_bodies(self.abtractions, pragmas=True)
+            .to_python(),
+            """
+            if x:
+                __start_extract__
+                a = int(input())
+                z = input()
+                __end_extract__
             """,
         )
 
@@ -306,6 +336,24 @@ class MultiKindTest(unittest.TestCase):
             """,
         )
 
+    def test_injection_includes_choicevar_pragmas(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_includes_choicevar)
+            .abstraction_calls_to_bodies(self.abstractions, pragmas=True)
+            .to_python(),
+            """
+            __start_extract__
+            if 1 * 2 * 3 * 4 * 5:
+                x = x + {__metavariable__, __m0, 1 * 2}
+                y = [print, sum, u]
+                __start_choice__
+                z = x
+                __end_choice__
+            __end_extract__
+            """,
+        )
+
     def test_injection_doesnt_include_choicevar(self):
         assertSameCode(
             self,
@@ -355,6 +403,30 @@ class MultiKindTest(unittest.TestCase):
                 print(1)
             else:
                 print(0)
+            """,
+        )
+
+    def test_injection_fn2_1_pragmas(self):
+        out = (
+            ParsedAST.parse_s_expression(self.ctx_for_fn2_1)
+            .abstraction_calls_to_bodies(self.abstractions, pragmas=True)
+            .to_python()
+        )
+        self.maxDiff = None
+        assertSameCode(
+            self,
+            out,
+            r"""
+            n = int(input())
+            c = input()
+            __start_extract__
+            if {__metavariable__, __m1, c.count('I')} == 0:
+                print({__metavariable__, __m2, c.count('A')})
+            elif {__metavariable__, __m1, c.count('I')} == 1:
+                print({__metavariable__, __m0, 1})
+            else:
+                print(0)
+            __end_extract__
             """,
         )
 
@@ -425,3 +497,9 @@ class RealDataTest(unittest.TestCase):
                 out,
                 code,
             )
+            # check_no_crash = (
+            #     ParsedAST.parse_s_expression(rewritten)
+            #     .abstraction_calls_to_bodies(abstr, pragmas=True)
+            #     .to_python()
+            # )
+            # self.assertIsNotNone(check_no_crash)

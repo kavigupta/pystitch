@@ -167,12 +167,12 @@ class ParsedAST(ABC):
             lambda call: abstractions[call.tag].create_stub(call.args)
         )
 
-    def abstraction_calls_to_bodies(self, abstractions):
+    def abstraction_calls_to_bodies(self, abstractions, *, pragmas=False):
         """
         Replace all abstraction calls with their bodies.
         """
         return self.map_abstraction_calls(
-            lambda call: abstractions[call.tag].substitute_body(call.args)
+            lambda call: abstractions[call.tag].substitute_body(call.args, pragmas=pragmas)
         )
 
     @classmethod
