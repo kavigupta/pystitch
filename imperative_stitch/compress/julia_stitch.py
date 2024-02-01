@@ -27,6 +27,8 @@ def run_julia_stitch(
     application_utility_symvar=-0.5,
     application_utility_fixed=-3,  # see reasoning above
     include_dfa=True,
+    root_states=("E", "S", "seqS"),
+    metavariable_statements=True,
 ):
     size_by_symbol = {
         "Module": 0.0,
@@ -53,6 +55,8 @@ def run_julia_stitch(
         f"--application-utility-fixed={application_utility_fixed}",
         f"--application-utility-metavar={application_utility_metavar}",
         f"--application-utility-symvar={application_utility_symvar}",
+        f"--dfa-valid-root-states={json.dumps(list(root_states))}",
+        *([] if metavariable_statements else ["--dfa-metavariable-disallow-S", "--dfa-metavariable-disallow-seqS"]),
     ]
     if not quiet:
         temp_txt = os.path.join(stitch_jl_dir, "temp.txt")
