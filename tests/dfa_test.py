@@ -1,6 +1,6 @@
 import ast
-from textwrap import dedent
 import unittest
+from textwrap import dedent
 
 # TODO fix this
 from s_expression_parser import Pair, ParserConfig, nil, parse

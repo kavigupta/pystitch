@@ -1,5 +1,5 @@
-from functools import lru_cache
 import json
+from functools import lru_cache
 
 import tqdm
 from permacache import permacache, stable_hash

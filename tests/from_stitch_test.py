@@ -95,7 +95,7 @@ class SequenceTest(unittest.TestCase):
                     "&u:0",
                     "&v:0",
                 ]
-            ]
+            ],
         )
         parsed = parsed.replace_abstraction_calls({handle: new_abstraction_call})
         assertSameCode(
