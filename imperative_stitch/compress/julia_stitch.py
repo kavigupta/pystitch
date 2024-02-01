@@ -56,7 +56,11 @@ def run_julia_stitch(
         f"--application-utility-metavar={application_utility_metavar}",
         f"--application-utility-symvar={application_utility_symvar}",
         f"--dfa-valid-root-states={json.dumps(list(root_states))}",
-        *([] if metavariable_statements else ["--dfa-metavariable-disallow-S", "--dfa-metavariable-disallow-seqS"]),
+        *(
+            []
+            if metavariable_statements
+            else ["--dfa-metavariable-disallow-S", "--dfa-metavariable-disallow-seqS"]
+        ),
     ]
     if not quiet:
         temp_txt = os.path.join(stitch_jl_dir, "temp.txt")
