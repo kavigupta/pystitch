@@ -21,6 +21,7 @@ def run_stitch_cached(c):
         application_utility_symvar=-0.5,
         max_arity=4,
         quiet=False,
+        # TODO we should be able to root abstractions at E
         root_states=("S", "seqS"),
         metavariable_statements=False,
     )
