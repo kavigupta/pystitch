@@ -26,7 +26,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         arity=0,
         sym_arity=2,
         choice_arity=0,
-        dfa_root="S",
+        dfa_root="seqS",
         dfa_symvars=["X", "X"],
         dfa_metavars=[],
         dfa_choicevars=[],
@@ -66,7 +66,7 @@ class AbstractionRenderingTest(unittest.TestCase):
             )
             (If
             (Compare (Name %4 Load) (list Gt) (list (Constant i0 None)))
-            #0
+            (Expr #0)
             (/seq
                 (If
                 (Compare (Name %4 Load) (list Eq) (list (Constant i0 None)))
@@ -96,14 +96,14 @@ class AbstractionRenderingTest(unittest.TestCase):
         choice_arity=1,
         dfa_root="S",
         dfa_symvars=["X", "X", "X", "X"],
-        dfa_metavars=["S"],
+        dfa_metavars=["E"],
         dfa_choicevars=["S"],
     )
 
     fn_2_args_w_nothing = [
         ParsedAST.parse_s_expression(x)
         for x in [
-            "(Expr (Call (Name g_print Load) (list (Constant i2 None)) nil))",
+            "(Call (Name g_print Load) (list (Constant i2 None)) nil)",
             "&c:0",
             "&a:0",
             "&b:0",
