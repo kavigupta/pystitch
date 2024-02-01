@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from imperative_stitch.parser import ParsedAST
-from imperative_stitch.parser.parsed_ast import SequenceAST, SpliceAST
+from imperative_stitch.parser.parsed_ast import LeafAST, SequenceAST, SpliceAST
 from imperative_stitch.parser.symbol import Symbol
 
 
@@ -101,7 +101,8 @@ class Abstraction:
         """
         Substitute the given arguments into the body of this abstraction.
         """
-        arguments = self.process_arguments(arguments)
+        if not isinstance(arguments, Arguments):
+            arguments = self.process_arguments(arguments)
         if pragmas:
             if not all(x == "E" for x in self.dfa_metavars):
                 raise ValueError(
@@ -124,6 +125,20 @@ class Abstraction:
         if pragmas:
             body = self._add_extract_pragmas(body)
         return body
+
+    def body_with_variable_names(self, *, pragmas=False):
+        """
+        Render the body but with the #0, %0, ?0, kept as placeholders.
+        """
+        arguments = Arguments(
+            [ParsedAST.name(LeafAST(Symbol(f"#{i}", None))) for i in range(self.arity)],
+            [LeafAST(Symbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
+            [
+                ParsedAST.expr_stmt(ParsedAST.name(LeafAST(Symbol(f"?{i}", None))))
+                for i in range(self.choice_arity)
+            ],
+        )
+        return self.substitute_body(arguments, pragmas=pragmas)
 
 
 def handle_abstractions(name_to_abstr):

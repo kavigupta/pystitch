@@ -259,3 +259,43 @@ class AbstractionRenderingTest(unittest.TestCase):
                     print(0)
             """,
         )
+
+    def test_body_variable_rendering_simple(self):
+        body = self.fn_1.body_with_variable_names()
+        assertSameCode(
+            self,
+            body.to_python(),
+            """
+            %1 = int(input())
+            %2 = input()
+            """,
+        )
+
+    def test_body_variable_rendering_multi(self):
+        body = self.fn_2.body_with_variable_names()
+        self.maxDiff = None
+        assertSameCode(
+            self,
+            body.to_python(),
+            """
+            if %2 == 0:
+                if %3 == 0:
+                    if %1 == 0:
+                        print(-1)
+                    else:
+                        print(0)
+                else:
+                    print(1)
+                    print(-%1 / %3)
+            else:
+                ?0
+                %4 = %3 ** 2 - 4 * %2 * %1
+                if %4 > 0:
+                    #0
+                elif %4 == 0:
+                    print(1)
+                    print(-%3 / (2 * %2))
+                else:
+                    print(0)
+            """,
+        )
