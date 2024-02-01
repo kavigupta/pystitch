@@ -83,7 +83,10 @@ class ParsedAST(ABC):
         Convert this ParsedAST into python code.
         """
         with no_recursionlimit():
-            return ast.unparse(self.to_python_ast())
+            code = self.to_python_ast()
+            if isinstance(code, Splice):
+                code = code.target
+            return ast.unparse(code)
 
     @abstractmethod
     def to_python_ast(self):
@@ -164,12 +167,12 @@ class ParsedAST(ABC):
             lambda call: abstractions[call.tag].create_stub(call.args)
         )
 
-    def abstraction_calls_to_bodies(self, abstractions):
+    def abstraction_calls_to_bodies(self, abstractions, *, pragmas=False):
         """
         Replace all abstraction calls with their bodies.
         """
         return self.map_abstraction_calls(
-            lambda call: abstractions[call.tag].substitute_body(call.args)
+            lambda call: abstractions[call.tag].substitute_body(call.args, pragmas=pragmas)
         )
 
     @classmethod
@@ -237,6 +240,32 @@ class ParsedAST(ABC):
         return ParsedAST.call(
             Symbol(name="__code__", scope=None),
             ParsedAST.constant(self.to_python()),
+        )
+
+    def wrap_in_metavariable(self, name):
+        return NodeAST(
+            ast.Set,
+            [
+                ListAST(
+                    [
+                        ParsedAST.name(LeafAST(Symbol("__metavariable__", None))),
+                        ParsedAST.name(LeafAST(Symbol(name, None))),
+                        self,
+                    ]
+                )
+            ],
+        )
+
+    def wrap_in_choicevar(self):
+        return SpliceAST(
+            SequenceAST(
+                "/seq",
+                [
+                    ParsedAST.parse_python_statement("__start_choice__"),
+                    self,
+                    ParsedAST.parse_python_statement("__end_choice__"),
+                ],
+            )
         )
 
 

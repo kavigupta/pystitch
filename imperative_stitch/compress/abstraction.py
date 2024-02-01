@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from imperative_stitch.parser import ParsedAST
-from imperative_stitch.parser.parsed_ast import SequenceAST
+from imperative_stitch.parser.parsed_ast import SequenceAST, SpliceAST
 from imperative_stitch.parser.symbol import Symbol
 
 
@@ -87,12 +87,43 @@ class Abstraction:
         assert self.dfa_root == "seqS"
         return seq_stub
 
-    def substitute_body(self, arguments):
+    def _add_extract_pragmas(self, body):
+        if self.dfa_root == "E":
+            raise ValueError("Cannot add extract pragmas to an expression")
+        start_pragma = ParsedAST.parse_python_statement("__start_extract__")
+        end_pragma = ParsedAST.parse_python_statement("__end_extract__")
+        if self.dfa_root == "S":
+            return SpliceAST(SequenceAST("/seq", [start_pragma, body, end_pragma]))
+        assert self.dfa_root == "seqS"
+        return SequenceAST("/seq", [start_pragma, *body.elements, end_pragma])
+
+    def substitute_body(self, arguments, *, pragmas=False):
         """
         Substitute the given arguments into the body of this abstraction.
         """
         arguments = self.process_arguments(arguments)
-        return self.body.substitute(arguments)
+        if pragmas:
+            if not all(x == "E" for x in self.dfa_metavars):
+                raise ValueError(
+                    "Cannot add extract pragmas to a body with non-expression metavariables"
+                )
+            if not all(x == "S" for x in self.dfa_choicevars):
+                raise ValueError(
+                    "Cannot add extract pragmas to a body with non-statement choicevars"
+                )
+            arguments = Arguments(
+                [
+                    x.wrap_in_metavariable(f"__m{i}")
+                    for i, x in enumerate(arguments.metavars)
+                ],
+                arguments.symvars,
+                [x.wrap_in_choicevar() for x in arguments.choicevars],
+            )
+        body = self.body
+        body = body.substitute(arguments)
+        if pragmas:
+            body = self._add_extract_pragmas(body)
+        return body
 
 
 def handle_abstractions(name_to_abstr):

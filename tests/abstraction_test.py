@@ -156,6 +156,19 @@ class AbstractionRenderingTest(unittest.TestCase):
             """,
         )
 
+    def test_body_rendering_simple_with_pragmas(self):
+        stub = self.fn_1.substitute_body(self.fn_1_args, pragmas=True)
+        assertSameCode(
+            self,
+            stub.to_python(),
+            """
+            __start_extract__
+            a = int(input())
+            z = input()
+            __end_extract__
+            """,
+        )
+
     def test_body_rendering_multi(self):
         stub = self.fn_2.substitute_body(self.fn_2_args)
         print(stub.to_python())
@@ -183,6 +196,40 @@ class AbstractionRenderingTest(unittest.TestCase):
                     print(-b / (2 * a))
                 else:
                     print(0)
+            """,
+        )
+
+    def test_body_rendering_multi_with_pragmas(self):
+        stub = self.fn_2.substitute_body(self.fn_2_args, pragmas=True)
+        print(stub.to_python())
+        assertSameCode(
+            self,
+            stub.to_python(),
+            """
+            __start_extract__
+            if a == 0:
+                if b == 0:
+                    if c == 0:
+                        print(-1)
+                    else:
+                        print(0)
+                else:
+                    print(1)
+                    print(-c / b)
+            else:
+                __start_choice__
+                if x == 3:
+                    pass
+                __end_choice__
+                d = b ** 2 - 4 * a * c
+                if d > 0:
+                    {__metavariable__, __m0, print(2)}
+                elif d == 0:
+                    print(1)
+                    print(-b / (2 * a))
+                else:
+                    print(0)
+            __end_extract__
             """,
         )
 
