@@ -10,7 +10,7 @@ from imperative_stitch.parser import python_to_s_exp
 
 
 @permacache(
-    "imperative_stitch/data/stitch_output_set/run_stitch_cached_5",
+    "imperative_stitch/data/stitch_output_set/run_stitch_cached_6",
     key_function=dict(c=stable_hash),
 )
 def run_stitch_cached(c):
@@ -21,11 +21,13 @@ def run_stitch_cached(c):
         application_utility_symvar=-0.5,
         max_arity=4,
         quiet=False,
+        root_states=("S", "seqS"),
+        metavariable_statements=False,
     )
 
 
 @permacache(
-    "imperative_stitch/data/stitch_output_set/stitch_output_set_7",
+    "imperative_stitch/data/stitch_output_set/stitch_output_set_8",
 )
 def stitch_output_set(amount):
     sets = compression_testing_code(amount * 10)
