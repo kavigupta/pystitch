@@ -497,9 +497,9 @@ class RealDataTest(unittest.TestCase):
                 out,
                 code,
             )
-            # check_no_crash = (
-            #     ParsedAST.parse_s_expression(rewritten)
-            #     .abstraction_calls_to_bodies(abstr, pragmas=True)
-            #     .to_python()
-            # )
-            # self.assertIsNotNone(check_no_crash)
+            check_no_crash = (
+                ParsedAST.parse_s_expression(rewritten)
+                .abstraction_calls_to_bodies(abstr, pragmas=True)
+                .to_python()
+            )
+            self.assertIsNotNone(check_no_crash)
