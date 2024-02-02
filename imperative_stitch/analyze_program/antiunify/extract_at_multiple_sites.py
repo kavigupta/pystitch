@@ -1,4 +1,7 @@
 import ast
+import copy
+
+from imperative_stitch.analyze_program.extract.extract import create_target
 
 
 def reconfigure_parameter(parameter, variables, vars_all):
@@ -31,7 +34,7 @@ def reconfigure_parameter(parameter, variables, vars_all):
     parameter.args.args = [ast.arg(name) for name in new_args_names]
 
 
-def antiunify_all_metavariables_across_extractions(extrs):
+def antiunify_extractions(extrs):
     """
     Antiunify all metavariables across all extractions. Once this is done,
         all metavariables will have the same number of passed variables.
@@ -44,6 +47,8 @@ def antiunify_all_metavariables_across_extractions(extrs):
     )
     for metavariable_name in all_metavariable_names:
         antiunify_metavariable_across_extractions(extrs, metavariable_name)
+
+    antiunify_returns(extrs)
 
     codes = set(ast.unparse(extr.func_def) for extr in extrs)
     if len(codes) != 1:
@@ -79,3 +84,32 @@ def antiunify_metavariable_across_extractions(extrs, metavariable_name):
         for meta in extr.metavariables.replacements_for_name(metavariable_name):
             meta.call.args = [ast.Name(var, ast.Load()) for var in vars_all]
         reconfigure_parameter(parameter, variables, vars_all)
+
+
+def antiunify_returns(extrs):
+    """
+    Antiunify the returns across all extractions. Once this is done,
+        all returns will have the same number of passed variables.
+
+    Assumes that all the variables are named the same and
+        all that needs to be changed is the return statements.
+    """
+    return_names_all = sorted({name for extr in extrs for name in extr.return_names})
+    return_target = create_target(return_names_all, ast.Load())
+    for extr in extrs:
+        if extr.return_names == return_names_all:
+            continue
+        return_to_call = dict(zip(extr.return_names, extr.call_names))
+        call_target = [return_to_call.get(name, "_") for name in return_names_all]
+        if (
+            extr.call_names
+        ):  # if there are no call names, we don't need to change the call since the output is not used
+            extr.call[0].targets[0] = create_target(call_target, ast.Store())
+
+        for return_ in extr.returns:
+            return_.value = copy.deepcopy(return_target)
+
+        if return_names_all and (
+            not extr.func_def.body or not isinstance(extr.func_def.body[-1], ast.Return)
+        ):
+            extr.func_def.body.append(ast.Return(value=copy.deepcopy(return_target)))

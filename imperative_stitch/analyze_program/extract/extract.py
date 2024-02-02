@@ -36,6 +36,20 @@ class ExtractedCode:
     metavariables: MetaVariables
     undo: Callable[[], None]
 
+    @property
+    def return_names(self):
+        if not self.returns:
+            return []
+        return names_from_target(self.returns[0].value)
+
+    @property
+    def call_names(self):
+        actual_call = self.call[0]
+        if isinstance(actual_call, ast.Expr):
+            return []
+        assert isinstance(actual_call, ast.Assign)
+        return names_from_target(actual_call.targets[0])
+
 
 def create_target(variables, ctx):
     """
@@ -75,6 +89,28 @@ def create_return_from_function(variables):
     if not variables:
         return ast.Return()
     return ast.Return(value=create_target(variables, ast.Load()))
+
+
+def names_from_target(target):
+    """
+    Return the names from a target.
+
+    Arguments
+    ---------
+    target: AST
+        The target.
+
+    Returns
+    -------
+    names: list[str]
+        The names from the target.
+    """
+    if isinstance(target, ast.Name):
+        return [target.id]
+    if isinstance(target, ast.Tuple):
+        return [x.id for x in target.elts]
+    assert target is None, target
+    return []
 
 
 def create_function_definition(
