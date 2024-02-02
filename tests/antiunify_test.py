@@ -1,7 +1,7 @@
 import ast
 
 from imperative_stitch.analyze_program.antiunify.extract_at_multiple_sites import (
-    antiunify_all_metavariables_across_extractions,
+    antiunify_extractions,
 )
 from imperative_stitch.analyze_program.extract.extract import do_extract
 from imperative_stitch.analyze_program.extract.extract_configuration import (
@@ -35,7 +35,7 @@ def run_extract(test, code, num_metavariables=None, *, config):
         for site in sites:
             test.assertEqual(len(site.metavariables), num_metavariables)
     extrs = [run_extract_from_tree(tree, site, config=config) for site in sites]
-    antiunify_all_metavariables_across_extractions(extrs)
+    antiunify_extractions(extrs)
     post_extracteds = {ast.unparse(extr.func_def) for extr in extrs}
     if len(post_extracteds) != 1:
         for x in post_extracteds:
@@ -179,6 +179,163 @@ class AntiUnifyTest(GenericExtractTest):
         def __f0(__m0):
             return [__m0(__0, __1) for (__0, __1) in 2]
         """
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_different_outputs_subset(self):
+        code = """
+        def f():
+            __start_extract__
+            x = {__metavariable__, __m0, 2}
+            y = x ** 2
+            __end_extract__
+            return y
+        def g():
+            __start_extract__
+            x = {__metavariable__, __m0, 3}
+            y = x ** 2
+            __end_extract__
+            return x + y
+        """
+        post_extract_expected = """
+        def f():
+            _, y = __f0(lambda: 2)
+            return y
+        def g():
+            x, y = __f0(lambda: 3)
+            return x + y
+        """
+
+        post_extracted = """
+        def __f0(__m0):
+            __0 = __m0()
+            __1 = __0 ** 2
+            return __0, __1
+        """
+
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_different_outputs_subset_empty(self):
+        code = """
+        def f():
+            __start_extract__
+            x = {__metavariable__, __m0, 2}
+            y = x ** 2
+            __end_extract__
+            return 2
+        def g():
+            __start_extract__
+            x = {__metavariable__, __m0, 3}
+            y = x ** 2
+            __end_extract__
+            return x + y
+        """
+        post_extract_expected = """
+        def f():
+            __f0(lambda: 2)
+            return 2
+        def g():
+            x, y = __f0(lambda: 3)
+            return x + y
+        """
+
+        post_extracted = """
+        def __f0(__m0):
+            __0 = __m0()
+            __1 = __0 ** 2
+            return __0, __1
+        """
+
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_different_outputs_subset_non_overlapping(self):
+        code = """
+        def f():
+            __start_extract__
+            x = {__metavariable__, __m0, 2}
+            y = x ** 2
+            __end_extract__
+            return x
+        def g():
+            __start_extract__
+            x = {__metavariable__, __m0, 3}
+            y = x ** 2
+            __end_extract__
+            return y
+        """
+        post_extract_expected = """
+        def f():
+            x, _ = __f0(lambda: 2)
+            return x
+        def g():
+            _, y = __f0(lambda: 3)
+            return y
+        """
+
+        post_extracted = """
+        def __f0(__m0):
+            __0 = __m0()
+            __1 = __0 ** 2
+            return __0, __1
+        """
+
+        self.assertCodes(
+            self.run_extract(code), (post_extract_expected, post_extracted)
+        )
+
+    def test_different_outputs_subset_empty_multi_exit(self):
+        code = """
+        def f():
+            while True:
+                __start_extract__
+                x = {__metavariable__, __m0, 2}
+                y = 3
+                if x:
+                    break
+                y = x ** 2
+                __end_extract__
+                break
+            return 2
+        def g():
+            while True:
+                __start_extract__
+                x = {__metavariable__, __m0, 3}
+                y = 3
+                if x:
+                    break
+                y = x ** 2
+                __end_extract__
+                break
+            return x + y
+        """
+        post_extract_expected = """
+        def f():
+            while True:
+                __f0(lambda : 2)
+                break
+            return 2
+        def g():
+            while True:
+                (x, y) = __f0(lambda : 3)
+                break
+            return x + y
+        """
+
+        post_extracted = """
+        def __f0(__m0):
+            __0 = __m0()
+            __1 = 3
+            if __0:
+                return __0, __1
+            __1 = __0 ** 2
+            return __0, __1
+        """
+
         self.assertCodes(
             self.run_extract(code), (post_extract_expected, post_extracted)
         )
