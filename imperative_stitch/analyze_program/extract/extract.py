@@ -31,6 +31,7 @@ class ExtractedCode:
     """
 
     func_def: ast.AST
+    returns: list[ast.AST]
     call: ast.AST
     metavariables: MetaVariables
     undo: Callable[[], None]
@@ -101,6 +102,10 @@ def create_function_definition(
     -------
     func_def: AST
         The function definition.
+    undo: () -> None
+        A function that undoes the function definition.
+    returns: List[AST]
+        The return statements of the function definition.
     """
     body = copy.copy(site.statements())
     return_from_function = create_return_from_function(output_variables)
@@ -125,9 +130,14 @@ def create_function_definition(
     if make_global:
         func_def.body = [ast.Global(names=sorted(set(make_global)))] + func_def.body
     func_def = ast.fix_missing_locations(func_def)
-    _, _, func_def, undo = replace_break_and_continue(func_def, return_from_function)
+    _, _, addtl_returns, func_def, undo = replace_break_and_continue(
+        func_def, return_from_function
+    )
+    returns = addtl_returns + [return_from_function]
     func_def = remove_unnecessary_returns(func_def)
-    return func_def, undo
+    remaining_nodes = set(ast.walk(func_def))
+    returns = [x for x in returns if x in remaining_nodes]
+    return func_def, undo, returns
 
 
 def create_function_call(
@@ -219,6 +229,8 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
         A list of functions that undoes the extraction.
     metavariables:
         A Metavariables object representing the metavariables.
+    returns:
+        A list of return statements in the function definition.
     """
     undo_preprocess = preprocess(tree)
     scope_info = ast_scope.annotate(tree)
@@ -257,7 +269,7 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
     undos.remove(undo_sentinel)
     undo_sentinel()
 
-    func_def, undo_replace = create_function_definition(
+    func_def, undo_replace, _ = create_function_definition(
         extract_name,
         site,
         variables.input_vars_without_ssa,
@@ -275,7 +287,7 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
     )
     undo_replace()
 
-    func_def, undo_replace = create_function_definition(
+    func_def, undo_replace, returns = create_function_definition(
         extract_name,
         site,
         input_variables,
@@ -300,7 +312,7 @@ def compute_extract_asts(tree, site, *, config, extract_name, undos):
     )
     undos.remove(undo_preprocess)
     undo_preprocess()
-    return func_def, call, exit_node, metavariables
+    return func_def, call, exit_node, metavariables, returns
 
 
 def do_extract(site, tree, *, config, extract_name):
@@ -333,18 +345,18 @@ def do_extract(site, tree, *, config, extract_name):
             un()
 
     try:
-        func_def, call, metavariables = _do_extract(
+        func_def, call, metavariables, returns = _do_extract(
             site, tree, config=config, extract_name=extract_name, undos=undos
         )
     except:
         full_undo()
         raise
 
-    return ExtractedCode(func_def, call, metavariables, full_undo)
+    return ExtractedCode(func_def, returns, call, metavariables, full_undo)
 
 
 def _do_extract(site, tree, *, config, extract_name, undos):
-    func_def, call, exit_node, metavariables = compute_extract_asts(
+    func_def, call, exit_node, metavariables, returns = compute_extract_asts(
         tree, site, config=config, extract_name=extract_name, undos=undos
     )
 
@@ -356,7 +368,7 @@ def _do_extract(site, tree, *, config, extract_name, undos):
     else:
         raise AssertionError("Weird and unexpected control flow")
 
-    return func_def, call, metavariables
+    return func_def, call, metavariables, returns
 
 
 def attempt_to_mutate(site, tree, calls, exit_node):
