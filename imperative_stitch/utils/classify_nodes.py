@@ -92,10 +92,19 @@ TRANSITIONS = frozendict(
             (ast.Constant, ast.Name, ast.AnnAssign): {all: "X"},
             (ast.Attribute, ast.Subscript, ast.Starred): {
                 "value": "E",
-                "slice": "Slice",
+                "slice": "SliceRoot",
                 all: "X",
             },
         },
+        "SliceRoot": {
+            "_slice_content": {all: "E"},
+            "_slice_slice": {all: "Slice"},
+            "_slice_tuple": {all: "SliceTuple"},
+        },
+        "SliceTuple": {
+            ast.Tuple: {"elts": "listSliceRoot", "ctx": "X"},
+        },
+        "listSliceRoot": {"list": "SliceRoot"},
         "Slice": {
             ast.Slice: {"lower": "E", "upper": "E", "step": "E"},
         },
@@ -137,7 +146,7 @@ TRANSITIONS = frozendict(
         },
         "L": {
             ast.Tuple: {all: "L"},
-            ast.Subscript: {"value": "E", "slice": "Slice"},
+            ast.Subscript: {"value": "E", "slice": "SliceRoot"},
             ast.Attribute: {"value": "E", "attr": "X"},
         },
         "seqS": {},
@@ -160,9 +169,13 @@ def compute_match(transition, key, default=None):
 
 
 def compute_transition(transitions, state, typ, field):
+    print("ABC")
     transition = transitions[state]
+    print(transition)
     transition = compute_match(transition, typ, default={})
+    print(transition)
     transition = compute_match(transition, field, default="X")
+    print(transition)
     return transition
 
 
@@ -190,6 +203,8 @@ def export_dfa(transitions=TRANSITIONS):
         if isinstance(getattr(ast, x), type) and issubclass(getattr(ast, x), ast.AST)
     ]
 
+    extras = ["_slice_content", "_slice_slice", "_slice_tuple"]
+
     result = {}
     for state in transitions:
         result[state] = {}
@@ -198,6 +213,17 @@ def export_dfa(transitions=TRANSITIONS):
             t = getattr(ast, tag)
             for f in t._fields:
                 result[state][tag].append(compute_transition(transitions, state, t, f))
+        for tag in extras:
+            result[state][tag] = [compute_transition(transitions, state, tag, None)]
+
+        missing = (
+            {x for x in transitions[state] if isinstance(x, str)}
+            - set(result[state])
+            - {"list", "/seq", "/splice"}
+        )
+        if missing:
+            raise RuntimeError(f"missing {missing}")
+
         result[state]["list"] = [transitions[state].get("list", state)]
     for state in transitions:
         result[state]["/seq"] = ["X"]

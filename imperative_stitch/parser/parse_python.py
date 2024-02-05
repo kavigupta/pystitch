@@ -1,6 +1,12 @@
 import ast
 
-from imperative_stitch.parser.parsed_ast import LeafAST, ListAST, NodeAST, SequenceAST, SliceElementAST
+from imperative_stitch.parser.parsed_ast import (
+    LeafAST,
+    ListAST,
+    NodeAST,
+    SequenceAST,
+    SliceElementAST,
+)
 from imperative_stitch.utils.ast_utils import field_is_body, name_field
 
 from .symbol import Symbol

@@ -494,7 +494,17 @@ class SliceElementAST(ParsedAST):
         content: NodeAST = self.content
         if content.typ is ast.Slice:
             return Pair("_slice_slice", Pair(content.to_pair_s_exp(), nil))
-        return self.content.to_pair_s_exp()
+        if content.typ is ast.Tuple:
+            assert isinstance(content.children, list)
+            assert len(content.children) == 2
+            content_children = list(content.children)
+            content_children[0] = ListAST(
+                [SliceElementAST(x) for x in content_children[0].children]
+            )
+            content = NodeAST(typ=ast.Tuple, children=content_children)
+
+            return Pair("_slice_tuple", Pair(content.to_pair_s_exp(), nil))
+        return Pair("_slice_content", Pair(content.to_pair_s_exp(), nil))
 
     def to_python_ast(self):
         return self.content.to_python_ast()
