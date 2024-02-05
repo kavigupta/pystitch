@@ -6,14 +6,16 @@ from imperative_stitch.utils.ast_utils import field_is_body, name_field
 from .symbol import Symbol
 
 
-def python_ast_to_parsed_ast(x, descoper, is_body=False):
+def python_body_to_parsed_ast(x, descoper):
+    assert isinstance(x, list), str(x)
+    x = [python_ast_to_parsed_ast(x, descoper) for x in x]
+    return SequenceAST("/seq", x)
+
+
+def python_ast_to_parsed_ast(x, descoper):
     """
     Convert an ast.AST object to a ParsedAST object.
     """
-    if is_body:
-        assert isinstance(x, list), str(x)
-        x = [python_ast_to_parsed_ast(x, descoper) for x in x]
-        return SequenceAST("/seq", x)
     if isinstance(x, ast.AST):
         result = []
         for f in x._fields:
@@ -22,11 +24,10 @@ def python_ast_to_parsed_ast(x, descoper, is_body=False):
                 assert isinstance(el, str), (x, f, el)
                 result.append(LeafAST(Symbol(el, descoper[x])))
             else:
-                result.append(
-                    python_ast_to_parsed_ast(
-                        el, descoper, is_body=field_is_body(type(x), f)
-                    )
-                )
+                if field_is_body(type(x), f):
+                    result.append(python_body_to_parsed_ast(el, descoper))
+                else:
+                    result.append(python_ast_to_parsed_ast(el, descoper))
         return NodeAST(type(x), result)
     if isinstance(x, list):
         return ListAST([python_ast_to_parsed_ast(x, descoper) for x in x])
