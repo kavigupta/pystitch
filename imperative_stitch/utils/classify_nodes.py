@@ -196,6 +196,15 @@ def export_dfa(transitions=TRANSITIONS):
             t = getattr(ast, tag)
             for f in t._fields:
                 result[state][tag].append(compute_transition(transitions, state, t, f))
+
+        missing = (
+            {x for x in transitions[state] if not isinstance(x, type)}
+            - set(result[state])
+            - {"list", "/seq", "/splice"}
+        )
+        if missing:
+            raise RuntimeError(f"missing {missing}")
+
         result[state]["list"] = [transitions[state].get("list", state)]
     for state in transitions:
         result[state]["/seq"] = ["X"]
