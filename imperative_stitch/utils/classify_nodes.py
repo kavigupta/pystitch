@@ -92,9 +92,11 @@ TRANSITIONS = frozendict(
             (ast.Constant, ast.Name, ast.AnnAssign): {all: "X"},
             (ast.Attribute, ast.Subscript, ast.Starred): {
                 "value": "E",
-                "slice": "E",
+                "slice": "Slice",
                 all: "X",
             },
+        },
+        "Slice": {
             ast.Slice: {"lower": "E", "upper": "E", "step": "E"},
         },
         "As": {
@@ -135,7 +137,7 @@ TRANSITIONS = frozendict(
         },
         "L": {
             ast.Tuple: {all: "L"},
-            ast.Subscript: {"value": "E", "slice": "E"},
+            ast.Subscript: {"value": "E", "slice": "Slice"},
             ast.Attribute: {"value": "E", "attr": "X"},
         },
         "seqS": {},

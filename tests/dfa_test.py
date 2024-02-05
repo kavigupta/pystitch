@@ -31,7 +31,6 @@ reasonable_classifications = [
     ("Compare", "E"),
     ("Constant", "E"),
     ("Constant", "F"),
-    ("Constant", "X"),
     ("Delete", "S"),
     ("Dict", "E"),
     ("DictComp", "E"),
@@ -47,7 +46,6 @@ reasonable_classifications = [
     ("Import", "S"),
     ("ImportFrom", "S"),
     ("JoinedStr", "E"),
-    ("JoinedStr", "X"),
     ("Lambda", "E"),
     ("List", "E"),
     ("List", "L"),
@@ -55,15 +53,13 @@ reasonable_classifications = [
     ("Module", "M"),
     ("Name", "E"),
     ("Name", "L"),
-    ("Name", "X"),
     ("NamedExpr", "E"),
     ("Nonlocal", "S"),
     ("Raise", "S"),
     ("Return", "S"),
     ("Set", "E"),
     ("SetComp", "E"),
-    ("Slice", "E"),
-    ("Starred", "E"),
+    ("Slice", "Slice"),
     ("Subscript", "E"),
     ("Subscript", "L"),
     ("Try", "S"),
@@ -74,9 +70,7 @@ reasonable_classifications = [
     ("With", "S"),
     ("Yield", "E"),
     ("YieldFrom", "E"),
-    ("alias", "X"),
     ("arg", "A"),
-    ("arg", "X"),
     ("arguments", "As"),
     ("comprehension", "C"),
     ("keyword", "K"),
@@ -88,7 +82,6 @@ reasonable_classifications = [
     ("list", "K"),
     ("list", "L"),
     ("list", "W"),
-    ("list", "X"),
     ("/seq", "seqS"),
     ("withitem", "W"),
 ]
@@ -159,6 +152,20 @@ class DFATest(unittest.TestCase):
 
     def test_tuple(self):
         self.classify_elements_in_code("(2, 3)")
+
+    def test_slicing_direct(self):
+        self.classify_elements_in_code("x[2]")
+        self.classify_elements_in_code("x[2:3]")
+        self.classify_elements_in_code("x[2:3] = 4")
+
+    def test_slicing_tuple(self):
+        self.classify_elements_in_code("x[2:3, 3]")
+        self.classify_elements_in_code("x[2:3, 3] = 5")
+
+    def test_starred(self):
+        self.classify_elements_in_code("f(2, 3, *x)")
+        self.classify_elements_in_code("(2, 3, *x)")
+        self.classify_elements_in_code("[2, 3, *x]")
 
     def test_code(self):
         self.classify_elements_in_code(

@@ -484,6 +484,28 @@ class NothingAST(ParsedAST):
         return ParsedAST.name(LeafAST(Symbol(name="None", scope=None)))
 
 
+@dataclass
+class SliceElementAST(ParsedAST):
+    content: ParsedAST
+
+    def to_pair_s_exp(self):
+        print(self.content)
+        assert isinstance(self.content, NodeAST), self.content
+        content: NodeAST = self.content
+        if content.typ is ast.Slice:
+            return Pair("_slice_slice", Pair(content.to_pair_s_exp(), nil))
+        return self.content.to_pair_s_exp()
+
+    def to_python_ast(self):
+        return self.content.to_python_ast()
+
+    def substitute(self, arguments):
+        return SliceElementAST(self.content.substitute(arguments))
+
+    def map(self, fn):
+        return fn(SliceElementAST(self.content.map(fn)))
+
+
 def list_to_pair(x):
     x = x[:]
     result = nil
