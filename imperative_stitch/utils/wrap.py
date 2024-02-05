@@ -42,4 +42,58 @@ def wrap_ast(code, fn_name="_main"):
 
 
 def wrap(code, fn_name="_main"):
-    return ast.unparse(ast.fix_missing_locations(wrap_ast(ast.parse(code), fn_name)))
+    result = ast.unparse(ast.fix_missing_locations(wrap_ast(ast.parse(code), fn_name)))
+    assert isinstance(result, str)
+    return result
+
+
+def unwrap_ast(code):
+    """
+    Unwrap the code.
+    """
+    assert isinstance(code, ast.Module)
+    body = code.body
+    assert isinstance(body, list)
+    assert len(body) >= 2
+    imports = []
+    for node in body:
+        if isinstance(node, ast.Import):
+            imports.append(node)
+        elif isinstance(node, ast.ImportFrom):
+            imports.append(node)
+        else:
+            break
+    body = body[len(imports) :]
+    assert len(body) == 2
+    assert isinstance(body[0], ast.FunctionDef)
+    output = imports + body[0].body
+    assert ast.unparse(body[1]) == f"{body[0].name}()", (
+        ast.unparse(body[1]),
+        body[0].name,
+    )
+    return ast.Module(body=output, type_ignores=[])
+
+
+def add_sentinel(code):
+    """
+    Add a __sentinel__ to the front of the code.
+    """
+
+    return "__sentinel__\n" + code
+
+
+def split_by_sentinel_ast(code):
+    """
+    Split the tree by __sentinel__.
+    """
+    assert isinstance(code, ast.Module)
+    body = code.body
+    assert isinstance(body, list)
+    result = []
+    for line in body:
+        if isinstance(line, ast.Expr):
+            if isinstance(line.value, ast.Name) and line.value.id == "__sentinel__":
+                result.append([])
+                continue
+        result[-1].append(line)
+    return [ast.Module(body=lines, type_ignores=[]) for lines in result]
