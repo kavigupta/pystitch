@@ -186,13 +186,9 @@ def compute_match(transition, key, default=None):
 
 
 def compute_transition(transitions, state, typ, field):
-    print("ABC")
     transition = transitions[state]
-    print(transition)
     transition = compute_match(transition, typ, default={})
-    print(transition)
     transition = compute_match(transition, field, default="X")
-    print(transition)
     return transition
 
 
