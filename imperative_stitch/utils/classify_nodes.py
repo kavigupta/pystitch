@@ -176,6 +176,18 @@ def compute_types_each(t, state):
                 getattr(t, f), compute_transition(TRANSITIONS, state, type(t), f)
             )
 
+def flatten_types(ts):
+    if isinstance(ts, (list, tuple)):
+        for x in ts:
+            yield from flatten_types(x)
+        return
+    if ts is all:
+        return
+    if isinstance(ts, type):
+        yield ts.__name__
+        return
+    assert isinstance(ts, str), ts
+    yield ts
 
 def export_dfa(transitions=TRANSITIONS):
     """
@@ -196,6 +208,15 @@ def export_dfa(transitions=TRANSITIONS):
             t = getattr(ast, tag)
             for f in t._fields:
                 result[state][tag].append(compute_transition(transitions, state, t, f))
+
+        missing = (
+            set(flatten_types(list(transitions[state])))
+            - set(result[state])
+            - {"list", "/seq", "/splice"}
+        )
+        if missing:
+            raise RuntimeError(f"missing {missing}")
+
         result[state]["list"] = [transitions[state].get("list", state)]
     for state in transitions:
         result[state]["/seq"] = ["X"]
