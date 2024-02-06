@@ -93,9 +93,20 @@ TRANSITIONS = frozendict(
             (ast.Constant, ast.Name, ast.AnnAssign): {all: "X"},
             (ast.Attribute, ast.Subscript, ast.Starred): {
                 "value": "E",
-                "slice": "E",
+                "slice": "SliceRoot",
                 all: "X",
             },
+        },
+        "SliceRoot": {
+            "_slice_content": {all: "E"},
+            "_slice_slice": {all: "Slice"},
+            "_slice_tuple": {all: "SliceTuple"},
+        },
+        "SliceTuple": {
+            ast.Tuple: {"elts": "listSliceRoot", "ctx": "X"},
+        },
+        "listSliceRoot": {"list": "SliceRoot"},
+        "Slice": {
             ast.Slice: {"lower": "E", "upper": "E", "step": "E"},
         },
         "As": {
@@ -138,7 +149,7 @@ TRANSITIONS = frozendict(
         "L": {
             ast.Tuple: {all: "L"},
             ast.List: {all: "L"},
-            ast.Subscript: {"value": "E", "slice": "E"},
+            ast.Subscript: {"value": "E", "slice": "SliceRoot"},
             ast.Attribute: {"value": "E", "attr": "X"},
             "list": "L",
             ast.Starred: {all: "L"},
@@ -211,6 +222,8 @@ def export_dfa(transitions=TRANSITIONS):
         if isinstance(getattr(ast, x), type) and issubclass(getattr(ast, x), ast.AST)
     ]
 
+    extras = ["_slice_content", "_slice_slice", "_slice_tuple"]
+
     result = {}
     for state in transitions:
         result[state] = {}
@@ -219,6 +232,8 @@ def export_dfa(transitions=TRANSITIONS):
             t = getattr(ast, tag)
             for f in t._fields:
                 result[state][tag].append(compute_transition(transitions, state, t, f))
+        for tag in extras:
+            result[state][tag] = [compute_transition(transitions, state, tag, None)]
 
         missing = (
             set(flatten_types(list(transitions[state])))
