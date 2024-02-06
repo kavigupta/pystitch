@@ -1,6 +1,12 @@
 import ast
 
-from imperative_stitch.parser.parsed_ast import LeafAST, ListAST, NodeAST, SequenceAST
+from imperative_stitch.parser.parsed_ast import (
+    LeafAST,
+    ListAST,
+    NodeAST,
+    SequenceAST,
+    SliceElementAST,
+)
 from imperative_stitch.utils.ast_utils import field_is_body, name_field
 
 from .symbol import Symbol
@@ -24,7 +30,11 @@ def python_ast_to_parsed_ast(x, descoper):
                 assert isinstance(el, str), (x, f, el)
                 result.append(LeafAST(Symbol(el, descoper[x])))
             else:
-                if field_is_body(type(x), f):
+                if f == "slice":
+                    result.append(
+                        SliceElementAST(python_ast_to_parsed_ast(el, descoper))
+                    )
+                elif field_is_body(type(x), f):
                     result.append(python_body_to_parsed_ast(el, descoper))
                 else:
                     result.append(python_ast_to_parsed_ast(el, descoper))
