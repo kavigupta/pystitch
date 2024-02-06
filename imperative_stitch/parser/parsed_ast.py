@@ -484,6 +484,66 @@ class NothingAST(ParsedAST):
         return ParsedAST.name(LeafAST(Symbol(name="None", scope=None)))
 
 
+@dataclass
+class SliceElementAST(ParsedAST):
+    content: ParsedAST
+
+    def to_pair_s_exp(self):
+        # should not be necessary; since we have the assertion
+        # but pylint is not smart enough to figure that out
+        # pylint: disable=no-member
+        content = self.content
+        if isinstance(self.content, StarrableElementAST):
+            # safe because it is not actually legal to have a starred element
+            # in a slice
+            content = content.content
+        assert isinstance(content, NodeAST), content
+        if content.typ is ast.Slice:
+            return Pair("_slice_slice", Pair(content.to_pair_s_exp(), nil))
+        if content.typ is ast.Tuple:
+            assert isinstance(content.children, list)
+            assert len(content.children) == 2
+            content_children = list(content.children)
+            content_children[0] = ListAST(
+                [SliceElementAST(x) for x in content_children[0].children]
+            )
+            content = NodeAST(typ=ast.Tuple, children=content_children)
+
+            return Pair("_slice_tuple", Pair(content.to_pair_s_exp(), nil))
+        return Pair("_slice_content", Pair(content.to_pair_s_exp(), nil))
+
+    def to_python_ast(self):
+        return self.content.to_python_ast()
+
+    def substitute(self, arguments):
+        return SliceElementAST(self.content.substitute(arguments))
+
+    def map(self, fn):
+        return fn(SliceElementAST(self.content.map(fn)))
+
+
+@dataclass
+class StarrableElementAST(ParsedAST):
+    content: ParsedAST
+
+    def to_pair_s_exp(self):
+        # pylint: disable=no-member
+        assert isinstance(self.content, NodeAST), self.content
+        content: NodeAST = self.content
+        if content.typ is ast.Starred:
+            return Pair("_starred_starred", Pair(content.to_pair_s_exp(), nil))
+        return Pair("_starred_content", Pair(self.content.to_pair_s_exp(), nil))
+
+    def to_python_ast(self):
+        return self.content.to_python_ast()
+
+    def substitute(self, arguments):
+        return StarrableElementAST(self.content.substitute(arguments))
+
+    def map(self, fn):
+        return fn(StarrableElementAST(self.content.map(fn)))
+
+
 def list_to_pair(x):
     x = x[:]
     result = nil

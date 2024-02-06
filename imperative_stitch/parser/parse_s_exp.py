@@ -13,7 +13,9 @@ from imperative_stitch.parser.parsed_ast import (
     NodeAST,
     NothingAST,
     SequenceAST,
+    SliceElementAST,
     SpliceAST,
+    StarrableElementAST,
     SymvarAST,
 )
 
@@ -94,6 +96,12 @@ def s_exp_to_parsed_ast(x):
     if tag in {"/splice"}:
         [arg] = args
         return SpliceAST(arg)
+    if tag.startswith("_slice"):
+        assert len(args) == 1
+        return SliceElementAST(args[0])
+    if tag.startswith("_starred"):
+        assert len(args) == 1
+        return StarrableElementAST(args[0])
     if tag in {"list"}:
         return ListAST(args)
     if tag.startswith("fn"):

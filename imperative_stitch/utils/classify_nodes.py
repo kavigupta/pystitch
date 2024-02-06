@@ -50,18 +50,19 @@ TRANSITIONS = frozendict(
             #         ast.Match: {"subject": "E", "cases": "C"},
             ast.Raise: {all: "E"},
             ast.Assert: {all: "E"},
-            (ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal): {all: "X"},
+            (ast.Import, ast.ImportFrom): {"names": "alias"},
+            (ast.Global, ast.Nonlocal): {"names": "names"},
             ast.Expr: {"value": "E"},
         },
         "E": {
             (ast.BoolOp, ast.BinOp, ast.UnaryOp, ast.Compare): {
-                "op": "X",
-                "ops": "X",
+                "op": "O",
+                "ops": "O",
                 "comparators": "listE",
                 "values": "listE",
                 all: "E",
             },
-            ast.NamedExpr: {"value": "E", "target": "X"},
+            ast.NamedExpr: {"value": "E", "target": "L"},
             ast.Lambda: {"args": "As", "body": "E"},
             (
                 ast.IfExp,
@@ -74,7 +75,7 @@ TRANSITIONS = frozendict(
                 ast.YieldFrom,
             ): {
                 "ctx": "X",
-                "elts": "listE",
+                "elts": "listE_starrable",
                 "keys": "listE",
                 "values": "listE",
                 all: "E",
@@ -85,16 +86,32 @@ TRANSITIONS = frozendict(
             },
             ast.Call: {
                 "keywords": "K",
-                "args": "listE",
+                "args": "listE_starrable",
                 all: "E",
             },
-            ast.JoinedStr: {"values": "F"},
+            ast.JoinedStr: {"values": "listF"},
             (ast.Constant, ast.Name, ast.AnnAssign): {all: "X"},
             (ast.Attribute, ast.Subscript, ast.Starred): {
                 "value": "E",
-                "slice": "E",
+                "slice": "SliceRoot",
                 all: "X",
             },
+        },
+        "SliceRoot": {
+            "_slice_content": {all: "E"},
+            "_slice_slice": {all: "Slice"},
+            "_slice_tuple": {all: "SliceTuple"},
+        },
+        "SliceTuple": {
+            ast.Tuple: {"elts": "listSliceRoot", "ctx": "X"},
+        },
+        "listSliceRoot": {"list": "SliceRoot"},
+        "StarredRoot": {
+            "_starred_content": {all: "E"},
+            "_starred_starred": {all: "Starred"},
+        },
+        "Starred": {ast.Starred: {"value": "E"}},
+        "Slice": {
             ast.Slice: {"lower": "E", "upper": "E", "step": "E"},
         },
         "As": {
@@ -108,8 +125,9 @@ TRANSITIONS = frozendict(
         },
         "X": {all: {all: "X"}},
         "F": {
-            ast.FormattedValue: {"value": "E", all: "X"},
-            ast.Constant: {all: "X"},
+            ast.FormattedValue: {"value": "E", "format_spec": "F"},
+            ast.Constant: {all: "F"},
+            ast.JoinedStr: {"values": "listF"},
         },
         "C": {
             ast.comprehension: {
@@ -135,11 +153,21 @@ TRANSITIONS = frozendict(
         },
         "L": {
             ast.Tuple: {all: "L"},
-            ast.Subscript: {"value": "E", "slice": "E"},
+            ast.List: {all: "L"},
+            ast.Subscript: {"value": "E", "slice": "SliceRoot"},
             ast.Attribute: {"value": "E", "attr": "X"},
+            "list": "L",
+            ast.Starred: {all: "L"},
+            "_starred_content": {all: "L"},
+            "_starred_starred": {all: "Starred"},
         },
         "seqS": {},
         "listE": {"list": "E"},
+        "listE_starrable": {"list": "StarredRoot"},
+        "O": {"list": "O"},
+        "alias": {"list": "alias"},
+        "names": {"list": "X"},
+        "listF": {"list": "F"},
     }
 )
 
@@ -177,6 +205,20 @@ def compute_types_each(t, state):
             )
 
 
+def flatten_types(ts):
+    if isinstance(ts, (list, tuple)):
+        for x in ts:
+            yield from flatten_types(x)
+        return
+    if ts is all:
+        return
+    if isinstance(ts, type):
+        yield ts.__name__
+        return
+    assert isinstance(ts, str), ts
+    yield ts
+
+
 def export_dfa(transitions=TRANSITIONS):
     """
     Takes a transition dictionary of the form above and converts
@@ -188,6 +230,14 @@ def export_dfa(transitions=TRANSITIONS):
         if isinstance(getattr(ast, x), type) and issubclass(getattr(ast, x), ast.AST)
     ]
 
+    extras = [
+        "_slice_content",
+        "_slice_slice",
+        "_slice_tuple",
+        "_starred_content",
+        "_starred_starred",
+    ]
+
     result = {}
     for state in transitions:
         result[state] = {}
@@ -196,6 +246,17 @@ def export_dfa(transitions=TRANSITIONS):
             t = getattr(ast, tag)
             for f in t._fields:
                 result[state][tag].append(compute_transition(transitions, state, t, f))
+        for tag in extras:
+            result[state][tag] = [compute_transition(transitions, state, tag, None)]
+
+        missing = (
+            set(flatten_types(list(transitions[state])))
+            - set(result[state])
+            - {"list", "/seq", "/splice"}
+        )
+        if missing:
+            raise RuntimeError(f"missing {missing}")
+
         result[state]["list"] = [transitions[state].get("list", state)]
     for state in transitions:
         result[state]["/seq"] = ["X"]
