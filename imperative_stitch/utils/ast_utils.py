@@ -14,6 +14,15 @@ def field_is_body(t, f):
         return False  # not body of statements
     return f in {"body", "orelse", "finalbody"}
 
+def field_is_starrable(t, f):
+    if f == "elts":
+        assert t in {
+            ast.List,
+            ast.Tuple,
+            ast.Set,
+        }, (t, f)
+        return True
+    return t == ast.Call and f == "args"
 
 def name_field(x):
     t = type(x)
