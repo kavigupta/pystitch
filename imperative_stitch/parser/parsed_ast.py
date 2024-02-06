@@ -489,7 +489,9 @@ class SliceElementAST(ParsedAST):
     content: ParsedAST
 
     def to_pair_s_exp(self):
-        print(self.content)
+        # should not be necessary; since we have the assertion
+        # but pylint is not smart enough to figure that out
+        # pylint: disable=no-member
         assert isinstance(self.content, NodeAST), self.content
         content: NodeAST = self.content
         if content.typ is ast.Slice:
