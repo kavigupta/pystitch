@@ -67,6 +67,7 @@ reasonable_classifications = [
     ("Tuple", "SliceTuple"),
     ("list", "listSliceRoot"),
     ("Slice", "Slice"),
+    ("Starred", "L"),
     ("Subscript", "E"),
     ("Subscript", "L"),
     ("Try", "S"),
