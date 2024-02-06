@@ -492,8 +492,12 @@ class SliceElementAST(ParsedAST):
         # should not be necessary; since we have the assertion
         # but pylint is not smart enough to figure that out
         # pylint: disable=no-member
-        assert isinstance(self.content, NodeAST), self.content
-        content: NodeAST = self.content
+        content = self.content
+        if isinstance(self.content, StarrableElementAST):
+            # safe because it is not actually legal to have a starred element
+            # in a slice
+            content = content.content
+        assert isinstance(content, NodeAST), content
         if content.typ is ast.Slice:
             return Pair("_slice_slice", Pair(content.to_pair_s_exp(), nil))
         if content.typ is ast.Tuple:
@@ -516,6 +520,28 @@ class SliceElementAST(ParsedAST):
 
     def map(self, fn):
         return fn(SliceElementAST(self.content.map(fn)))
+
+
+@dataclass
+class StarrableElementAST(ParsedAST):
+    content: ParsedAST
+
+    def to_pair_s_exp(self):
+        # pylint: disable=no-member
+        assert isinstance(self.content, NodeAST), self.content
+        content: NodeAST = self.content
+        if content.typ is ast.Starred:
+            return Pair("_starred_starred", Pair(content.to_pair_s_exp(), nil))
+        return Pair("_starred_content", Pair(self.content.to_pair_s_exp(), nil))
+
+    def to_python_ast(self):
+        return self.content.to_python_ast()
+
+    def substitute(self, arguments):
+        return StarrableElementAST(self.content.substitute(arguments))
+
+    def map(self, fn):
+        return fn(StarrableElementAST(self.content.map(fn)))
 
 
 def list_to_pair(x):

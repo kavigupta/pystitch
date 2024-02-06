@@ -67,8 +67,12 @@ reasonable_classifications = [
     ("Tuple", "SliceTuple"),
     ("list", "listSliceRoot"),
     ("Slice", "Slice"),
-    ("Starred", "E"),
     ("Starred", "L"),
+    ("Starred", "Starred"),
+    ("_starred_content", "StarredRoot"),
+    ("_starred_content", "L"),
+    ("_starred_starred", "StarredRoot"),
+    ("_starred_starred", "L"),
     ("Subscript", "E"),
     ("Subscript", "L"),
     ("Try", "S"),
@@ -86,6 +90,7 @@ reasonable_classifications = [
     ("list", "A"),
     ("list", "C"),
     ("list", "listE"),
+    ("list", "listE_starrable"),
     ("list", "EH"),
     ("list", "listF"),
     ("list", "K"),
@@ -188,6 +193,7 @@ class DFATest(unittest.TestCase):
         self.classify_elements_in_code("f(2, 3, *x)")
         self.classify_elements_in_code("(2, 3, *x)")
         self.classify_elements_in_code("[2, 3, *x]")
+        self.classify_elements_in_code("{2, 3, *x}")
 
     def test_import(self):
         self.classify_elements_in_code("import x")

@@ -52,9 +52,11 @@ class FunctionSSAAnnotator:
         for sym in self.function_symbols:
             self._arg_node[sym] = self._mapping.fresh_variable(
                 sym,
-                Argument()
-                if sym in self.function_argument_symbols
-                else Uninitialized(),
+                (
+                    Argument()
+                    if sym in self.function_argument_symbols
+                    else Uninitialized()
+                ),
             )
 
     def run(self):

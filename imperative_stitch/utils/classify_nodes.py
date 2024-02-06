@@ -75,7 +75,7 @@ TRANSITIONS = frozendict(
                 ast.YieldFrom,
             ): {
                 "ctx": "X",
-                "elts": "listE",
+                "elts": "listE_starrable",
                 "keys": "listE",
                 "values": "listE",
                 all: "E",
@@ -86,7 +86,7 @@ TRANSITIONS = frozendict(
             },
             ast.Call: {
                 "keywords": "K",
-                "args": "listE",
+                "args": "listE_starrable",
                 all: "E",
             },
             ast.JoinedStr: {"values": "listF"},
@@ -106,6 +106,11 @@ TRANSITIONS = frozendict(
             ast.Tuple: {"elts": "listSliceRoot", "ctx": "X"},
         },
         "listSliceRoot": {"list": "SliceRoot"},
+        "StarredRoot": {
+            "_starred_content": {all: "E"},
+            "_starred_starred": {all: "Starred"},
+        },
+        "Starred": {ast.Starred: {"value": "E"}},
         "Slice": {
             ast.Slice: {"lower": "E", "upper": "E", "step": "E"},
         },
@@ -153,9 +158,12 @@ TRANSITIONS = frozendict(
             ast.Attribute: {"value": "E", "attr": "X"},
             "list": "L",
             ast.Starred: {all: "L"},
+            "_starred_content": {all: "L"},
+            "_starred_starred": {all: "Starred"},
         },
         "seqS": {},
         "listE": {"list": "E"},
+        "listE_starrable": {"list": "StarredRoot"},
         "O": {"list": "O"},
         "alias": {"list": "alias"},
         "names": {"list": "X"},
@@ -222,7 +230,13 @@ def export_dfa(transitions=TRANSITIONS):
         if isinstance(getattr(ast, x), type) and issubclass(getattr(ast, x), ast.AST)
     ]
 
-    extras = ["_slice_content", "_slice_slice", "_slice_tuple"]
+    extras = [
+        "_slice_content",
+        "_slice_slice",
+        "_slice_tuple",
+        "_starred_content",
+        "_starred_starred",
+    ]
 
     result = {}
     for state in transitions:
