@@ -14,6 +14,7 @@ from .utils import expand_with_slow_tests, small_set_examples
 dfa = export_dfa(TRANSITIONS)
 
 reasonable_classifications = [
+    ("alias", "alias"),
     ("AnnAssign", "S"),
     ("Assert", "S"),
     ("Assign", "S"),
@@ -31,7 +32,6 @@ reasonable_classifications = [
     ("Compare", "E"),
     ("Constant", "E"),
     ("Constant", "F"),
-    ("Constant", "X"),
     ("Delete", "S"),
     ("Dict", "E"),
     ("DictComp", "E"),
@@ -47,7 +47,7 @@ reasonable_classifications = [
     ("Import", "S"),
     ("ImportFrom", "S"),
     ("JoinedStr", "E"),
-    ("JoinedStr", "X"),
+    ("JoinedStr", "F"),
     ("Lambda", "E"),
     ("List", "E"),
     ("List", "L"),
@@ -55,7 +55,6 @@ reasonable_classifications = [
     ("Module", "M"),
     ("Name", "E"),
     ("Name", "L"),
-    ("Name", "X"),
     ("NamedExpr", "E"),
     ("Nonlocal", "S"),
     ("Raise", "S"),
@@ -64,6 +63,7 @@ reasonable_classifications = [
     ("SetComp", "E"),
     ("Slice", "E"),
     ("Starred", "E"),
+    ("Starred", "L"),
     ("Subscript", "E"),
     ("Subscript", "L"),
     ("Try", "S"),
@@ -74,9 +74,7 @@ reasonable_classifications = [
     ("With", "S"),
     ("Yield", "E"),
     ("YieldFrom", "E"),
-    ("alias", "X"),
     ("arg", "A"),
-    ("arg", "X"),
     ("arguments", "As"),
     ("comprehension", "C"),
     ("keyword", "K"),
@@ -84,11 +82,13 @@ reasonable_classifications = [
     ("list", "C"),
     ("list", "listE"),
     ("list", "EH"),
-    ("list", "F"),
+    ("list", "listF"),
     ("list", "K"),
     ("list", "L"),
     ("list", "W"),
-    ("list", "X"),
+    ("list", "O"),
+    ("list", "alias"),
+    ("list", "names"),
     ("/seq", "seqS"),
     ("withitem", "W"),
 ]
@@ -107,6 +107,7 @@ def classify(x, state):
         return
     yield x, state
     elements = dfa[state][x[0]]
+    x[0] += "::" + state
     for i, el in enumerate(x[1:]):
         yield from classify(el, elements[i % len(elements)])
 
@@ -122,6 +123,7 @@ class DFATest(unittest.TestCase):
             (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
             code = to_list_nested(code)
             result = sorted({(x, state) for ((x, *_), state) in classify(code, "M")})
+            print(code)
             extras = set(result) - set(reasonable_classifications)
             if extras:
                 print(sorted(extras | set(reasonable_classifications)))
@@ -157,8 +159,42 @@ class DFATest(unittest.TestCase):
     def test_comparison(self):
         self.classify_elements_in_code("x == 2")
 
+    def test_aug_assign(self):
+        self.classify_elements_in_code("(x := 2)")
+
     def test_tuple(self):
         self.classify_elements_in_code("(2, 3)")
+
+    def test_unpacking(self):
+        self.classify_elements_in_code("a, b = 1, 2")
+        self.classify_elements_in_code("a, *b = 1, 2, 3")
+        self.classify_elements_in_code("[a, b] = 1, 2, 3")
+
+    def test_slicing_direct(self):
+        self.classify_elements_in_code("x[2]")
+        self.classify_elements_in_code("x[2:3]")
+        self.classify_elements_in_code("x[2:3] = 4")
+
+    def test_slicing_tuple(self):
+        self.classify_elements_in_code("x[2:3, 3]")
+        self.classify_elements_in_code("x[2:3, 3] = 5")
+
+    def test_starred(self):
+        self.classify_elements_in_code("f(2, 3, *x)")
+        self.classify_elements_in_code("(2, 3, *x)")
+        self.classify_elements_in_code("[2, 3, *x]")
+
+    def test_import(self):
+        self.classify_elements_in_code("import x")
+        self.classify_elements_in_code("from x import y")
+        self.classify_elements_in_code("from x import y as z")
+
+    def test_global_nonlocal(self):
+        self.classify_elements_in_code("global x")
+        self.classify_elements_in_code("nonlocal x")
+
+    def test_joined_str(self):
+        self.classify_elements_in_code("f'2 {459.67:.1f}'")
 
     def test_code(self):
         self.classify_elements_in_code(

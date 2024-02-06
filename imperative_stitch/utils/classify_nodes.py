@@ -50,18 +50,19 @@ TRANSITIONS = frozendict(
             #         ast.Match: {"subject": "E", "cases": "C"},
             ast.Raise: {all: "E"},
             ast.Assert: {all: "E"},
-            (ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal): {all: "X"},
+            (ast.Import, ast.ImportFrom): {"names": "alias"},
+            (ast.Global, ast.Nonlocal): {"names": "names"},
             ast.Expr: {"value": "E"},
         },
         "E": {
             (ast.BoolOp, ast.BinOp, ast.UnaryOp, ast.Compare): {
-                "op": "X",
-                "ops": "X",
+                "op": "O",
+                "ops": "O",
                 "comparators": "listE",
                 "values": "listE",
                 all: "E",
             },
-            ast.NamedExpr: {"value": "E", "target": "X"},
+            ast.NamedExpr: {"value": "E", "target": "L"},
             ast.Lambda: {"args": "As", "body": "E"},
             (
                 ast.IfExp,
@@ -88,7 +89,7 @@ TRANSITIONS = frozendict(
                 "args": "listE",
                 all: "E",
             },
-            ast.JoinedStr: {"values": "F"},
+            ast.JoinedStr: {"values": "listF"},
             (ast.Constant, ast.Name, ast.AnnAssign): {all: "X"},
             (ast.Attribute, ast.Subscript, ast.Starred): {
                 "value": "E",
@@ -108,8 +109,9 @@ TRANSITIONS = frozendict(
         },
         "X": {all: {all: "X"}},
         "F": {
-            ast.FormattedValue: {"value": "E", all: "X"},
-            ast.Constant: {all: "X"},
+            ast.FormattedValue: {"value": "E", "format_spec": "F"},
+            ast.Constant: {all: "F"},
+            ast.JoinedStr: {"values": "listF"},
         },
         "C": {
             ast.comprehension: {
@@ -135,11 +137,18 @@ TRANSITIONS = frozendict(
         },
         "L": {
             ast.Tuple: {all: "L"},
+            ast.List: {all: "L"},
             ast.Subscript: {"value": "E", "slice": "E"},
             ast.Attribute: {"value": "E", "attr": "X"},
+            "list": "L",
+            ast.Starred: {all: "L"},
         },
         "seqS": {},
         "listE": {"list": "E"},
+        "O": {"list": "O"},
+        "alias": {"list": "alias"},
+        "names": {"list": "X"},
+        "listF": {"list": "F"},
     }
 )
 
@@ -176,6 +185,7 @@ def compute_types_each(t, state):
                 getattr(t, f), compute_transition(TRANSITIONS, state, type(t), f)
             )
 
+
 def flatten_types(ts):
     if isinstance(ts, (list, tuple)):
         for x in ts:
@@ -188,6 +198,7 @@ def flatten_types(ts):
         return
     assert isinstance(ts, str), ts
     yield ts
+
 
 def export_dfa(transitions=TRANSITIONS):
     """
