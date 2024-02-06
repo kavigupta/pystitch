@@ -41,6 +41,11 @@ def run_julia_stitch(
         "/seq": 0.0,
         "Constant": 0.0,
         "Attribute": 0.0,
+        "_slice_content": 0.0,
+        "_slice_slice": 0.0,
+        "_slice_tuple": 0.0,
+        "_starred_content": 0.0,
+        "_starred_starred": 0.0,
     }
     with open("data/dfa.json", "w") as f:
         json.dump(export_dfa(), f, indent=2)
