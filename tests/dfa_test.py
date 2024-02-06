@@ -112,14 +112,21 @@ def to_list_nested(x):
     return x
 
 
-def classify(x, state):
+def from_list_nested(x):
+    if not x:
+        return nil
+    return Pair(from_list_nested(x[0]), from_list_nested(x[1:]))
+
+
+def classify(x, state, *, mutate):
     if not isinstance(x, list):
         return
     yield x, state
     elements = dfa[state][x[0]]
-    x[0] += "::" + state
+    if mutate:
+        x[0] += "::" + state
     for i, el in enumerate(x[1:]):
-        yield from classify(el, elements[i % len(elements)])
+        yield from classify(el, elements[i % len(elements)], mutate=mutate)
 
 
 class DFATest(unittest.TestCase):
@@ -132,7 +139,9 @@ class DFATest(unittest.TestCase):
             # pylint: disable=unbalanced-tuple-unpacking
             (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
             code = to_list_nested(code)
-            result = sorted({(x, state) for ((x, *_), state) in classify(code, "M")})
+            classified = list(classify(code, "M", mutate=False))
+            result = sorted({(x, state) for ((x, *_), state) in classified})
+            list(classify(code, "M", mutate=True))
             print(code)
             extras = set(result) - set(reasonable_classifications)
             if extras:
