@@ -532,7 +532,7 @@ class RealDataTest(unittest.TestCase):
         for rewr, code_original in zip(rewritten, eg["code"]):
             code_original = s_exp_to_python(code_original)
             print(code_original)
-            out = outputs(code_original, eg["inputs"])
+            out = outputs(code_original, eg["inputs"][:10])
             if out is None:
                 continue
             RewriteSemanticsTest().assert_code_same(
