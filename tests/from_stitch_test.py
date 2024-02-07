@@ -547,6 +547,7 @@ class RealDataTest(unittest.TestCase):
 @permacache(
     "imperative_stitch/tests/from_stitch_test/outputs",
     key_function=dict(code=stable_hash, inputs=stable_hash),
+    multiprocess_safe=True,
 )
 def outputs(code, inputs):
     result = []

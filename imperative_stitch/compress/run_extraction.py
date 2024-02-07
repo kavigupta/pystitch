@@ -19,6 +19,17 @@ from imperative_stitch.utils.wrap import (
 
 
 def add_pragmas_around_single_abstraction_call(parsed, abstr):
+    """
+    Add pragmas around a single abstraction call, selected as
+    the first abstraction call in the parsed code.
+
+    Args:
+        parsed: ParsedAST
+        abstr: dict[str, Abstraction]
+
+    Returns:
+        str, python code with pragmas added around the first abstraction call
+    """
     ac = parsed.abstraction_calls()
     key = next(iter(ac))
     call = ac[key]
@@ -29,6 +40,22 @@ def add_pragmas_around_single_abstraction_call(parsed, abstr):
 
 
 def convert_output(abstractions, rewritten):
+    """
+    Convert the output of `run_julia_stitch` to actual python code
+        using properly extracted python function abstractions.
+
+    Args:
+        abstractions: list[dict]
+        rewritten: list[str]
+
+    Returns:
+        (abstraction: str, extracted: list[str])
+        abstraction: str, the extracted python function
+        extracted: list[str], the rewritten python code with the abstraction calls replaced
+
+    Raises:
+        NotApplicable: various errors related to the semantics not allowing for extraction
+    """
     [abstr_dict] = abstractions
     abstr_dict = {
         **abstr_dict,
@@ -50,13 +77,24 @@ def convert_output(abstractions, rewritten):
     if not elements:
         raise ValueError("No abstraction calls found")
 
-    extracted, abstraction = run_extraction(elements)
+    abstraction, extracted = run_extraction(elements)
     extracted.update(unchanged)
     extracted = [extracted[i] for i in range(len(rewritten))]
     return abstraction, extracted
 
 
 def run_extraction(elements):
+    """
+    Run extraction on the given elements.
+
+    Args:
+        elements: dict[int, str]
+
+    Returns:
+        (abstraction: str, extracted: dict[int, str])
+        abstraction: str, the extracted python function
+        extracted: dict[int, str], the rewritten python code with the abstraction calls replaced
+    """
     keys = sorted(elements.keys())
     all_codes = "\n".join(add_sentinel(wrap(elements[k])) for k in keys)
     config = ExtractConfiguration(True)
@@ -66,8 +104,8 @@ def run_extraction(elements):
     ]
     antiunify_extractions(extrs)
     post_extracteds = {ast.unparse(extr.func_def) for extr in extrs}
-    [post_extracted] = post_extracteds
-    result = split_by_sentinel_ast(tree)
-    result = [unwrap_ast(x) for x in result]
-    result = {k: ast.unparse(v) for k, v in zip(keys, result)}
-    return result, post_extracted
+    [abstraction] = post_extracteds
+    rewritten = split_by_sentinel_ast(tree)
+    rewritten = [unwrap_ast(x) for x in rewritten]
+    rewritten = {k: ast.unparse(v) for k, v in zip(keys, rewritten)}
+    return abstraction, rewritten
