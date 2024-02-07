@@ -20,16 +20,7 @@ def extract_from_data(datapoint, *, max_tests, max_solutions):
         solution: str
     """
     name = datapoint["name"]
-    tests = (
-        datapoint["public_tests"],
-        datapoint["private_tests"],
-        datapoint["generated_tests"],
-    )
-    inputs, outputs = [], []
-    for test in tests:
-        inputs += test["input"]
-        outputs += test["output"]
-    inputs, outputs = inputs[:max_tests], outputs[:max_tests]
+    inputs, outputs = extract_tests(datapoint, max_tests)
     solutions = [
         sol
         for lang, sol in zip(
@@ -43,6 +34,19 @@ def extract_from_data(datapoint, *, max_tests, max_solutions):
         if not passes_tests(sol, inputs, outputs):
             continue
         yield dict(name=f"{name}_{i}", inputs=inputs, outputs=outputs, solution=sol)
+
+def extract_tests(datapoint, max_tests):
+    tests = (
+        datapoint["public_tests"],
+        datapoint["private_tests"],
+        datapoint["generated_tests"],
+    )
+    inputs, outputs = [], []
+    for test in tests:
+        inputs += test["input"]
+        outputs += test["output"]
+    inputs, outputs = inputs[:max_tests], outputs[:max_tests]
+    return inputs,outputs
 
 
 @permacache(

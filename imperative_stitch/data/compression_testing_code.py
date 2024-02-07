@@ -3,11 +3,12 @@ import os
 
 import fire
 from datasets import load_dataset
+from imperative_stitch.data.runnable_code_set import extract_tests
 
 from imperative_stitch.parser import python_to_s_exp
 
 
-def compression_testing_code(amount):
+def compression_testing_code(amount, *, max_tests=100):
     dset = load_dataset("deepmind/code_contests", split="train")
     sets = []
     for datum in dset:
@@ -19,7 +20,8 @@ def compression_testing_code(amount):
             if lang == 3
         ]
         if len(py3s) > 3:
-            sets.append(py3s)
+            i, o = extract_tests(datum, max_tests)
+            sets.append(dict(inputs=i, outputs=o, solutions=py3s))
         if len(sets) > amount:
             break
     return sets
@@ -28,7 +30,7 @@ def compression_testing_code(amount):
 def produce_julia_tests(jl_path):
     test_out_folder = os.path.join(jl_path, "data", "imperative_realistic")
     code = compression_testing_code(100)
-    code = [x[:10] for x in code]
+    code = [x["solutions"][:10] for x in code]
     code = [x for x in code if len(json.dumps(x)) < 10**4]
     assert len(code) >= 10
     code = code[:10]

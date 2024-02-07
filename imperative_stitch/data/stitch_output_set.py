@@ -28,17 +28,17 @@ def run_stitch_cached(c):
 
 
 @permacache(
-    "imperative_stitch/data/stitch_output_set/stitch_output_set_10",
+    "imperative_stitch/data/stitch_output_set/stitch_output_set_12",
 )
 def stitch_output_set(amount):
     sets = compression_testing_code(amount * 10)
-    sets = [x[:10] for x in sets]
 
     results = []
 
     pbar = tqdm.tqdm(total=amount)
 
-    for s in sets:
+    for datum in sets:
+        s = datum["solutions"][:10]
         if len(json.dumps(s)) > 5000:
             continue
         c = [python_to_s_exp(code) for code in s]
@@ -49,6 +49,8 @@ def stitch_output_set(amount):
             code=c,
             abstractions=abstractions,
             rewritten=rewritten,
+            inputs=datum["inputs"],
+            outputs=datum["outputs"],
         )
 
         results.append(result)
