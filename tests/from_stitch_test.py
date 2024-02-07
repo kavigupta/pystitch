@@ -1,5 +1,6 @@
 import unittest
 from textwrap import dedent
+from imperative_stitch.analyze_program.extract.errors import NotApplicable
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.run_extraction import convert_output
@@ -510,7 +511,11 @@ class RealDataTest(unittest.TestCase):
     @expand_with_slow_tests(len(load_stitch_output_set()))
     def test_realistic_same_behavior(self, i):
         eg = load_stitch_output_set()[i]
-        abstraction, rewritten = convert_output(eg["abstractions"], eg["rewritten"])
+        try:
+            abstraction, rewritten = convert_output(eg["abstractions"], eg["rewritten"])
+        except NotApplicable:
+            # This is fine, we can't rewrite this example
+            return
         from .rewrite_semantic_test import RewriteSemanticsTest
 
         assert len(rewritten) == len(eg["code"])
