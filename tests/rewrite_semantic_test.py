@@ -21,22 +21,26 @@ class RewriteSemanticsTest(GenericRewriteRealisticTest):
         xs = self.operate_on_code(seed, code_original, use_full_tree=True)
         for code, out in xs:
             if isinstance(out, Exception):
-                continue
-            post_extract, extracted = out
-            new_code = self.concat_code(extracted, post_extract)
+                return
             print("*" * 80)
             print(code)
-            print("=" * 80)
-            print(new_code)
-            for inp, output in zip(example["inputs"], example["outputs"]):
-                print(repr(inp))
-                py_out = self.run_and_check_for_errors(new_code, inp)
-                py_out = normalize_output(py_out)
-                output = normalize_output(output)
-                if py_out != output:
-                    if not self.check_deterministic(code_original, inp):
-                        continue
-                self.assertEqual(py_out, output)
+            post_extract, extracted = out
+            self.assert_code_same(example, code_original, post_extract, extracted)
+
+    def assert_code_same(self, example, code_original, post_extract, extracted):
+        new_code = self.concat_code(extracted, post_extract)
+        print("=" * 80)
+        print(new_code)
+
+        for inp, output in zip(example["inputs"], example["outputs"]):
+            print(repr(inp))
+            py_out = self.run_and_check_for_errors(new_code, inp)
+            py_out = normalize_output(py_out)
+            output = normalize_output(output)
+            if py_out != output:
+                if not self.check_deterministic(code_original, inp):
+                    continue
+            self.assertEqual(py_out, output)
 
     def run_and_check_for_errors(self, code, inp):
         py_out = run_python(code, inp)

@@ -48,9 +48,20 @@ def wrap(code, fn_name="_main"):
 def clean_for_unwrap(body):
     if body and isinstance(body[-1], ast.Pass):
         body = body[:-1]
-    if body and isinstance(body[-1], ast.Return):
-        body[-1] = ast.Expr(value=body[-1].value)
+    body = [ReplaceReturnsAtTopLevel().visit(node) for node in body]
     return body
+
+
+class ReplaceReturnsAtTopLevel(ast.NodeTransformer):
+    """Replace return statements with the given statement, but only at the top level.
+    Do *not* replace return statements inside inner functions.
+    """
+
+    def visit_FunctionDef(self, node):
+        return node
+
+    def visit_Return(self, node):
+        return ast.Expr(value=node.value)
 
 
 def unwrap_ast(code):
@@ -82,3 +93,28 @@ def unwrap_ast(code):
 
 def unwrap(code):
     return ast.unparse(unwrap_ast(ast.parse(code)))
+
+
+def add_sentinel(code):
+    """
+    Add a __sentinel__ to the front of the code.
+    """
+
+    return "__sentinel__\n" + code
+
+
+def split_by_sentinel_ast(code):
+    """
+    Split the tree by __sentinel__.
+    """
+    assert isinstance(code, ast.Module)
+    body = code.body
+    assert isinstance(body, list)
+    result = []
+    for line in body:
+        if isinstance(line, ast.Expr):
+            if isinstance(line.value, ast.Name) and line.value.id == "__sentinel__":
+                result.append([])
+                continue
+        result[-1].append(line)
+    return [ast.Module(body=lines, type_ignores=[]) for lines in result]
