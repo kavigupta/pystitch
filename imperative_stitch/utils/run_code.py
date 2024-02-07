@@ -45,6 +45,7 @@ def run_python_with_timeout(code, inp, *, timeout=10):
     finally:
         signal.alarm(0)
 
+
 @permacache(
     "imperative_stitch/data/runnable_code_set/run_python_3",
     key_function=dict(code=stable_hash, input=stable_hash),

@@ -48,9 +48,20 @@ def wrap(code, fn_name="_main"):
 def clean_for_unwrap(body):
     if body and isinstance(body[-1], ast.Pass):
         body = body[:-1]
-    if body and isinstance(body[-1], ast.Return):
-        body[-1] = ast.Expr(value=body[-1].value)
+    body = [ReplaceReturnsAtTopLevel().visit(node) for node in body]
     return body
+
+
+class ReplaceReturnsAtTopLevel(ast.NodeTransformer):
+    """Replace return statements with the given statement, but only at the top level.
+    Do *not* replace return statements inside inner functions.
+    """
+
+    def visit_FunctionDef(self, node):
+        return node
+
+    def visit_Return(self, node):
+        return ast.Expr(value=node.value)
 
 
 def unwrap_ast(code):

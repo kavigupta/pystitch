@@ -4,7 +4,6 @@ from textwrap import dedent
 from permacache import permacache, stable_hash
 
 from imperative_stitch.analyze_program.extract.errors import NotApplicable
-
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.run_extraction import convert_output
 from imperative_stitch.data.stitch_output_set import load_stitch_output_set
@@ -478,7 +477,6 @@ class MultiKindTest(unittest.TestCase):
 
 
 class RealDataTest(unittest.TestCase):
-
     @expand_with_slow_tests(len(load_stitch_output_set()))
     def test_realistic_parseable(self, i):
         eg = load_stitch_output_set()[i]

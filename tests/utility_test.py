@@ -90,3 +90,26 @@ class WrapTest(unittest.TestCase):
         )
         expected = "3"
         self.assertSameCode(unwrap(code), expected)
+
+    def test_unwrap_with_internal_return(self):
+        code = dedent(
+            """
+            def _main():
+                x = 3
+                def _inner():
+                    return x
+                if x == 2:
+                    return x
+            _main()
+            """
+        )
+        expected = dedent(
+            """
+            x = 3
+            def _inner():
+                return x
+            if x == 2:
+                x
+            """
+        )
+        self.assertSameCode(unwrap(code), expected)
