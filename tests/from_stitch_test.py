@@ -2,9 +2,11 @@ import unittest
 from textwrap import dedent
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.run_extraction import convert_output
 from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import AbstractionCallAST, ParsedAST
+from imperative_stitch.utils.run_code import run_python
 from tests.utils import expand_with_slow_tests
 
 
@@ -472,8 +474,9 @@ class MultiKindTest(unittest.TestCase):
 
 
 class RealDataTest(unittest.TestCase):
+
     @expand_with_slow_tests(len(load_stitch_output_set()))
-    def test_realistic(self, i):
+    def test_realistic_parseable(self, i):
         eg = load_stitch_output_set()[i]
         abstr_dict = eg["abstractions"][0].copy()
         print(abstr_dict)
@@ -503,3 +506,27 @@ class RealDataTest(unittest.TestCase):
                 .to_python()
             )
             self.assertIsNotNone(check_no_crash)
+
+    @expand_with_slow_tests(len(load_stitch_output_set()))
+    def test_realistic_same_behavior(self, i):
+        eg = load_stitch_output_set()[i]
+        abstraction, rewritten = convert_output(eg["abstractions"], eg["rewritten"])
+        from .rewrite_semantic_test import RewriteSemanticsTest
+
+        assert len(rewritten) == len(eg["code"])
+
+        for rewr, code_original in zip(rewritten, eg["code"]):
+            code_original = s_exp_to_python(code_original)
+            print(code_original)
+            RewriteSemanticsTest().assert_code_same(
+                dict(
+                    inputs=eg["inputs"][:10],
+                    outputs=[
+                        run_python(code_original, inp)
+                        for inp in eg["inputs"][:10]
+                    ],
+                ),
+                code_original,
+                rewr,
+                extracted=abstraction,
+            )
