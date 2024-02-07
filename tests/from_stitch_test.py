@@ -538,10 +538,7 @@ class RealDataTest(unittest.TestCase):
             RewriteSemanticsTest().assert_code_same(
                 dict(
                     inputs=eg["inputs"][:10],
-                    outputs=[
-                        run_python_with_timeout(code_original, inp)
-                        for inp in eg["inputs"][:10]
-                    ],
+                    outputs=out,
                 ),
                 code_original,
                 rewr,

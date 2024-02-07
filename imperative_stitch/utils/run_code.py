@@ -42,7 +42,8 @@ def run_python_with_timeout(code, inp, *, timeout=10):
         return run_python(code, inp)
     except TimeoutError:
         return None
-
+    finally:
+        signal.alarm(0)
 
 @permacache(
     "imperative_stitch/data/runnable_code_set/run_python_3",
