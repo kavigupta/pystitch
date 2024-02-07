@@ -80,6 +80,10 @@ def unwrap_ast(code):
     return ast.Module(body=output, type_ignores=[])
 
 
+def unwrap(code):
+    return ast.unparse(ast.fix_missing_locations(unwrap_ast(ast.parse(code))))
+
+
 def add_sentinel(code):
     """
     Add a __sentinel__ to the front of the code.
