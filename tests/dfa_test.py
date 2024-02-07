@@ -2,11 +2,9 @@ import ast
 import unittest
 from textwrap import dedent
 
-# TODO fix this
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
 from imperative_stitch.parser import python_to_s_exp
-from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.parser.symbol import Symbol
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
