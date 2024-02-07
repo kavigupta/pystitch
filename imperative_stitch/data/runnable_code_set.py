@@ -35,6 +35,7 @@ def extract_from_data(datapoint, *, max_tests, max_solutions):
             continue
         yield dict(name=f"{name}_{i}", inputs=inputs, outputs=outputs, solution=sol)
 
+
 def extract_tests(datapoint, max_tests):
     tests = (
         datapoint["public_tests"],
@@ -46,7 +47,7 @@ def extract_tests(datapoint, max_tests):
         inputs += test["input"]
         outputs += test["output"]
     inputs, outputs = inputs[:max_tests], outputs[:max_tests]
-    return inputs,outputs
+    return inputs, outputs
 
 
 @permacache(

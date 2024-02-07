@@ -3,8 +3,8 @@ import os
 
 import fire
 from datasets import load_dataset
-from imperative_stitch.data.runnable_code_set import extract_tests
 
+from imperative_stitch.data.runnable_code_set import extract_tests
 from imperative_stitch.parser import python_to_s_exp
 
 

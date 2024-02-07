@@ -42,9 +42,15 @@ def wrap_ast(code, fn_name="_main"):
 
 
 def wrap(code, fn_name="_main"):
-    result = ast.unparse(ast.fix_missing_locations(wrap_ast(ast.parse(code), fn_name)))
-    assert isinstance(result, str)
-    return result
+    return ast.unparse(ast.fix_missing_locations(wrap_ast(ast.parse(code), fn_name)))
+
+
+def clean_for_unwrap(body):
+    if body and isinstance(body[-1], ast.Pass):
+        body = body[:-1]
+    if body and isinstance(body[-1], ast.Return):
+        body[-1] = ast.Expr(value=body[-1].value)
+    return body
 
 
 def unwrap_ast(code):
@@ -66,7 +72,7 @@ def unwrap_ast(code):
     body = body[len(imports) :]
     assert len(body) == 2
     assert isinstance(body[0], ast.FunctionDef)
-    output = imports + body[0].body
+    output = imports + clean_for_unwrap(body[0].body)
     assert ast.unparse(body[1]) == f"{body[0].name}()", (
         ast.unparse(body[1]),
         body[0].name,
