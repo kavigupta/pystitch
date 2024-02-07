@@ -1,8 +1,6 @@
 import ast
-from textwrap import dedent
 
 from permacache import stable_hash
-from imperative_stitch.utils.wrap import wrap
 
 from imperative_stitch.utils.run_code import normalize_output, run_python
 from tests.rewrite_test import GenericRewriteRealisticTest
