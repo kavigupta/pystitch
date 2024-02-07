@@ -10,8 +10,8 @@ from imperative_stitch.parser.parsed_ast import (
 )
 from imperative_stitch.utils.ast_utils import (
     field_is_body,
-    name_field,
     field_is_starrable,
+    name_field,
 )
 
 from .symbol import Symbol
