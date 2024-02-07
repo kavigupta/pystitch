@@ -2,10 +2,11 @@ import ast
 import unittest
 from textwrap import dedent
 
-# TODO fix this
-from s_expression_parser import Pair, ParserConfig, nil, parse
+from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
 from imperative_stitch.parser import python_to_s_exp
+from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.parser.symbol import Symbol
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
 from imperative_stitch.utils.recursion import limit_to_size
 
@@ -112,14 +113,23 @@ def to_list_nested(x):
     return x
 
 
-def classify(x, state):
+def from_list_nested(x):
+    if not x:
+        return nil
+    if not isinstance(x, list):
+        return x
+    return Pair(from_list_nested(x[0]), from_list_nested(x[1:]))
+
+
+def classify(x, state, *, mutate):
     if not isinstance(x, list):
         return
     yield x, state
     elements = dfa[state][x[0]]
-    x[0] += "::" + state
+    if mutate:
+        x[0] += "::" + state
     for i, el in enumerate(x[1:]):
-        yield from classify(el, elements[i % len(elements)])
+        yield from classify(el, elements[i % len(elements)], mutate=mutate)
 
 
 class DFATest(unittest.TestCase):
@@ -132,7 +142,9 @@ class DFATest(unittest.TestCase):
             # pylint: disable=unbalanced-tuple-unpacking
             (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
             code = to_list_nested(code)
-            result = sorted({(x, state) for ((x, *_), state) in classify(code, "M")})
+            classified = list(classify(code, "M", mutate=False))
+            result = sorted({(x, state) for ((x, *_), state) in classified})
+            list(classify(code, "M", mutate=True))
             print(code)
             extras = set(result) - set(reasonable_classifications)
             if extras:
@@ -215,3 +227,53 @@ class DFATest(unittest.TestCase):
                 """
             )
         )
+
+
+class TestExprNodeValidity(unittest.TestCase):
+    def e_nodes(self, code):
+        with limit_to_size(code):
+            print("#" * 80)
+            print(code)
+            code = python_to_s_exp(code)
+            print(code)
+            # pylint: disable=unbalanced-tuple-unpacking
+            (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+            code = to_list_nested(code)
+            e_nodes = [
+                x for x, state in classify(code, "M", mutate=False) if state == "E"
+            ]
+            e_nodes = [Renderer().render(from_list_nested(x)) for x in e_nodes]
+            return e_nodes
+
+    def assertENodeReal(self, node):
+        print(node)
+        code = ParsedAST.parse_s_expression(node)
+        print(code)
+        code_in_function_call = ParsedAST.call(Symbol(name="hi", scope=None), code)
+        code_in_function_call = code_in_function_call.to_python()
+        print(code_in_function_call)
+        code_in_function_call = ParsedAST.parse_python_statement(code_in_function_call)
+        assert code_in_function_call.typ == ast.Expr
+        code_in_function_call = code_in_function_call.children[0]
+        assert code_in_function_call.typ == ast.Call
+        code_in_function_call = code_in_function_call.children[1]
+        code_in_function_call = code_in_function_call.children[0].content
+        print(code_in_function_call)
+        code_in_function_call = code_in_function_call.to_python()
+        print(code_in_function_call)
+        self.maxDiff = None
+        self.assertEqual(code.to_python(), code_in_function_call)
+
+    def assertENodesReal(self, code):
+        e_nodes = self.e_nodes(code)
+        for node in e_nodes:
+            self.assertENodeReal(node)
+
+    def test_slice(self):
+        self.assertENodesReal("y = x[2:3]")
+
+    @expand_with_slow_tests(len(small_set_examples()))
+    def test_realistic(self, i):
+        code = small_set_examples()[i]
+        for element in ast.parse(code).body:
+            self.assertENodesReal(ast.unparse(element))
