@@ -81,7 +81,7 @@ def unwrap_ast(code):
 
 
 def unwrap(code):
-    return ast.unparse(ast.fix_missing_locations(unwrap_ast(ast.parse(code))))
+    return ast.unparse(unwrap_ast(ast.parse(code)))
 
 
 def add_sentinel(code):
