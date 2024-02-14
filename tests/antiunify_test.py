@@ -356,7 +356,10 @@ class AntiUnifyTest(GenericExtractTest):
             y, x = 2
         """
 
-        self.run_extract(code)
+        x, y = self.run_extract(code)
+        print(x)
+        print(y)
+        1/0
 
 
 class AntiUnifyRealisticTest(GenericRewriteRealisticTest):
