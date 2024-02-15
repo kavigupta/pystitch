@@ -5,7 +5,7 @@ from frozendict import frozendict
 
 TRANSITIONS = frozendict(
     {
-        "M": {ast.Module: {"body": "seqS", "type_ignores": "X"}},
+        "M": {ast.Module: {"body": "seqS", "type_ignores": "TI"}},
         "S": {
             (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef): {
                 "body": "seqS",
@@ -13,7 +13,7 @@ TRANSITIONS = frozendict(
                 "bases": "listE",
                 "name": "X",
                 "args": "As",
-                "returns": "E",
+                "returns": "TA",
                 "type_comment": "X",
                 "keywords": "K",
             },
@@ -23,9 +23,9 @@ TRANSITIONS = frozendict(
                 "value": "E",
                 "targets": "L",
                 "target": "L",
-                "type_comment": "X",
-                "op": "X",
-                "annotation": "E",
+                "type_comment": "TC",
+                "op": "O",
+                "annotation": "TA",
                 "simple": "X",
             },
             (
@@ -121,7 +121,7 @@ TRANSITIONS = frozendict(
             }
         },
         "A": {
-            ast.arg: {"annotation": "E"},
+            ast.arg: {"annotation": "TA"},
         },
         "X": {all: {all: "X"}},
         "F": {
@@ -153,8 +153,8 @@ TRANSITIONS = frozendict(
         },
         "L": {
             ast.Name: {all: "X"},
-            ast.Tuple: {all: "L"},
-            ast.List: {all: "L"},
+            ast.Tuple: {"elts": "L", "ctx": "X"},
+            ast.List: {"elts": "L", "ctx": "X"},
             ast.Subscript: {"value": "E", "slice": "SliceRoot"},
             ast.Attribute: {"value": "E", "attr": "X"},
             "list": "L",
@@ -169,6 +169,7 @@ TRANSITIONS = frozendict(
         "alias": {"list": "alias", ast.alias: {all: "X"}},
         "names": {"list": "X"},
         "listF": {"list": "F"},
+        "TA": {all: {all: "TA"}},
     }
 )
 

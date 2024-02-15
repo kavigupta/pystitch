@@ -1,4 +1,5 @@
 import ast
+import re
 import unittest
 from textwrap import dedent
 
@@ -36,6 +37,40 @@ reasonable_classifications = [
     ("Delete", "S"),
     ("Dict", "E"),
     ("DictComp", "E"),
+    *[
+        (x, "O")
+        for x in {
+            "Add",
+            "Sub",
+            "Mult",
+            "MatMult",
+            "Div",
+            "Mod",
+            "Pow",
+            "LShift",
+            "RShift",
+            "BitOr",
+            "BitXor",
+            "BitAnd",
+            "FloorDiv",
+            "Invert",
+            "Not",
+            "UAdd",
+            "USub",
+            "Eq",
+            "NotEq",
+            "Lt",
+            "LtE",
+            "Gt",
+            "GtE",
+            "Is",
+            "IsNot",
+            "In",
+            "NotIn",
+            "And",
+            "Or",
+        }
+    ],
     ("ExceptHandler", "EH"),
     ("Expr", "S"),
     ("For", "S"),
@@ -58,8 +93,11 @@ reasonable_classifications = [
     ("Name", "L"),
     ("NamedExpr", "E"),
     ("Nonlocal", "S"),
+    ("Pass", "S"),
     ("Raise", "S"),
     ("Return", "S"),
+    ("Break", "S"),
+    ("Continue", "S"),
     ("Set", "E"),
     ("SetComp", "E"),
     ("_slice_content", "SliceRoot"),
@@ -100,8 +138,33 @@ reasonable_classifications = [
     ("list", "O"),
     ("list", "alias"),
     ("list", "names"),
+    ("list", "TI"),
     ("/seq", "seqS"),
     ("withitem", "W"),
+    ("const-None", "E"),
+    # formatting
+    ("const-None", "F"),
+    ("const-s.*", "F"),
+    # vararg
+    ("const-None", "A"),
+    # type
+    (".*", "TA"),
+    ("const-None", "TC"),
+    # left value
+    ("const-None", "L"),
+    # Load/Store/Del
+    ("Load", "X"),
+    ("Store", "X"),
+    ("Del", "X"),
+    # name
+    ("const-&.*", "X"),
+    ("const-g_.*", "X"),
+    # values
+    ("const-None", "X"),
+    ("const-True", "X"),
+    ("const-False", "X"),
+    ("const-Ellipsis", "X"),
+    ("const-[sbijf].*", "X"),
 ]
 
 
@@ -125,17 +188,20 @@ def classify(x, state, *, mutate):
     if not isinstance(x, list):
         return
     yield x, state
-    if x[0] not in dfa[state]:
-        raise ValueError(f"Unknown state {x[0]} in {state}")
-    elements = dfa[state][x[0]]
+    tag = x[0]
     if mutate:
         x[0] += "::" + state
+    if not x[1:]:
+        return
+    if tag not in dfa[state]:
+        raise ValueError(f"Unknown state {tag} in {state}")
+    elements = dfa[state][tag]
     for i, el in enumerate(x[1:]):
         yield from classify(el, elements[i % len(elements)], mutate=mutate)
 
 
-def prep_for_classification(parsed_ast):
-    code = parsed_ast.to_s_exp()
+def prep_for_classification(parsed_ast, **kwargs):
+    code = parsed_ast.to_s_exp(**kwargs)
     # pylint: disable=unbalanced-tuple-unpacking
     (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
     code = to_list_nested(code)
@@ -148,25 +214,56 @@ def classify_code(parsed_ast, start_state, *, mutate):
 
 
 class DFATest(unittest.TestCase):
-    def classify_elements_in_code(self, code):
+    def check_reasonable_classification(self, tag_to_check, state_to_check):
+        for tag, state in reasonable_classifications:
+            mat = re.match("^" + tag + "$", tag_to_check)
+            if mat and state == state_to_check:
+                return
+        self.fail(f"Unknown classification {tag_to_check} {state_to_check}")
+
+    def classify_elements_in_code_with_config(self, code, **kwargs):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = prep_for_classification(ParsedAST.parse_python_module(code))
+            code = prep_for_classification(
+                ParsedAST.parse_python_module(code), **kwargs
+            )
             classified = classify(code, "M", mutate=False)
             result = sorted({(x, state) for ((x, *_), state) in classified})
             list(classify(code, "M", mutate=True))
             print(code)
-            extras = set(result) - set(reasonable_classifications)
-            if extras:
-                print(sorted(extras | set(reasonable_classifications)))
-                self.fail(f"Extras found in classification {extras}")
+            for x, state in result:
+                self.check_reasonable_classification(x, state)
+
+    def classify_elements_in_code(self, code):
+        self.classify_elements_in_code_with_config(code)
+        self.classify_elements_in_code_with_config(code, no_leaves=True)
 
     @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         code = small_set_examples()[i]
         for element in ast.parse(code).body:
             self.classify_elements_in_code(ast.unparse(element))
+
+    def test_function(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                def f(x):
+                    pass
+                """
+            )
+        )
+
+    def test_with(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                with x:
+                    pass
+                """
+            )
+        )
 
     def test_annotation(self):
         self.classify_elements_in_code(
@@ -194,6 +291,11 @@ class DFATest(unittest.TestCase):
 
     def test_aug_assign(self):
         self.classify_elements_in_code("(x := 2)")
+
+    def test_assign(self):
+        self.classify_elements_in_code("x = 2")
+        self.classify_elements_in_code("x = 2, 3")
+        self.classify_elements_in_code("x += 2")
 
     def test_tuple(self):
         self.classify_elements_in_code("(2, 3)")
@@ -229,6 +331,11 @@ class DFATest(unittest.TestCase):
 
     def test_joined_str(self):
         self.classify_elements_in_code("f'2 {459.67:.1f}'")
+
+    def test_type_annotation(self):
+        self.classify_elements_in_code("x: int = 2")
+        self.classify_elements_in_code("def f(x: int) -> int: pass")
+        self.classify_elements_in_code("x: List[int] = []")
 
     def test_code(self):
         self.classify_elements_in_code(
