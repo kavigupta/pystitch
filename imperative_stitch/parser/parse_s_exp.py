@@ -89,6 +89,11 @@ def s_exp_to_parsed_ast(x):
         return NodeAST(typ, [])
     assert isinstance(x, Pair), str(type(x))
     tag, *args = pair_to_list(x)
+    if tag.startswith("const-"):
+        assert len(args) == 0
+        is_leaf, leaf = s_exp_leaf_to_value(tag[len("const-") :])
+        assert is_leaf
+        return LeafAST(leaf)
     assert isinstance(tag, str), str(tag)
     args = [s_exp_to_parsed_ast(x) for x in args]
     if tag in {"/seq", "/subseq"}:
