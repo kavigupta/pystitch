@@ -447,7 +447,12 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
         for node in valid_nodes:
             print(node)
         lines = body if isinstance(body, list) else [body]
-        expressions = [x for line in lines for x in ast.walk(line) if str(convert(x)) in valid_nodes]
+        expressions = [
+            x
+            for line in lines
+            for x in ast.walk(line)
+            if str(convert(x)) in valid_nodes
+        ]
         return expressions
 
     def manipulate(self, body, rng):
