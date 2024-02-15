@@ -246,8 +246,6 @@ def export_dfa(transitions=TRANSITIONS):
     for state in transitions:
         result[state] = {}
         for tag in all_tags:
-            # if tag not in transitions[state]:
-            #     continue
             t = getattr(ast, tag)
             out = compute_transition(transitions, state, t, t._fields)
             if out is not None:
@@ -257,7 +255,6 @@ def export_dfa(transitions=TRANSITIONS):
             if out is not None:
                 result[state][tag] = out
 
-        # print(transitions[state])
         missing = (
             set(flatten_types(list(transitions[state])))
             - set(result[state])
