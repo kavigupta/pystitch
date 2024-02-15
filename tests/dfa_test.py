@@ -153,18 +153,30 @@ reasonable_classifications = [
     # left value
     ("const-None", "L"),
     # Load/Store/Del
-    ("Load", "X"),
-    ("Store", "X"),
-    ("Del", "X"),
+    ("Load", "Ctx"),
+    ("Store", "Ctx"),
+    ("Del", "Ctx"),
     # name
-    ("const-&.*", "X"),
-    ("const-g_.*", "X"),
+    ("const-[&g].*", "Name"),
+    ("const-[&g].*", "NullableName"),
+    ("const-None", "NullableName"),
+    ("const-s.*", "NameStr"),
+    ("const-[&g].*", "NameStr"),  # imports
+    ("const-s.*", "NullableNameStr"),
+    ("const-None", "NullableNameStr"),
+    ("const-[&g].*", "NullableNameStr"),
     # values
-    ("const-None", "X"),
-    ("const-True", "X"),
-    ("const-False", "X"),
-    ("const-Ellipsis", "X"),
-    ("const-[sbijf].*", "X"),
+    ("const-None", "Const"),
+    ("const-True", "Const"),
+    ("const-False", "Const"),
+    ("const-Ellipsis", "Const"),
+    ("const-[sbijf].*", "Const"),
+    # constkind
+    ("const-None", "ConstKind"),
+    ("const-s.*", "ConstKind"),
+    # constants
+    ("const-i[01]", "bool"),
+    ("const-i.*", "int"),
 ]
 
 
@@ -254,6 +266,14 @@ class DFATest(unittest.TestCase):
                 """
             )
         )
+        self.classify_elements_in_code(
+            dedent(
+                """
+                def f(x, *y, z=2, **w):
+                    pass
+                """
+            )
+        )
 
     def test_with(self):
         self.classify_elements_in_code(
@@ -286,8 +306,23 @@ class DFATest(unittest.TestCase):
             )
         )
 
+    def test_exception(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                try:
+                    x = 2
+                except:
+                    pass
+                """
+            )
+        )
+
     def test_comparison(self):
         self.classify_elements_in_code("x == 2")
+
+    def test_keyword(self):
+        self.classify_elements_in_code("f(x=2)")
 
     def test_aug_assign(self):
         self.classify_elements_in_code("(x := 2)")
@@ -320,10 +355,14 @@ class DFATest(unittest.TestCase):
         self.classify_elements_in_code("[2, 3, *x]")
         self.classify_elements_in_code("{2, 3, *x}")
 
+    def test_kwstarred(self):
+        self.classify_elements_in_code("f(2, 3, **x)")
+
     def test_import(self):
         self.classify_elements_in_code("import x")
         self.classify_elements_in_code("from x import y")
         self.classify_elements_in_code("from x import y as z")
+        self.classify_elements_in_code("from . import x")
 
     def test_global_nonlocal(self):
         self.classify_elements_in_code("global x")
