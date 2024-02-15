@@ -194,20 +194,6 @@ def compute_transition(transitions, state, typ, fields):
     return [compute_match(transition, field, default="X") for field in fields]
 
 
-def compute_types_each(t, state):
-    if isinstance(t, list):
-        for x in t:
-            yield from compute_types_each(x, state)
-        return
-    if isinstance(t, ast.AST):
-        yield t, state
-        fields = t._fields
-        states = compute_transition(TRANSITIONS, state, type(t), fields)
-        assert states is not None, (t, state)
-        for f, new_state in zip(fields, states):
-            yield from compute_types_each(getattr(t, f), new_state)
-
-
 def flatten_types(ts):
     if isinstance(ts, (list, tuple)):
         for x in ts:
