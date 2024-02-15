@@ -5,6 +5,7 @@ from imperative_stitch.analyze_program.extract.errors import (
     ClosureOverVariableModifiedInExtractedCode,
     ModifiesVariableClosedOverInNonExtractedCode,
 )
+from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.ast_utils import ReplaceNodes
 from imperative_stitch.utils.classify_nodes import compute_types_each
 
@@ -434,20 +435,20 @@ class RewriteTest(GenericExtractTest):
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
-        expressions = list(
-            x for x, state in compute_types_each(body, start) if state == "E"
+        convert = lambda b: prep_for_classification(
+            ParsedAST.from_python_ast(b, descoper={})
         )
-        expressions = [x for x in expressions if not self.bad_expression(x)]
-        return expressions
+        from .dfa_test import classify, prep_for_classification
 
-    def bad_expression(self, expr, top_level=True):
-        if top_level and isinstance(expr, ast.Starred):
-            return True
-        if isinstance(expr, (ast.Slice, ast.Ellipsis, ast.Yield, ast.YieldFrom)):
-            return True
-        if isinstance(expr, ast.Tuple):
-            return any(self.bad_expression(x, top_level=False) for x in expr.elts)
-        return False
+        valid_nodes = {
+            str(node)
+            for node, state in classify(convert(body), "S", mutate=False)
+            if state == "E"
+        }
+        for node in valid_nodes:
+            print(node)
+        expressions = [x for line in body for x in ast.walk(line) if str(convert(x)) in valid_nodes]
+        return expressions
 
     def manipulate(self, body, rng):
         expressions = self.get_expressions(body)

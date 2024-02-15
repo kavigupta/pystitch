@@ -125,6 +125,8 @@ def classify(x, state, *, mutate):
     if not isinstance(x, list):
         return
     yield x, state
+    if x[0] not in dfa[state]:
+        raise ValueError(f"Unknown state {x[0]} in {state}")
     elements = dfa[state][x[0]]
     if mutate:
         x[0] += "::" + state
@@ -132,17 +134,26 @@ def classify(x, state, *, mutate):
         yield from classify(el, elements[i % len(elements)], mutate=mutate)
 
 
+def prep_for_classification(parsed_ast):
+    code = parsed_ast.to_s_exp()
+    # pylint: disable=unbalanced-tuple-unpacking
+    (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+    code = to_list_nested(code)
+    return code
+
+
+def classify_code(parsed_ast, start_state, *, mutate):
+    code = prep_for_classification(parsed_ast)
+    return list(classify(code, start_state, mutate=mutate))
+
+
 class DFATest(unittest.TestCase):
     def classify_elements_in_code(self, code):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = python_to_s_exp(code)
-            print(code)
-            # pylint: disable=unbalanced-tuple-unpacking
-            (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-            code = to_list_nested(code)
-            classified = list(classify(code, "M", mutate=False))
+            code = prep_for_classification(ParsedAST.parse_python_module(code))
+            classified = classify(code, "M", mutate=False)
             result = sorted({(x, state) for ((x, *_), state) in classified})
             list(classify(code, "M", mutate=True))
             print(code)
