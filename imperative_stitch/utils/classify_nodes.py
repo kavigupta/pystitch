@@ -200,7 +200,6 @@ def compute_types_each(t, state):
             yield from compute_types_each(x, state)
         return
     if isinstance(t, ast.AST):
-        print(state, ast.dump(t))
         yield t, state
         fields = t._fields
         states = compute_transition(TRANSITIONS, state, type(t), fields)

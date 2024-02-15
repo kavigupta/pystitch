@@ -444,8 +444,6 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
             for node, state in classify(convert(body), start, mutate=False)
             if state == "E"
         }
-        for node in valid_nodes:
-            print(node)
         lines = body if isinstance(body, list) else [body]
         expressions = [
             x
