@@ -198,8 +198,9 @@ def compute_types_each(t, state):
         return
     if isinstance(t, ast.AST):
         yield t, state
+        fields = t._fields
         for f, new_state in zip(
-            t._fields, compute_transition(TRANSITIONS, state, type(t), f)
+            fields, compute_transition(TRANSITIONS, state, type(t), fields)
         ):
             yield from compute_types_each(getattr(t, f), new_state)
 
