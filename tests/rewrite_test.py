@@ -442,12 +442,13 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
 
         valid_nodes = {
             str(node)
-            for node, state in classify(convert(body), "S", mutate=False)
+            for node, state in classify(convert(body), start, mutate=False)
             if state == "E"
         }
         for node in valid_nodes:
             print(node)
-        expressions = [x for line in body for x in ast.walk(line) if str(convert(x)) in valid_nodes]
+        lines = body if isinstance(body, list) else [body]
+        expressions = [x for line in lines for x in ast.walk(line) if str(convert(x)) in valid_nodes]
         return expressions
 
     def manipulate(self, body, rng):
