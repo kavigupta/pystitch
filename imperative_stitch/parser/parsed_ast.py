@@ -18,6 +18,20 @@ class ParsedAST(ABC):
     """
 
     @classmethod
+    def from_python_ast(cls, ast_node, descoper=None):
+        """
+        Convert the given python AST into a ParsedAST.
+        """
+        # pylint: disable=R0401
+        from .parse_python import python_ast_to_parsed_ast
+
+        with no_recursionlimit():
+            return python_ast_to_parsed_ast(
+                ast_node,
+                descoper if descoper is not None else create_descoper(ast_node),
+            )
+
+    @classmethod
     def parse_python_module(cls, code):
         """
         Parse the given python code into a ParsedAST.
