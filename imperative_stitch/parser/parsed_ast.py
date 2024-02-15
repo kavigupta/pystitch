@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
 
-from frozendict import frozendict
 from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
 from ..utils.recursion import limit_to_size, no_recursionlimit
@@ -577,7 +576,7 @@ def list_to_pair(x):
 
 
 def s_exp_from_string(code):
-    # pylint: disable=R0401
+    # pylint: disable=unbalanced-tuple-unpacking
     with limit_to_size(code):
         (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
     return code
