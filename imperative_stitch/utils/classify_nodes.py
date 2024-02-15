@@ -152,6 +152,7 @@ TRANSITIONS = frozendict(
             }
         },
         "L": {
+            ast.Name: {all: "X"},
             ast.Tuple: {all: "L"},
             ast.List: {all: "L"},
             ast.Subscript: {"value": "E", "slice": "SliceRoot"},
@@ -165,7 +166,7 @@ TRANSITIONS = frozendict(
         "listE": {"list": "E"},
         "listE_starrable": {"list": "StarredRoot"},
         "O": {"list": "O"},
-        "alias": {"list": "alias"},
+        "alias": {"list": "alias", ast.alias: {all: "X"}},
         "names": {"list": "X"},
         "listF": {"list": "F"},
     }
@@ -187,7 +188,9 @@ def compute_match(transition, key, default=None):
 
 def compute_transition(transitions, state, typ, fields):
     transition = transitions[state]
-    transition = compute_match(transition, typ, default={})
+    transition = compute_match(transition, typ, default=False)
+    if transition is False:
+        return None
     return [compute_match(transition, field, default="X") for field in fields]
 
 
@@ -229,9 +232,13 @@ def export_dfa(transitions=TRANSITIONS):
         result[state] = {}
         for tag in all_tags:
             t = getattr(ast, tag)
-            result[state][tag] = compute_transition(transitions, state, t, t._fields)
+            out = compute_transition(transitions, state, t, t._fields)
+            if out is not None:
+                result[state][tag] = out
         for tag in extras:
-            result[state][tag] = compute_transition(transitions, state, tag, [None])
+            out = compute_transition(transitions, state, tag, [None])
+            if out is not None:
+                result[state][tag] = out
 
         missing = (
             set(flatten_types(list(transitions[state])))
