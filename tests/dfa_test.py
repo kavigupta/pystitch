@@ -39,7 +39,7 @@ reasonable_classifications = [
     ("DictComp", "E"),
     *[
         (x, "O")
-        for x in {
+        for x in [
             "Add",
             "Sub",
             "Mult",
@@ -69,7 +69,7 @@ reasonable_classifications = [
             "NotIn",
             "And",
             "Or",
-        }
+        ]
     ],
     ("ExceptHandler", "EH"),
     ("Expr", "S"),
