@@ -434,10 +434,11 @@ class RewriteTest(GenericExtractTest):
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
+        from .dfa_test import classify, prep_for_classification
+
         convert = lambda b: prep_for_classification(
             ParsedAST.from_python_ast(b, descoper={})
         )
-        from .dfa_test import classify, prep_for_classification
 
         valid_nodes = {
             str(node)
