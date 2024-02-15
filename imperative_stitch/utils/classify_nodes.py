@@ -185,11 +185,10 @@ def compute_match(transition, key, default=None):
     raise RuntimeError(f"could not find {key}")
 
 
-def compute_transition(transitions, state, typ, field):
+def compute_transition(transitions, state, typ, fields):
     transition = transitions[state]
     transition = compute_match(transition, typ, default={})
-    transition = compute_match(transition, field, default="X")
-    return transition
+    return [compute_match(transition, field, default="X") for field in fields]
 
 
 def compute_types_each(t, state):
@@ -199,10 +198,11 @@ def compute_types_each(t, state):
         return
     if isinstance(t, ast.AST):
         yield t, state
-        for f in t._fields:
-            yield from compute_types_each(
-                getattr(t, f), compute_transition(TRANSITIONS, state, type(t), f)
-            )
+        fields = t._fields
+        for f, new_state in zip(
+            fields, compute_transition(TRANSITIONS, state, type(t), fields)
+        ):
+            yield from compute_types_each(getattr(t, f), new_state)
 
 
 def flatten_types(ts):
@@ -242,12 +242,10 @@ def export_dfa(transitions=TRANSITIONS):
     for state in transitions:
         result[state] = {}
         for tag in all_tags:
-            result[state][tag] = []
             t = getattr(ast, tag)
-            for f in t._fields:
-                result[state][tag].append(compute_transition(transitions, state, t, f))
+            result[state][tag] = compute_transition(transitions, state, t, t._fields)
         for tag in extras:
-            result[state][tag] = [compute_transition(transitions, state, tag, None)]
+            result[state][tag] = compute_transition(transitions, state, tag, [None])
 
         missing = (
             set(flatten_types(list(transitions[state])))
@@ -255,7 +253,7 @@ def export_dfa(transitions=TRANSITIONS):
             - {"list", "/seq", "/splice"}
         )
         if missing:
-            raise RuntimeError(f"missing {missing}")
+            raise RuntimeError(f"in state {state}: missing {missing}")
 
         result[state]["list"] = [transitions[state].get("list", state)]
     for state in transitions:
