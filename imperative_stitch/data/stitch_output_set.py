@@ -9,10 +9,10 @@ from imperative_stitch.data.compression_testing_code import compression_testing_
 from imperative_stitch.parser import python_to_s_exp
 
 
-@permacache(
-    "imperative_stitch/data/stitch_output_set/run_stitch_cached_9",
-    key_function=dict(c=stable_hash),
-)
+# @permacache(
+#     "imperative_stitch/data/stitch_output_set/run_stitch_cached_9",
+#     key_function=dict(c=stable_hash),
+# )
 def run_stitch_cached(c):
     return run_julia_stitch(
         c,
@@ -27,9 +27,9 @@ def run_stitch_cached(c):
     )
 
 
-@permacache(
-    "imperative_stitch/data/stitch_output_set/stitch_output_set_13",
-)
+# @permacache(
+#     "imperative_stitch/data/stitch_output_set/stitch_output_set_13",
+# )
 def stitch_output_set(amount):
     sets = compression_testing_code(amount * 10)
 
@@ -41,7 +41,7 @@ def stitch_output_set(amount):
         s = datum["solutions"][:10]
         if len(json.dumps(s)) > 5000:
             continue
-        c = [python_to_s_exp(code) for code in s]
+        c = [python_to_s_exp(code, renderer_kwargs=dict(columns=10000)) for code in s]
 
         abstractions, rewritten = run_stitch_cached(c)
 
@@ -74,9 +74,9 @@ def main():
     with open("data/stitch_output_set_small.json", "w") as f:
         json.dump(small, f, indent=2)
 
-    full = stitch_output_set(100)
-    with open("data/stitch_output_set.json", "w") as f:
-        json.dump(full, f, indent=2)
+    # full = stitch_output_set(100)
+    # with open("data/stitch_output_set.json", "w") as f:
+    #     json.dump(full, f, indent=2)
 
 
 if __name__ == "__main__":

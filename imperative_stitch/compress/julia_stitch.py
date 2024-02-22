@@ -53,6 +53,7 @@ def run_julia_stitch(
         "julia",
         "--project=" + stitch_jl_dir,
         os.path.join(stitch_jl_dir, "cli/compress.jl"),
+        f"--corpus={json.dumps(code)}",
         f"--iterations={iters}",
         f"--max-arity={max_arity}",
         *([f"--dfa={os.path.abspath('data/dfa.json')}"] if include_dfa else []),
@@ -68,14 +69,10 @@ def run_julia_stitch(
         ),
     ]
     if not quiet:
-        temp_txt = os.path.join(stitch_jl_dir, "temp.txt")
-        with open(temp_txt, "w") as f:
-            f.write(json.dumps(code))
         print("Run the following command to debug:")
-        print(" ".join([shlex.quote(x) for x in cmd]) + " < " + temp_txt)
+        print(" ".join([shlex.quote(x) for x in cmd]))
     abstractions = subprocess.run(
         cmd,
-        input=json.dumps(code).encode("utf-8"),
         capture_output=True,
         check=False,
     ).stdout
