@@ -52,7 +52,7 @@ def run_julia_stitch(
     cmd = [
         "julia",
         "--project=" + stitch_jl_dir,
-        os.path.join(stitch_jl_dir, "src/cli.jl"),
+        os.path.join(stitch_jl_dir, "cli/compress.jl"),
         f"--iterations={iters}",
         f"--max-arity={max_arity}",
         *([f"--dfa={os.path.abspath('data/dfa.json')}"] if include_dfa else []),
