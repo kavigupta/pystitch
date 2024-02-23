@@ -6,12 +6,6 @@
     ],
     "list": [
       "M"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "S": {
@@ -128,9 +122,6 @@
     "list": [
       "S"
     ],
-    "/seq": [
-      "X"
-    ],
     "/splice": [
       "seqS"
     ]
@@ -240,12 +231,6 @@
     ],
     "list": [
       "E"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "SliceRoot": {
@@ -260,12 +245,6 @@
     ],
     "list": [
       "SliceRoot"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "SliceTuple": {
@@ -275,23 +254,11 @@
     ],
     "list": [
       "SliceTuple"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "listSliceRoot": {
     "list": [
       "SliceRoot"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "StarredRoot": {
@@ -303,12 +270,6 @@
     ],
     "list": [
       "StarredRoot"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "Starred": {
@@ -318,12 +279,6 @@
     ],
     "list": [
       "Starred"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "Slice": {
@@ -334,12 +289,6 @@
     ],
     "list": [
       "Slice"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "As": {
@@ -354,12 +303,6 @@
     ],
     "list": [
       "As"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "A": {
@@ -370,12 +313,6 @@
     ],
     "list": [
       "A"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "F": {
@@ -393,12 +330,6 @@
     ],
     "list": [
       "F"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "C": {
@@ -410,12 +341,6 @@
     ],
     "list": [
       "C"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "K": {
@@ -425,12 +350,6 @@
     ],
     "list": [
       "K"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "EH": {
@@ -441,12 +360,6 @@
     ],
     "list": [
       "EH"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "W": {
@@ -456,12 +369,6 @@
     ],
     "list": [
       "W"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "L": {
@@ -499,12 +406,6 @@
     ],
     "list": [
       "L"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "seqS": {
@@ -513,42 +414,21 @@
     ],
     "/seq": [
       "S"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "listE": {
     "list": [
       "E"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "listE_starrable": {
     "list": [
       "StarredRoot"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "O": {
     "list": [
       "O"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "alias": {
@@ -558,34 +438,16 @@
     ],
     "list": [
       "alias"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "names": {
     "list": [
       "NameStr"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "listF": {
     "list": [
       "F"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   },
   "TA": {
@@ -950,12 +812,6 @@
     ],
     "list": [
       "TA"
-    ],
-    "/seq": [
-      "X"
-    ],
-    "/splice": [
-      "X"
     ]
   }
 }

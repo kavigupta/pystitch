@@ -286,9 +286,6 @@ def export_dfa(transitions=TRANSITIONS):
             raise RuntimeError(f"in state {state}: missing {missing}")
 
         result[state]["list"] = [transitions[state].get("list", state)]
-    for state in transitions:
-        result[state]["/seq"] = ["X"]
-        result[state]["/splice"] = ["X"]
     result["seqS"]["/seq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
     return result
