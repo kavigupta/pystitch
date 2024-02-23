@@ -67,11 +67,11 @@ class ParsedAST(ABC):
         """
         Parse the given s-expression into a ParsedAST.
         """
+        # pylint: disable=R0401
         with limit_to_size(code):
-            # pylint: disable=R0401
             from .parse_s_exp import s_exp_to_parsed_ast
 
-            (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+            code = s_exp_from_string(code)
             code = s_exp_to_parsed_ast(code)
             return code
 
@@ -569,3 +569,10 @@ def list_to_pair(x):
     while x:
         result = Pair(x.pop(), result)
     return result
+
+
+def s_exp_from_string(code):
+    # pylint: disable=unbalanced-tuple-unpacking
+    with limit_to_size(code):
+        (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+    return code
