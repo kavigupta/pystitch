@@ -2,6 +2,8 @@ import ast
 import unittest
 
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
+from imperative_stitch.parser.parsed_ast import s_exp_from_string
+from imperative_stitch.utils.recursion import no_recursionlimit
 from tests.abstraction_test import assertSameCode
 
 from .utils import expand_with_slow_tests, small_set_examples
@@ -15,18 +17,20 @@ class ParseUnparseInverseTest(unittest.TestCase):
         if not isinstance(s_exp, list) or not s_exp:
             return
         if s_exp[0] not in {"/seq"}:
-            self.assertTrue(isinstance(s_exp[0], type), repr(s_exp[0]))
+            self.assertTrue(isinstance(s_exp[0], str), repr(s_exp[0]))
             self.assertTrue(len(s_exp) > 1, repr(s_exp))
         for y in s_exp[1:]:
             self.assert_valid_s_exp(y)
 
     def check(self, test_code):
+        from .dfa_test import to_list_nested
+
         test_code = self.canonicalize(test_code)
         s_exp = python_to_s_exp(test_code, renderer_kwargs=dict(columns=80))
-        # print(s_exp)
+        with no_recursionlimit():
+            self.assert_valid_s_exp(to_list_nested(s_exp_from_string(s_exp)))
         s_exp_parsed = ParsedAST.parse_s_expression(s_exp)
         print(repr(s_exp_parsed))
-        self.assert_valid_s_exp(s_exp_parsed)
         modified = s_exp_to_python(s_exp)
         self.assertEqual(test_code, modified)
 
