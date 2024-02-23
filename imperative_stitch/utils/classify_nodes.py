@@ -29,8 +29,8 @@ TRANSITIONS = frozendict(
         "S": {
             (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef): {
                 "body": "seqS",
-                "decorator_list": "listE",
-                "bases": "listE",
+                "decorator_list": "[E]",
+                "bases": "[E]",
                 "name": "Name",
                 "args": "As",
                 "returns": "TA",
@@ -82,8 +82,8 @@ TRANSITIONS = frozendict(
             (ast.BoolOp, ast.BinOp, ast.UnaryOp, ast.Compare): {
                 "op": "O",
                 "ops": "O",
-                "comparators": "listE",
-                "values": "listE",
+                "comparators": "[E]",
+                "values": "[E]",
                 all: "E",
             },
             ast.NamedExpr: {"value": "E", "target": "L"},
@@ -100,8 +100,8 @@ TRANSITIONS = frozendict(
             ): {
                 "ctx": "Ctx",
                 "elts": "listE_starrable",
-                "keys": "listE",
-                "values": "listE",
+                "keys": "[E]",
+                "values": "[E]",
                 all: "E",
             },
             (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp): {
@@ -142,7 +142,7 @@ TRANSITIONS = frozendict(
         },
         "As": {
             ast.arguments: {
-                ("kw_defaults", "defaults"): "listE",
+                ("kw_defaults", "defaults"): "[E]",
                 all: "A",
             }
         },
@@ -158,7 +158,7 @@ TRANSITIONS = frozendict(
             ast.comprehension: {
                 "target": "L",
                 "iter": "E",
-                "ifs": "listE",
+                "ifs": "[E]",
                 "is_async": "bool",
             }
         },
@@ -191,7 +191,7 @@ TRANSITIONS = frozendict(
             "_starred_starred": {all: "Starred"},
         },
         "seqS": {},
-        "listE": {"list": "E"},
+        "[E]": {"list": "E"},
         "listE_starrable": {"list": "StarredRoot"},
         "O": {"list": "O"},
         "alias": {

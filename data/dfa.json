@@ -35,7 +35,7 @@
       "Name",
       "As",
       "seqS",
-      "listE",
+      "[E]",
       "TA",
       "TC"
     ],
@@ -51,10 +51,10 @@
     ],
     "ClassDef": [
       "Name",
-      "listE",
+      "[E]",
       "K",
       "seqS",
-      "listE"
+      "[E]"
     ],
     "Delete": [
       "L"
@@ -73,7 +73,7 @@
       "Name",
       "As",
       "seqS",
-      "listE",
+      "[E]",
       "TA",
       "TC"
     ],
@@ -142,7 +142,7 @@
     ],
     "BoolOp": [
       "O",
-      "listE"
+      "[E]"
     ],
     "Call": [
       "E",
@@ -152,15 +152,15 @@
     "Compare": [
       "E",
       "O",
-      "listE"
+      "[E]"
     ],
     "Constant": [
       "Const",
       "ConstKind"
     ],
     "Dict": [
-      "listE",
-      "listE"
+      "[E]",
+      "[E]"
     ],
     "DictComp": [
       "E",
@@ -297,9 +297,9 @@
       "A",
       "A",
       "A",
-      "listE",
+      "[E]",
       "A",
-      "listE"
+      "[E]"
     ],
     "list": [
       "As"
@@ -336,7 +336,7 @@
     "comprehension": [
       "L",
       "E",
-      "listE",
+      "[E]",
       "bool"
     ],
     "list": [
@@ -416,7 +416,7 @@
       "S"
     ]
   },
-  "listE": {
+  "[E]": {
     "list": [
       "E"
     ]
