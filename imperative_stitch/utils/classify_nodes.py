@@ -251,7 +251,8 @@ def export_dfa(transitions=TRANSITIONS):
     all_tags = [
         x
         for x in dir(ast)
-        if isinstance(getattr(ast, x), type) and issubclass(getattr(ast, x), ast.AST)
+        if isinstance(getattr(ast, x), type)
+        and issubclass(getattr(ast, x), ast.AST)
         and x not in EXCLUDED_TAGS
     ]
 
