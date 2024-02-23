@@ -75,7 +75,7 @@ class ParsedAST(ABC):
             code = s_exp_to_parsed_ast(code)
             return code
 
-    def to_s_exp(self, renderer_kwargs=None):
+    def to_s_exp(self, *, renderer_kwargs=None, no_leaves=False):
         """
         Convert this ParsedAST into an s-expression.
         """
@@ -83,7 +83,7 @@ class ParsedAST(ABC):
             renderer_kwargs = {}
         with no_recursionlimit():
             return Renderer(**renderer_kwargs, nil_as_word=True).render(
-                self.to_pair_s_exp(dict())
+                self.to_pair_s_exp(dict(no_leaves=no_leaves))
             )
 
     @abstractmethod
@@ -328,7 +328,7 @@ class NodeAST(ParsedAST):
     children: List[ParsedAST]
 
     def to_pair_s_exp(self, config):
-        if not self.children:
+        if not self.children and not config.get("no_leaves", False):
             return self.typ.__name__
 
         return list_to_pair(
@@ -350,7 +350,7 @@ class ListAST(ParsedAST):
 
     def to_pair_s_exp(self, config):
         if not self.children:
-            return nil
+            return ["list"] if config.get("no_leaves", False) else nil
 
         return list_to_pair(["list"] + [x.to_pair_s_exp(config) for x in self.children])
 
@@ -369,7 +369,12 @@ class LeafAST(ParsedAST):
         assert not isinstance(self.leaf, ParsedAST)
 
     def to_pair_s_exp(self, config):
-        del config
+        leaf_as_string = self.render_leaf_as_string()
+        if not config.get("no_leaves", False):
+            return leaf_as_string
+        return list_to_pair(["const-" + leaf_as_string])
+
+    def render_leaf_as_string(self):
         if (
             self.leaf is True
             or self.leaf is False
