@@ -428,6 +428,7 @@ class Variable(ParsedAST):
 @dataclass
 class SymvarAST(Variable):
     def to_pair_s_exp(self, config):
+        del config
         return self.sym
 
     def to_python_ast(self):
