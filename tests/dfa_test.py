@@ -129,7 +129,7 @@ reasonable_classifications = [
     ("keyword", "K"),
     ("list", "A"),
     ("list", "C"),
-    ("list", "listE"),
+    ("list", "[E]"),
     ("list", "listE_starrable"),
     ("list", "EH"),
     ("list", "listF"),
