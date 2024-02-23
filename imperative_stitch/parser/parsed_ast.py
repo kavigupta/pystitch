@@ -83,11 +83,11 @@ class ParsedAST(ABC):
             renderer_kwargs = {}
         with no_recursionlimit():
             return Renderer(**renderer_kwargs, nil_as_word=True).render(
-                self.to_pair_s_exp()
+                self.to_pair_s_exp(dict())
             )
 
     @abstractmethod
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
         """
         Convert this ParsedAST into a pair s-expression.
         """
@@ -289,8 +289,8 @@ class ParsedAST(ABC):
 class SpliceAST(ParsedAST):
     content: ParsedAST
 
-    def to_pair_s_exp(self):
-        return list_to_pair(["/splice", self.content.to_pair_s_exp()])
+    def to_pair_s_exp(self, config):
+        return list_to_pair(["/splice", self.content.to_pair_s_exp(config)])
 
     def to_python_ast(self):
         return Splice(self.content.to_python_ast())
@@ -304,8 +304,8 @@ class SequenceAST(ParsedAST):
     head: str
     elements: List[ParsedAST]
 
-    def to_pair_s_exp(self):
-        result = [self.head] + [x.to_pair_s_exp() for x in self.elements]
+    def to_pair_s_exp(self, config):
+        result = [self.head] + [x.to_pair_s_exp(config) for x in self.elements]
         return list_to_pair(result)
 
     def to_python_ast(self):
@@ -327,12 +327,12 @@ class NodeAST(ParsedAST):
     typ: type
     children: List[ParsedAST]
 
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
         if not self.children:
             return self.typ.__name__
 
         return list_to_pair(
-            [self.typ.__name__] + [x.to_pair_s_exp() for x in self.children]
+            [self.typ.__name__] + [x.to_pair_s_exp(config) for x in self.children]
         )
 
     def to_python_ast(self):
@@ -348,11 +348,11 @@ class NodeAST(ParsedAST):
 class ListAST(ParsedAST):
     children: List[ParsedAST]
 
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
         if not self.children:
             return nil
 
-        return list_to_pair(["list"] + [x.to_pair_s_exp() for x in self.children])
+        return list_to_pair(["list"] + [x.to_pair_s_exp(config) for x in self.children])
 
     def to_python_ast(self):
         return [x.to_python_ast() for x in self.children]
@@ -368,7 +368,8 @@ class LeafAST(ParsedAST):
     def __post_init__(self):
         assert not isinstance(self.leaf, ParsedAST)
 
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
+        del config
         if (
             self.leaf is True
             or self.leaf is False
@@ -421,7 +422,8 @@ class Variable(ParsedAST):
 
 @dataclass
 class SymvarAST(Variable):
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
+        del config
         return self.sym
 
     def to_python_ast(self):
@@ -433,7 +435,8 @@ class SymvarAST(Variable):
 
 @dataclass
 class MetavarAST(Variable):
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
+        del config
         return self.sym
 
     def to_python_ast(self):
@@ -445,7 +448,8 @@ class MetavarAST(Variable):
 
 @dataclass
 class ChoicevarAST(Variable):
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
+        del config
         return self.sym
 
     def to_python_ast(self):
@@ -461,8 +465,8 @@ class AbstractionCallAST(ParsedAST):
     args: List[ParsedAST]
     handle: uuid.UUID
 
-    def to_pair_s_exp(self):
-        return list_to_pair([self.tag] + [x.to_pair_s_exp() for x in self.args])
+    def to_pair_s_exp(self, config):
+        return list_to_pair([self.tag] + [x.to_pair_s_exp(config) for x in self.args])
 
     def to_python_ast(self):
         raise RuntimeError("cannot convert abstraction call to python")
@@ -482,7 +486,8 @@ class AbstractionCallAST(ParsedAST):
 
 @dataclass
 class NothingAST(ParsedAST):
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
+        del config
         return "/nothing"
 
     def to_python_ast(self):
@@ -502,7 +507,7 @@ class NothingAST(ParsedAST):
 class SliceElementAST(ParsedAST):
     content: ParsedAST
 
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
         # should not be necessary; since we have the assertion
         # but pylint is not smart enough to figure that out
         # pylint: disable=no-member
@@ -513,7 +518,7 @@ class SliceElementAST(ParsedAST):
             content = content.content
         assert isinstance(content, NodeAST), content
         if content.typ is ast.Slice:
-            return Pair("_slice_slice", Pair(content.to_pair_s_exp(), nil))
+            return Pair("_slice_slice", Pair(content.to_pair_s_exp(config), nil))
         if content.typ is ast.Tuple:
             assert isinstance(content.children, list)
             assert len(content.children) == 2
@@ -523,8 +528,8 @@ class SliceElementAST(ParsedAST):
             )
             content = NodeAST(typ=ast.Tuple, children=content_children)
 
-            return Pair("_slice_tuple", Pair(content.to_pair_s_exp(), nil))
-        return Pair("_slice_content", Pair(content.to_pair_s_exp(), nil))
+            return Pair("_slice_tuple", Pair(content.to_pair_s_exp(config), nil))
+        return Pair("_slice_content", Pair(content.to_pair_s_exp(config), nil))
 
     def to_python_ast(self):
         return self.content.to_python_ast()
@@ -540,13 +545,13 @@ class SliceElementAST(ParsedAST):
 class StarrableElementAST(ParsedAST):
     content: ParsedAST
 
-    def to_pair_s_exp(self):
+    def to_pair_s_exp(self, config):
         # pylint: disable=no-member
         assert isinstance(self.content, NodeAST), self.content
         content: NodeAST = self.content
         if content.typ is ast.Starred:
-            return Pair("_starred_starred", Pair(content.to_pair_s_exp(), nil))
-        return Pair("_starred_content", Pair(self.content.to_pair_s_exp(), nil))
+            return Pair("_starred_starred", Pair(content.to_pair_s_exp(config), nil))
+        return Pair("_starred_content", Pair(self.content.to_pair_s_exp(config), nil))
 
     def to_python_ast(self):
         return self.content.to_python_ast()
