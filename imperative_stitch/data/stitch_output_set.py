@@ -10,7 +10,7 @@ from imperative_stitch.parser import python_to_s_exp
 
 
 @permacache(
-    "imperative_stitch/data/stitch_output_set/run_stitch_cached_9",
+    "imperative_stitch/data/stitch_output_set/run_stitch_cached_10",
     key_function=dict(c=stable_hash),
 )
 def run_stitch_cached(c):
@@ -28,7 +28,7 @@ def run_stitch_cached(c):
 
 
 @permacache(
-    "imperative_stitch/data/stitch_output_set/stitch_output_set_13",
+    "imperative_stitch/data/stitch_output_set/stitch_output_set_14",
 )
 def stitch_output_set(amount):
     sets = compression_testing_code(amount * 10)
@@ -41,7 +41,7 @@ def stitch_output_set(amount):
         s = datum["solutions"][:10]
         if len(json.dumps(s)) > 5000:
             continue
-        c = [python_to_s_exp(code) for code in s]
+        c = [python_to_s_exp(code, renderer_kwargs=dict(columns=float("inf"))) for code in s]
 
         abstractions, rewritten = run_stitch_cached(c)
 
