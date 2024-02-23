@@ -3,6 +3,26 @@ import json
 
 from frozendict import frozendict
 
+# exclude these tags from the dfa. these are all python 3.10+ features,
+# and for consistency across python versions, we exclude them. We can
+# add them back in later if we want to support them.
+EXCLUDED_TAGS = [
+    # match
+    "Match",
+    "MatchAs",
+    "MatchMapping",
+    "MatchSequence",
+    "MatchValue",
+    "MatchClass",
+    "MatchOr",
+    "MatchSingleton",
+    "MatchStar",
+    "match_case",
+    "pattern",
+    # trystar
+    "TryStar",
+]
+
 TRANSITIONS = frozendict(
     {
         "M": {ast.Module: {"body": "seqS", "type_ignores": "TI"}},
@@ -232,6 +252,7 @@ def export_dfa(transitions=TRANSITIONS):
         x
         for x in dir(ast)
         if isinstance(getattr(ast, x), type) and issubclass(getattr(ast, x), ast.AST)
+        and x not in EXCLUDED_TAGS
     ]
 
     extras = [
