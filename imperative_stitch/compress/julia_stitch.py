@@ -18,7 +18,7 @@ from imperative_stitch.utils.classify_nodes import export_dfa
 
 def run_julia_stitch(*args, iters, **kwargs):
     output = run_julia_stitch_generic(
-        *args, **kwargs, extra_args=[f"--iterations={iters}"]
+        "cli/compress.jl", *args, **kwargs, extra_args=[f"--iterations={iters}"]
     )
     *_, tildes1, abstractions, tildes2, rewritten, newline = output.split("\n")
     assert tildes1 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -29,7 +29,24 @@ def run_julia_stitch(*args, iters, **kwargs):
     return abstractions, rewritten
 
 
+def run_julia_rewrite(code, abstractions, **kwargs):
+    output = run_julia_stitch_generic(
+        "cli/rewrite.jl",
+        code,
+        **kwargs,
+        extra_args=[
+            f"--abstractions={json.dumps(abstractions)}",
+        ],
+    )
+    *_, tildes, rewritten, newline = output.split("\n")
+    assert tildes == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert newline == ""
+    rewritten = json.loads(rewritten)
+    return rewritten
+
+
 def run_julia_stitch_generic(
+    path,
     code,
     *,
     stitch_jl_dir,
@@ -65,7 +82,7 @@ def run_julia_stitch_generic(
     cmd = [
         "julia",
         "--project=" + stitch_jl_dir,
-        os.path.join(stitch_jl_dir, "cli/compress.jl"),
+        os.path.join(stitch_jl_dir, path),
         f"--corpus={json.dumps(code)}",
         f"--max-arity={max_arity}",
         *([f"--dfa={os.path.abspath('data/dfa.json')}"] if include_dfa else []),
