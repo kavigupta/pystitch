@@ -384,6 +384,7 @@ class DFATest(unittest.TestCase):
         self.classify_elements_in_code("x: int = 2")
         self.classify_elements_in_code("def f(x: int) -> int: pass")
         self.classify_elements_in_code("x: List[int] = []")
+        self.classify_elements_in_code("x: Tuple[int, int] = (x, y)")
 
     def test_code(self):
         self.classify_elements_in_code(

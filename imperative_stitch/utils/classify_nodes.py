@@ -201,7 +201,7 @@ TRANSITIONS = frozendict(
             },
         },
         "[NameStr]": {"list": "NameStr"},
-        "TA": {all: {all: "TA"}},
+        "TA": {all: {all: "TA"}, "list": "TA"},
         "[F]": {"list": "F"},
         "[A]": {"list": "A"},
         "[C]": {"list": "C"},
