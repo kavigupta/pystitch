@@ -126,11 +126,14 @@ def classify(x, state, *, mutate):
     if not isinstance(x, list):
         return
     yield x, state
-    if x[0] not in dfa[state]:
-        raise ValueError(f"Unknown state {x[0]} in {state}")
-    elements = dfa[state][x[0]]
+    tag = x[0]
     if mutate:
         x[0] += "::" + state
+    if not x[1:]:
+        return
+    if tag not in dfa[state]:
+        raise ValueError(f"Unknown state {tag} in {state}")
+    elements = dfa[state][tag]
     for i, el in enumerate(x[1:]):
         yield from classify(el, elements[i % len(elements)], mutate=mutate)
 
