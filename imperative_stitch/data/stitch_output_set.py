@@ -18,7 +18,6 @@ def run_stitch_cached(c):
         c,
         stitch_jl_dir="../Stitch.jl/",
         iters=1,
-        application_utility_symvar=-0.5,
         max_arity=4,
         quiet=False,
         # TODO we should be able to root abstractions at E

@@ -16,11 +16,24 @@ from imperative_stitch.utils.classify_nodes import export_dfa
 #     = assign_size + call_size + fn_name + 2 * n_returns * sym_size
 
 
-def run_julia_stitch(
+def run_julia_stitch(*args, iters, **kwargs):
+    output = run_julia_stitch_generic(
+        *args, **kwargs, extra_args=[f"--iterations={iters}"]
+    )
+    *_, tildes1, abstractions, tildes2, rewritten, newline = output.split("\n")
+    assert tildes1 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert tildes2 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert newline == ""
+    abstractions = json.loads(abstractions)
+    rewritten = json.loads(rewritten)
+    return abstractions, rewritten
+
+
+def run_julia_stitch_generic(
     code,
     *,
     stitch_jl_dir,
-    iters,
+    extra_args=(),
     max_arity,
     quiet=True,
     application_utility_metavar=-1,
@@ -54,7 +67,6 @@ def run_julia_stitch(
         "--project=" + stitch_jl_dir,
         os.path.join(stitch_jl_dir, "cli/compress.jl"),
         f"--corpus={json.dumps(code)}",
-        f"--iterations={iters}",
         f"--max-arity={max_arity}",
         *([f"--dfa={os.path.abspath('data/dfa.json')}"] if include_dfa else []),
         f"--size-by-symbol={json.dumps(size_by_symbol)}",
@@ -67,6 +79,7 @@ def run_julia_stitch(
             if metavariable_statements
             else ["--dfa-metavariable-disallow-S", "--dfa-metavariable-disallow-seqS"]
         ),
+        *extra_args,
     ]
     if not quiet:
         print("Run the following command to debug:")
@@ -79,10 +92,4 @@ def run_julia_stitch(
     abstractions = abstractions.decode("utf-8")
     if not quiet:
         print(abstractions)
-    *_, tildes1, abstractions, tildes2, rewritten, newline = abstractions.split("\n")
-    assert tildes1 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    assert tildes2 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    assert newline == ""
-    abstractions = json.loads(abstractions)
-    rewritten = json.loads(rewritten)
-    return abstractions, rewritten
+    return abstractions
