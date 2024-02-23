@@ -105,7 +105,6 @@ reasonable_classifications = [
     ("_slice_slice", "SliceRoot"),
     ("_slice_tuple", "SliceRoot"),
     ("Tuple", "SliceTuple"),
-    ("list", "[SliceRoot]"),
     ("Slice", "Slice"),
     ("Starred", "L"),
     ("Starred", "Starred"),
@@ -127,19 +126,20 @@ reasonable_classifications = [
     ("arguments", "As"),
     ("comprehension", "C"),
     ("keyword", "K"),
-    ("list", "A"),
-    ("list", "C"),
+    ("list", "[A]"),
+    ("list", "[C]"),
+    ("list", "[SliceRoot]"),
     ("list", "[E]"),
     ("list", "[StarredRoot]"),
-    ("list", "EH"),
+    ("list", "[EH]"),
     ("list", "[F]"),
-    ("list", "K"),
-    ("list", "L"),
-    ("list", "W"),
-    ("list", "O"),
-    ("list", "alias"),
-    ("list", "names"),
-    ("list", "TI"),
+    ("list", "[K]"),
+    ("list", "[L]"),
+    ("list", "[W]"),
+    ("list", "[O]"),
+    ("list", "[alias]"),
+    ("list", "[NameStr]"),
+    ("list", "[TI]"),
     ("/seq", "seqS"),
     ("withitem", "W"),
     ("const-None", "E"),
@@ -281,6 +281,14 @@ class DFATest(unittest.TestCase):
             dedent(
                 """
                 with x:
+                    pass
+                """
+            )
+        )
+        self.classify_elements_in_code(
+            dedent(
+                """
+                with x as y:
                     pass
                 """
             )

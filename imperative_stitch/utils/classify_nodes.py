@@ -25,7 +25,7 @@ EXCLUDED_TAGS = [
 
 TRANSITIONS = frozendict(
     {
-        "M": {ast.Module: {"body": "seqS", "type_ignores": "TI"}},
+        "M": {ast.Module: {"body": "seqS", "type_ignores": "[TI]"}},
         "S": {
             (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef): {
                 "body": "seqS",
@@ -35,13 +35,13 @@ TRANSITIONS = frozendict(
                 "args": "As",
                 "returns": "TA",
                 "type_comment": "TC",
-                "keywords": "K",
+                "keywords": "[K]",
             },
             ast.Return: {"value": "E"},
-            ast.Delete: {"targets": "L"},
+            ast.Delete: {"targets": "[L]"},
             (ast.Assign, ast.AugAssign, ast.AnnAssign): {
                 "value": "E",
-                "targets": "L",
+                "targets": "[L]",
                 "target": "L",
                 "type_comment": "TC",
                 "op": "O",
@@ -62,8 +62,8 @@ TRANSITIONS = frozendict(
                 "body": "seqS",
                 "orelse": "seqS",
                 "finalbody": "seqS",
-                "items": "W",
-                "handlers": "EH",
+                "items": "[W]",
+                "handlers": "[EH]",
                 "target": "L",
                 "type_comment": "TC",
             },
@@ -71,17 +71,17 @@ TRANSITIONS = frozendict(
             ast.Raise: {all: "E"},
             ast.Assert: {all: "E"},
             (ast.Import, ast.ImportFrom): {
-                "names": "alias",
+                "names": "[alias]",
                 "module": "NullableNameStr",
                 "level": "int",
             },
-            (ast.Global, ast.Nonlocal): {"names": "names"},
+            (ast.Global, ast.Nonlocal): {"names": "[NameStr]"},
             ast.Expr: {"value": "E"},
         },
         "E": {
             (ast.BoolOp, ast.BinOp, ast.UnaryOp, ast.Compare): {
                 "op": "O",
-                "ops": "O",
+                "ops": "[O]",
                 "comparators": "[E]",
                 "values": "[E]",
                 all: "E",
@@ -105,11 +105,11 @@ TRANSITIONS = frozendict(
                 all: "E",
             },
             (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp): {
-                "generators": "C",
+                "generators": "[C]",
                 all: "E",
             },
             ast.Call: {
-                "keywords": "K",
+                "keywords": "[K]",
                 "args": "[StarredRoot]",
                 all: "E",
             },
@@ -143,7 +143,8 @@ TRANSITIONS = frozendict(
         "As": {
             ast.arguments: {
                 ("kw_defaults", "defaults"): "[E]",
-                all: "A",
+                ("args", "posonlyargs", "kwonlyargs"): "[A]",
+                ("vararg", "kwarg"): "A",
             }
         },
         "A": {
@@ -181,8 +182,8 @@ TRANSITIONS = frozendict(
                 "id": "Name",
                 "ctx": "Ctx",
             },
-            ast.Tuple: {"elts": "L", "ctx": "Ctx"},
-            ast.List: {"elts": "L", "ctx": "Ctx"},
+            ast.Tuple: {"elts": "[L]", "ctx": "Ctx"},
+            ast.List: {"elts": "[L]", "ctx": "Ctx"},
             ast.Subscript: {"value": "E", "slice": "SliceRoot", "ctx": "Ctx"},
             ast.Attribute: {"value": "E", "attr": "NameStr", "ctx": "Ctx"},
             "list": "L",
@@ -193,7 +194,6 @@ TRANSITIONS = frozendict(
         "seqS": {},
         "[E]": {"list": "E"},
         "[StarredRoot]": {"list": "StarredRoot"},
-        "O": {"list": "O"},
         "alias": {
             "list": "alias",
             ast.alias: {
@@ -201,9 +201,18 @@ TRANSITIONS = frozendict(
                 "asname": "NullableNameStr",
             },
         },
-        "names": {"list": "NameStr"},
-        "[F]": {"list": "F"},
+        "[NameStr]": {"list": "NameStr"},
         "TA": {all: {all: "TA"}},
+        "[F]": {"list": "F"},
+        "[A]": {"list": "A"},
+        "[C]": {"list": "C"},
+        "[EH]": {"list": "EH"},
+        "[K]": {"list": "K"},
+        "[L]": {"list": "L"},
+        "[O]": {"list": "O"},
+        "[W]": {"list": "W"},
+        "[alias]": {"list": "alias"},
+        "[TI]": {"list": "TI"},
     }
 )
 
