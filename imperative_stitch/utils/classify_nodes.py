@@ -152,6 +152,7 @@ TRANSITIONS = frozendict(
             }
         },
         "L": {
+            ast.Name: {all: "X"},
             ast.Tuple: {all: "L"},
             ast.List: {all: "L"},
             ast.Subscript: {"value": "E", "slice": "SliceRoot"},
@@ -165,7 +166,7 @@ TRANSITIONS = frozendict(
         "listE": {"list": "E"},
         "listE_starrable": {"list": "StarredRoot"},
         "O": {"list": "O"},
-        "alias": {"list": "alias"},
+        "alias": {"list": "alias", ast.alias: {all: "X"}},
         "names": {"list": "X"},
         "listF": {"list": "F"},
     }
