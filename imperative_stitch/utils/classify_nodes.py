@@ -187,7 +187,9 @@ def compute_match(transition, key, default=None):
 
 def compute_transition(transitions, state, typ, fields):
     transition = transitions[state]
-    transition = compute_match(transition, typ, default={})
+    transition = compute_match(transition, typ, default=False)
+    if transition is False:
+        return None
     return [compute_match(transition, field, default="X") for field in fields]
 
 
@@ -229,9 +231,13 @@ def export_dfa(transitions=TRANSITIONS):
         result[state] = {}
         for tag in all_tags:
             t = getattr(ast, tag)
-            result[state][tag] = compute_transition(transitions, state, t, t._fields)
+            out = compute_transition(transitions, state, t, t._fields)
+            if out is not None:
+                result[state][tag] = out
         for tag in extras:
-            result[state][tag] = compute_transition(transitions, state, tag, [None])
+            out = compute_transition(transitions, state, tag, [None])
+            if out is not None:
+                result[state][tag] = out
 
         missing = (
             set(flatten_types(list(transitions[state])))
