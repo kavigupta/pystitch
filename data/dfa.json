@@ -146,7 +146,7 @@
     ],
     "Call": [
       "E",
-      "listE_starrable",
+      "[StarredRoot]",
       "K"
     ],
     "Compare": [
@@ -177,14 +177,14 @@
       "E"
     ],
     "JoinedStr": [
-      "listF"
+      "[F]"
     ],
     "Lambda": [
       "As",
       "E"
     ],
     "List": [
-      "listE_starrable",
+      "[StarredRoot]",
       "Ctx"
     ],
     "ListComp": [
@@ -200,7 +200,7 @@
       "E"
     ],
     "Set": [
-      "listE_starrable"
+      "[StarredRoot]"
     ],
     "SetComp": [
       "E",
@@ -216,7 +216,7 @@
       "Ctx"
     ],
     "Tuple": [
-      "listE_starrable",
+      "[StarredRoot]",
       "Ctx"
     ],
     "UnaryOp": [
@@ -249,14 +249,14 @@
   },
   "SliceTuple": {
     "Tuple": [
-      "listSliceRoot",
+      "[SliceRoot]",
       "Ctx"
     ],
     "list": [
       "SliceTuple"
     ]
   },
-  "listSliceRoot": {
+  "[SliceRoot]": {
     "list": [
       "SliceRoot"
     ]
@@ -326,7 +326,7 @@
       "F"
     ],
     "JoinedStr": [
-      "listF"
+      "[F]"
     ],
     "list": [
       "F"
@@ -421,7 +421,7 @@
       "E"
     ]
   },
-  "listE_starrable": {
+  "[StarredRoot]": {
     "list": [
       "StarredRoot"
     ]
@@ -445,7 +445,7 @@
       "NameStr"
     ]
   },
-  "listF": {
+  "[F]": {
     "list": [
       "F"
     ]

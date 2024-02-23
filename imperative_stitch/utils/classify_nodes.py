@@ -99,7 +99,7 @@ TRANSITIONS = frozendict(
                 ast.YieldFrom,
             ): {
                 "ctx": "Ctx",
-                "elts": "listE_starrable",
+                "elts": "[StarredRoot]",
                 "keys": "[E]",
                 "values": "[E]",
                 all: "E",
@@ -110,10 +110,10 @@ TRANSITIONS = frozendict(
             },
             ast.Call: {
                 "keywords": "K",
-                "args": "listE_starrable",
+                "args": "[StarredRoot]",
                 all: "E",
             },
-            ast.JoinedStr: {"values": "listF"},
+            ast.JoinedStr: {"values": "[F]"},
             ast.Constant: {"value": "Const", "kind": "ConstKind"},
             ast.Name: {"id": "Name", "ctx": "Ctx"},
             (ast.Attribute, ast.Subscript, ast.Starred): {
@@ -129,9 +129,9 @@ TRANSITIONS = frozendict(
             "_slice_tuple": {all: "SliceTuple"},
         },
         "SliceTuple": {
-            ast.Tuple: {"elts": "listSliceRoot", "ctx": "Ctx"},
+            ast.Tuple: {"elts": "[SliceRoot]", "ctx": "Ctx"},
         },
-        "listSliceRoot": {"list": "SliceRoot"},
+        "[SliceRoot]": {"list": "SliceRoot"},
         "StarredRoot": {
             "_starred_content": {all: "E"},
             "_starred_starred": {all: "Starred"},
@@ -152,7 +152,7 @@ TRANSITIONS = frozendict(
         "F": {
             ast.FormattedValue: {"value": "E", "format_spec": "F", "conversion": "int"},
             ast.Constant: {all: "F"},
-            ast.JoinedStr: {"values": "listF"},
+            ast.JoinedStr: {"values": "[F]"},
         },
         "C": {
             ast.comprehension: {
@@ -192,7 +192,7 @@ TRANSITIONS = frozendict(
         },
         "seqS": {},
         "[E]": {"list": "E"},
-        "listE_starrable": {"list": "StarredRoot"},
+        "[StarredRoot]": {"list": "StarredRoot"},
         "O": {"list": "O"},
         "alias": {
             "list": "alias",
@@ -202,7 +202,7 @@ TRANSITIONS = frozendict(
             },
         },
         "names": {"list": "NameStr"},
-        "listF": {"list": "F"},
+        "[F]": {"list": "F"},
         "TA": {all: {all: "TA"}},
     }
 )
