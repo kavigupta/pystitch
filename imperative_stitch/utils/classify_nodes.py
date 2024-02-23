@@ -195,7 +195,6 @@ TRANSITIONS = frozendict(
         "[E]": {"list": "E"},
         "[StarredRoot]": {"list": "StarredRoot"},
         "alias": {
-            "list": "alias",
             ast.alias: {
                 "name": "NameStr",
                 "asname": "NullableNameStr",
@@ -294,7 +293,8 @@ def export_dfa(transitions=TRANSITIONS):
         if missing:
             raise RuntimeError(f"in state {state}: missing {missing}")
 
-        result[state]["list"] = [transitions[state].get("list", state)]
+        if "list" in transitions[state]:
+            result[state]["list"] = [transitions[state]["list"]]
     result["seqS"]["/seq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
     return result

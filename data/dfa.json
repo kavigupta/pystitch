@@ -3,9 +3,6 @@
     "Module": [
       "seqS",
       "[TI]"
-    ],
-    "list": [
-      "M"
     ]
   },
   "S": {
@@ -119,9 +116,6 @@
       "seqS",
       "TC"
     ],
-    "list": [
-      "S"
-    ],
     "/splice": [
       "seqS"
     ]
@@ -228,9 +222,6 @@
     ],
     "YieldFrom": [
       "E"
-    ],
-    "list": [
-      "E"
     ]
   },
   "SliceRoot": {
@@ -242,18 +233,12 @@
     ],
     "_slice_tuple": [
       "SliceTuple"
-    ],
-    "list": [
-      "SliceRoot"
     ]
   },
   "SliceTuple": {
     "Tuple": [
       "[SliceRoot]",
       "Ctx"
-    ],
-    "list": [
-      "SliceTuple"
     ]
   },
   "[SliceRoot]": {
@@ -267,18 +252,12 @@
     ],
     "_starred_starred": [
       "Starred"
-    ],
-    "list": [
-      "StarredRoot"
     ]
   },
   "Starred": {
     "Starred": [
       "E",
       "Ctx"
-    ],
-    "list": [
-      "Starred"
     ]
   },
   "Slice": {
@@ -286,9 +265,6 @@
       "E",
       "E",
       "E"
-    ],
-    "list": [
-      "Slice"
     ]
   },
   "As": {
@@ -300,9 +276,6 @@
       "[E]",
       "A",
       "[E]"
-    ],
-    "list": [
-      "As"
     ]
   },
   "A": {
@@ -310,9 +283,6 @@
       "Name",
       "TA",
       "TC"
-    ],
-    "list": [
-      "A"
     ]
   },
   "F": {
@@ -327,9 +297,6 @@
     ],
     "JoinedStr": [
       "[F]"
-    ],
-    "list": [
-      "F"
     ]
   },
   "C": {
@@ -338,18 +305,12 @@
       "E",
       "[E]",
       "bool"
-    ],
-    "list": [
-      "C"
     ]
   },
   "K": {
     "keyword": [
       "NullableNameStr",
       "E"
-    ],
-    "list": [
-      "K"
     ]
   },
   "EH": {
@@ -357,18 +318,12 @@
       "E",
       "NullableName",
       "seqS"
-    ],
-    "list": [
-      "EH"
     ]
   },
   "W": {
     "withitem": [
       "E",
       "L"
-    ],
-    "list": [
-      "W"
     ]
   },
   "L": {
@@ -409,9 +364,6 @@
     ]
   },
   "seqS": {
-    "list": [
-      "seqS"
-    ],
     "/seq": [
       "S"
     ]
@@ -430,9 +382,6 @@
     "alias": [
       "NameStr",
       "NullableNameStr"
-    ],
-    "list": [
-      "alias"
     ]
   },
   "[NameStr]": {
@@ -798,9 +747,6 @@
       "TA"
     ],
     "_starred_starred": [
-      "TA"
-    ],
-    "list": [
       "TA"
     ]
   },
