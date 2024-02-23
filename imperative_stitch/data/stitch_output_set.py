@@ -40,7 +40,10 @@ def stitch_output_set(amount):
         s = datum["solutions"][:10]
         if len(json.dumps(s)) > 5000:
             continue
-        c = [python_to_s_exp(code, renderer_kwargs=dict(columns=float("inf"))) for code in s]
+        c = [
+            python_to_s_exp(code, renderer_kwargs=dict(columns=float("inf")))
+            for code in s
+        ]
 
         abstractions, rewritten = run_stitch_cached(c)
 
