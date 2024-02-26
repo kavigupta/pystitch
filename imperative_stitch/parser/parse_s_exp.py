@@ -2,7 +2,7 @@ import ast
 import base64
 import uuid
 
-from s_expression_parser import Pair, nil
+import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import (
     AbstractionCallAST,
@@ -20,17 +20,6 @@ from imperative_stitch.parser.parsed_ast import (
 )
 
 from .symbol import Symbol
-
-
-def pair_to_list(x):
-    """
-    Convert a pair to a list.
-    """
-    result = []
-    while x is not nil:
-        result.append(x.car)
-        x = x.cdr
-    return result
 
 
 def s_exp_leaf_to_value(x):
@@ -65,11 +54,11 @@ def s_exp_leaf_to_value(x):
     return False, None
 
 
-def s_exp_to_parsed_ast(x):
+def s_exp_to_parsed_ast(x: ns.SExpression):
     """
     Convert an s-expression (as pairs) to a parsed AST
     """
-    if x is nil or x == "nil":
+    if x == "nil":
         return ListAST([])
     if isinstance(x, str):
         if x.startswith("%"):
@@ -87,8 +76,8 @@ def s_exp_to_parsed_ast(x):
         typ = getattr(ast, x)
         assert not typ._fields
         return NodeAST(typ, [])
-    assert isinstance(x, Pair), str(type(x))
-    tag, *args = pair_to_list(x)
+    assert isinstance(x, ns.SExpression), str((type(x), x))
+    tag, args = x.symbol, x.children
     if tag.startswith("const-"):
         assert len(args) == 0
         is_leaf, leaf = s_exp_leaf_to_value(tag[len("const-") :])
