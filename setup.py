@@ -19,7 +19,6 @@ setuptools.setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "s-exp-parser==1.3.1",
         "datasets==2.10.1",
         "ast_scope>=0.4.2",
         "permacache>=3.7.0",

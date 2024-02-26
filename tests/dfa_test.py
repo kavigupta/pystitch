@@ -3,12 +3,15 @@ import json
 import unittest
 from textwrap import dedent
 
-from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
+import neurosym as ns
 
-from imperative_stitch.parser import python_to_s_exp
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.parser.symbol import Symbol
-from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
+from imperative_stitch.utils.classify_nodes import (
+    TRANSITIONS,
+    classify_nodes_in_program,
+    export_dfa,
+)
 from imperative_stitch.utils.recursion import limit_to_size
 
 from .utils import expand_with_slow_tests, small_set_examples
@@ -106,56 +109,14 @@ reasonable_classifications = [
 ]
 
 
-def to_list_nested(x):
-    if x is nil:
-        return []
-    if isinstance(x, Pair):
-        return [to_list_nested(x.car)] + to_list_nested(x.cdr)
-    return x
-
-
-def from_list_nested(x):
-    if not x:
-        return nil
-    if not isinstance(x, list):
-        return x
-    return Pair(from_list_nested(x[0]), from_list_nested(x[1:]))
-
-
-def classify(x, state, *, mutate):
-    if not isinstance(x, list):
-        return
-    yield x, state
-    tag = x[0]
-    if mutate:
-        x[0] += "::" + state
-    if not x[1:]:
-        return
-    if tag not in dfa[state]:
-        raise ValueError(f"Unknown state {tag} in {state}")
-    elements = dfa[state][tag]
-    for i, el in enumerate(x[1:]):
-        yield from classify(el, elements[i % len(elements)], mutate=mutate)
-
-
-def prep_for_classification(parsed_ast):
-    code = parsed_ast.to_s_exp()
-    # pylint: disable=unbalanced-tuple-unpacking
-    (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-    code = to_list_nested(code)
-    return code
-
-
-def classify_code(parsed_ast, start_state, *, mutate):
-    code = prep_for_classification(parsed_ast)
-    return list(classify(code, start_state, mutate=mutate))
-
-
 class TestClassifications(unittest.TestCase):
     def classify_in_code(self, code, start_state):
         classified = [
-            (Renderer().render(from_list_nested(x)), tag)
-            for x, tag in classify_code(code, start_state, mutate=False)
+            (ns.render_s_expression(x), tag)
+            for x, tag in classify_nodes_in_program(
+                dfa, code.to_ns_s_exp(dict()), start_state
+            )
+            if isinstance(x, ns.SExpression)
         ]
         print(classified)
         return classified
@@ -196,11 +157,15 @@ class DFATest(unittest.TestCase):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = prep_for_classification(ParsedAST.parse_python_module(code))
-            classified = classify(code, "M", mutate=False)
-            result = sorted({(x, state) for ((x, *_), state) in classified})
-            list(classify(code, "M", mutate=True))
-            print(code)
+            code = ParsedAST.parse_python_module(code).to_ns_s_exp(dict())
+            classified = classify_nodes_in_program(dfa, code, "M")
+            result = sorted(
+                {
+                    (x.symbol, state)
+                    for (x, state) in classified
+                    if isinstance(x, ns.SExpression)
+                }
+            )
             extras = set(result) - set(reasonable_classifications)
             if extras:
                 print(sorted(extras | set(reasonable_classifications)))
@@ -292,15 +257,14 @@ class TestExprNodeValidity(unittest.TestCase):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = python_to_s_exp(code)
-            print(code)
-            # pylint: disable=unbalanced-tuple-unpacking
-            (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-            code = to_list_nested(code)
+            code = ParsedAST.parse_python_module(code)
             e_nodes = [
-                x for x, state in classify(code, "M", mutate=False) if state == "E"
+                ns.render_s_expression(x)
+                for x, state in classify_nodes_in_program(
+                    dfa, code.to_ns_s_exp(dict()), "M"
+                )
+                if state == "E" and isinstance(x, ns.SExpression)
             ]
-            e_nodes = [Renderer().render(from_list_nested(x)) for x in e_nodes]
             return e_nodes
 
     def assertENodeReal(self, node):
