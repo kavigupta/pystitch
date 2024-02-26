@@ -441,12 +441,13 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
             dict()
         )
 
+        lines = body if isinstance(body, list) else [body]
         valid_nodes = {
             str(node)
-            for node, state in classify_nodes_in_program(dfa, convert(body), start)
+            for line in lines
+            for node, state in classify_nodes_in_program(dfa, convert(line), start)
             if state == "E"
         }
-        lines = body if isinstance(body, list) else [body]
         expressions = [
             x
             for line in lines
