@@ -151,6 +151,46 @@ def classify_code(parsed_ast, start_state, *, mutate):
     return list(classify(code, start_state, mutate=mutate))
 
 
+class TestClassifications(unittest.TestCase):
+    def classify_in_code(self, code, start_state):
+        classified = [
+            (Renderer().render(from_list_nested(x)), tag)
+            for x, tag in classify_code(code, start_state, mutate=False)
+        ]
+        print(classified)
+        return classified
+
+    def test_module_classify(self):
+        self.assertEqual(
+            self.classify_in_code(ParsedAST.parse_python_module("x = 2"), "M"),
+            [
+                (
+                    "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)",
+                    "M",
+                ),
+                (
+                    "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))",
+                    "seqS",
+                ),
+                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
+                ("(list (Name &x:0 Store))", "L"),
+                ("(Name &x:0 Store)", "L"),
+                ("(Constant i2 None)", "E"),
+            ],
+        )
+
+    def test_statement_classify(self):
+        self.assertEqual(
+            self.classify_in_code(ParsedAST.parse_python_statement("x = 2"), "S"),
+            [
+                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
+                ("(list (Name &x:0 Store))", "L"),
+                ("(Name &x:0 Store)", "L"),
+                ("(Constant i2 None)", "E"),
+            ],
+        )
+
+
 class DFATest(unittest.TestCase):
     def classify_elements_in_code(self, code):
         with limit_to_size(code):
@@ -192,6 +232,9 @@ class DFATest(unittest.TestCase):
                 """
             )
         )
+
+    def test_for(self):
+        self.classify_elements_in_code("for x in range(10): pass")
 
     def test_comparison(self):
         self.classify_elements_in_code("x == 2")
@@ -283,6 +326,17 @@ class TestExprNodeValidity(unittest.TestCase):
         e_nodes = self.e_nodes(code)
         for node in e_nodes:
             self.assertENodeReal(node)
+
+    def test_e_nodes_basic(self):
+        e_nodes = self.e_nodes("x == 2")
+        self.assertEqual(
+            e_nodes,
+            [
+                "(Compare (Name g_x Load) (list Eq) (list (Constant i2 None)))",
+                "(Name g_x Load)",
+                "(Constant i2 None)",
+            ],
+        )
 
     def test_slice(self):
         self.assertENodesReal("y = x[2:3]")
