@@ -42,7 +42,7 @@ reasonable_classifications = [
     ("DictComp", "E"),
     ("ExceptHandler", "EH"),
     ("Expr", "S"),
-    # ("For", "S"),
+    ("For", "S"),
     ("FormattedValue", "F"),
     ("FunctionDef", "S"),
     ("GeneratorExp", "E"),
