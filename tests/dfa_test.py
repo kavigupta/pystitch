@@ -152,46 +152,6 @@ class TestClassifications(unittest.TestCase):
         )
 
 
-class TestClassifications(unittest.TestCase):
-    def classify_in_code(self, code, start_state):
-        classified = [
-            (Renderer().render(from_list_nested(x)), tag)
-            for x, tag in classify_code(code, start_state, mutate=False)
-        ]
-        print(classified)
-        return classified
-
-    def test_module_classify(self):
-        self.assertEqual(
-            self.classify_in_code(ParsedAST.parse_python_module("x = 2"), "M"),
-            [
-                (
-                    "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)",
-                    "M",
-                ),
-                (
-                    "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))",
-                    "seqS",
-                ),
-                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
-                ("(list (Name &x:0 Store))", "L"),
-                ("(Name &x:0 Store)", "L"),
-                ("(Constant i2 None)", "E"),
-            ],
-        )
-
-    def test_statement_classify(self):
-        self.assertEqual(
-            self.classify_in_code(ParsedAST.parse_python_statement("x = 2"), "S"),
-            [
-                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
-                ("(list (Name &x:0 Store))", "L"),
-                ("(Name &x:0 Store)", "L"),
-                ("(Constant i2 None)", "E"),
-            ],
-        )
-
-
 class DFATest(unittest.TestCase):
     def classify_elements_in_code(self, code):
         with limit_to_size(code):
