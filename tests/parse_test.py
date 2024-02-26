@@ -28,7 +28,6 @@ class ParseUnparseInverseTest(unittest.TestCase):
             self.assert_valid_s_exp(y, no_leaves)
 
     def check_with_args(self, test_code, no_leaves=False):
-
         test_code = self.canonicalize(test_code)
         s_exp = python_to_s_exp(
             test_code, renderer_kwargs=dict(columns=80), no_leaves=no_leaves

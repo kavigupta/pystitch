@@ -4,6 +4,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List
+
 import neurosym as ns
 
 from ..utils.recursion import limit_to_size, no_recursionlimit
@@ -346,7 +347,9 @@ class ListAST(ParsedAST):
 
     def to_ns_s_exp(self, config):
         if not self.children:
-            return ns.SExpression("list", []) if config.get("no_leaves", False) else "nil"
+            return (
+                ns.SExpression("list", []) if config.get("no_leaves", False) else "nil"
+            )
 
         return ns.SExpression("list", [x.to_ns_s_exp(config) for x in self.children])
 
@@ -551,12 +554,8 @@ class StarrableElementAST(ParsedAST):
         assert isinstance(self.content, NodeAST), self.content
         content: NodeAST = self.content
         if content.typ is ast.Starred:
-            return ns.SExpression(
-                "_starred_starred", [content.to_ns_s_exp(config)]
-            )
-        return ns.SExpression(
-            "_starred_content", [self.content.to_ns_s_exp(config)]
-        )
+            return ns.SExpression("_starred_starred", [content.to_ns_s_exp(config)])
+        return ns.SExpression("_starred_content", [self.content.to_ns_s_exp(config)])
 
     def to_python_ast(self):
         return self.content.to_python_ast()
@@ -566,4 +565,3 @@ class StarrableElementAST(ParsedAST):
 
     def map(self, fn):
         return fn(StarrableElementAST(self.content.map(fn)))
-

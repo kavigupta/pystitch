@@ -1,9 +1,8 @@
 import ast
 import json
 
-from frozendict import frozendict
-
 import neurosym as ns
+from frozendict import frozendict
 
 # exclude these tags from the dfa. these are all python 3.10+ features,
 # and for consistency across python versions, we exclude them. We can

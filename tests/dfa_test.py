@@ -4,8 +4,7 @@ import unittest
 from textwrap import dedent
 
 import neurosym as ns
-
-from s_expression_parser import ParserConfig, Pair, Renderer, nil, parse
+from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
 
 from imperative_stitch.parser import python_to_s_exp
 from imperative_stitch.parser.parsed_ast import ParsedAST
