@@ -7,6 +7,7 @@ from imperative_stitch.analyze_program.extract.errors import (
 )
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.ast_utils import ReplaceNodes
+from imperative_stitch.utils.classify_nodes import classify_nodes_in_program
 
 from .extract_test import GenericExtractRealisticTest, GenericExtractTest
 from .utils import expand_with_slow_tests, small_set_examples
@@ -434,15 +435,15 @@ class RewriteTest(GenericExtractTest):
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
-        from .dfa_test import classify, prep_for_classification
+        from .dfa_test import dfa
 
-        convert = lambda b: prep_for_classification(
-            ParsedAST.from_python_ast(b, descoper={})
+        convert = lambda b: ParsedAST.from_python_ast(b, descoper={}).to_ns_s_exp(
+            dict()
         )
 
         valid_nodes = {
             str(node)
-            for node, state in classify(convert(body), start, mutate=False)
+            for node, state in classify_nodes_in_program(dfa, convert(body), start)
             if state == "E"
         }
         lines = body if isinstance(body, list) else [body]

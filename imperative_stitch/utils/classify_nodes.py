@@ -3,6 +3,8 @@ import json
 
 from frozendict import frozendict
 
+import neurosym as ns
+
 # exclude these tags from the dfa. these are all python 3.10+ features,
 # and for consistency across python versions, we exclude them. We can
 # add them back in later if we want to support them.
@@ -277,6 +279,19 @@ def export_dfa(transitions=TRANSITIONS):
     result["seqS"]["/seq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
     return result
+
+
+def classify_nodes_in_program(dfa, node, state):
+    if not isinstance(node, (ns.SExpression, str)):
+        raise ValueError(f"expected SExpression or str, got {node}")
+    yield node, state
+    if not isinstance(node, ns.SExpression):
+        return
+    dfa_states = dfa[state][node.symbol]
+    for i, child in enumerate(node.children):
+        yield from classify_nodes_in_program(
+            dfa, child, dfa_states[i % len(dfa_states)]
+        )
 
 
 if __name__ == "__main__":

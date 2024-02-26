@@ -3,12 +3,18 @@ import json
 import unittest
 from textwrap import dedent
 
-from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
+import neurosym as ns
+
+from s_expression_parser import ParserConfig, Pair, Renderer, nil, parse
 
 from imperative_stitch.parser import python_to_s_exp
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.parser.symbol import Symbol
-from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
+from imperative_stitch.utils.classify_nodes import (
+    TRANSITIONS,
+    classify_nodes_in_program,
+    export_dfa,
+)
 from imperative_stitch.utils.recursion import limit_to_size
 
 from .utils import expand_with_slow_tests, small_set_examples
@@ -149,6 +155,49 @@ def prep_for_classification(parsed_ast):
 def classify_code(parsed_ast, start_state, *, mutate):
     code = prep_for_classification(parsed_ast)
     return list(classify(code, start_state, mutate=mutate))
+
+
+class TestClassifications(unittest.TestCase):
+    def classify_in_code(self, code, start_state):
+        classified = [
+            (ns.render_s_expression(x), tag)
+            for x, tag in classify_nodes_in_program(
+                dfa, code.to_ns_s_exp(dict()), start_state
+            )
+            if isinstance(x, ns.SExpression)
+        ]
+        print(classified)
+        return classified
+
+    def test_module_classify(self):
+        self.assertEqual(
+            self.classify_in_code(ParsedAST.parse_python_module("x = 2"), "M"),
+            [
+                (
+                    "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)",
+                    "M",
+                ),
+                (
+                    "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))",
+                    "seqS",
+                ),
+                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
+                ("(list (Name &x:0 Store))", "L"),
+                ("(Name &x:0 Store)", "L"),
+                ("(Constant i2 None)", "E"),
+            ],
+        )
+
+    def test_statement_classify(self):
+        self.assertEqual(
+            self.classify_in_code(ParsedAST.parse_python_statement("x = 2"), "S"),
+            [
+                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
+                ("(list (Name &x:0 Store))", "L"),
+                ("(Name &x:0 Store)", "L"),
+                ("(Constant i2 None)", "E"),
+            ],
+        )
 
 
 class DFATest(unittest.TestCase):

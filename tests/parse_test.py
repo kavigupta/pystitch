@@ -16,6 +16,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
 
     def assert_valid_s_exp(self, s_exp, no_leaves):
         if not isinstance(s_exp, ns.SExpression):
+            assert isinstance(s_exp, str)
             if no_leaves:
                 self.fail(f"leaf: {s_exp}")
             return
@@ -27,16 +28,13 @@ class ParseUnparseInverseTest(unittest.TestCase):
             self.assert_valid_s_exp(y, no_leaves)
 
     def check_with_args(self, test_code, no_leaves=False):
-        from .dfa_test import to_list_nested
 
         test_code = self.canonicalize(test_code)
         s_exp = python_to_s_exp(
             test_code, renderer_kwargs=dict(columns=80), no_leaves=no_leaves
         )
         with no_recursionlimit():
-            self.assert_valid_s_exp(
-                to_list_nested(ns.parse_s_expression(s_exp)), no_leaves=no_leaves
-            )
+            self.assert_valid_s_exp(ns.parse_s_expression(s_exp), no_leaves=no_leaves)
         s_exp_parsed = ParsedAST.parse_s_expression(s_exp)
         print(repr(s_exp_parsed))
         modified = s_exp_to_python(s_exp)
