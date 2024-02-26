@@ -307,6 +307,9 @@ def classify_nodes_in_program(dfa, node, state):
     yield node, state
     if not isinstance(node, ns.SExpression):
         return
+    if not node.children:
+        # avoid looking up dfa[state][tag] when there are no children; allows sparser dfa
+        return
     dfa_states = dfa[state][node.symbol]
     for i, child in enumerate(node.children):
         yield from classify_nodes_in_program(

@@ -209,47 +209,11 @@ class TestClassifications(unittest.TestCase):
                     "seqS",
                 ),
                 ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
-                ("(list (Name &x:0 Store))", "L"),
+                ("(list (Name &x:0 Store))", "[L]"),
                 ("(Name &x:0 Store)", "L"),
                 ("(Constant i2 None)", "E"),
             ],
         )
-
-def from_list_nessted(x):
-    if not x:
-        return nil
-    if not isinstance(x, list):
-        return x
-    return Pair(from_list_nested(x[0]), from_list_nested(x[1:]))
-
-
-def classify(x, state, *, mutate):
-    if not isinstance(x, list):
-        return
-    yield x, state
-    tag = x[0]
-    if mutate:
-        x[0] += "::" + state
-    if not x[1:]:
-        return
-    if tag not in dfa[state]:
-        raise ValueError(f"Unknown state {tag} in {state}")
-    elements = dfa[state][tag]
-    for i, el in enumerate(x[1:]):
-        yield from classify(el, elements[i % len(elements)], mutate=mutate)
-
-
-def prep_for_classification(parsed_ast, **kwargs):
-    code = parsed_ast.to_s_exp(**kwargs)
-    # pylint: disable=unbalanced-tuple-unpacking
-    (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-    code = to_list_nested(code)
-    return code
-
-
-def classify_code(parsed_ast, start_state, *, mutate):
-    code = prep_for_classification(parsed_ast)
-    return list(classify(code, start_state, mutate=mutate))
 
 
 class DFATest(unittest.TestCase):
@@ -264,12 +228,15 @@ class DFATest(unittest.TestCase):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = prep_for_classification(
-                ParsedAST.parse_python_module(code), **kwargs
+            code = ParsedAST.parse_python_module(code).to_ns_s_exp(kwargs)
+            classified = classify_nodes_in_program(dfa, code, "M")
+            result = sorted(
+                {
+                    (x.symbol, state)
+                    for (x, state) in classified
+                    if isinstance(x, ns.SExpression)
+                }
             )
-            classified = classify(code, "M", mutate=False)
-            result = sorted({(x, state) for ((x, *_), state) in classified})
-            list(classify(code, "M", mutate=True))
             print(code)
             for x, state in result:
                 self.check_reasonable_classification(x, state)
