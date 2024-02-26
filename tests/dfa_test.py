@@ -297,15 +297,14 @@ class TestExprNodeValidity(unittest.TestCase):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = python_to_s_exp(code)
-            print(code)
-            # pylint: disable=unbalanced-tuple-unpacking
-            (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-            code = to_list_nested(code)
+            code = ParsedAST.parse_python_module(code)
             e_nodes = [
-                x for x, state in classify(code, "M", mutate=False) if state == "E"
+                ns.render_s_expression(x)
+                for x, state in classify_nodes_in_program(
+                    dfa, code.to_ns_s_exp(dict()), "M"
+                )
+                if state == "E" and isinstance(x, ns.SExpression)
             ]
-            e_nodes = [Renderer().render(from_list_nested(x)) for x in e_nodes]
             return e_nodes
 
     def assertENodeReal(self, node):
@@ -331,6 +330,17 @@ class TestExprNodeValidity(unittest.TestCase):
         e_nodes = self.e_nodes(code)
         for node in e_nodes:
             self.assertENodeReal(node)
+
+    def test_e_nodes_basic(self):
+        e_nodes = self.e_nodes("x == 2")
+        self.assertEqual(
+            e_nodes,
+            [
+                "(Compare (Name g_x Load) (list Eq) (list (Constant i2 None)))",
+                "(Name g_x Load)",
+                "(Constant i2 None)",
+            ],
+        )
 
     def test_slice(self):
         self.assertENodesReal("y = x[2:3]")
