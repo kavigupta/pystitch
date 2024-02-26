@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import List
 
 import neurosym as ns
+from s_expression_parser import ParserConfig, parse
 
 from ..utils.recursion import limit_to_size, no_recursionlimit
 from .splice import Splice
@@ -565,3 +566,10 @@ class StarrableElementAST(ParsedAST):
 
     def map(self, fn):
         return fn(StarrableElementAST(self.content.map(fn)))
+
+
+def s_exp_from_string(code):
+    # pylint: disable=unbalanced-tuple-unpacking
+    with limit_to_size(code):
+        (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
+    return code
