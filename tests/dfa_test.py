@@ -214,7 +214,7 @@ class TestClassifications(unittest.TestCase):
                 ("(Constant i2 None)", "E"),
             ],
         )
-    
+
     def test_statement_classify(self):
         self.assertEqual(
             self.classify_in_code(ParsedAST.parse_python_statement("x = 2"), "S"),
