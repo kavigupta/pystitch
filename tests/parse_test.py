@@ -1,8 +1,9 @@
 import ast
 import unittest
 
+import neurosym as ns
+
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
-from imperative_stitch.parser.parsed_ast import s_exp_from_string
 from imperative_stitch.utils.recursion import no_recursionlimit
 from tests.abstraction_test import assertSameCode
 
@@ -14,15 +15,15 @@ class ParseUnparseInverseTest(unittest.TestCase):
         return ast.unparse(ast.parse(python_code))
 
     def assert_valid_s_exp(self, s_exp, no_leaves):
-        if not isinstance(s_exp, list) or not s_exp:
+        if not isinstance(s_exp, ns.SExpression):
             if no_leaves:
                 self.fail(f"leaf: {s_exp}")
             return
-        if s_exp[0] not in {"/seq"}:
-            self.assertTrue(isinstance(s_exp[0], str), repr(s_exp[0]))
+        if s_exp.symbol not in {"/seq"}:
+            self.assertTrue(isinstance(s_exp.symbol, str), repr(s_exp.symbol))
             if not no_leaves:
-                self.assertTrue(len(s_exp) > 1, repr(s_exp))
-        for y in s_exp[1:]:
+                self.assertTrue(len(s_exp.children) >= 1, repr(s_exp))
+        for y in s_exp.children:
             self.assert_valid_s_exp(y, no_leaves)
 
     def check_with_args(self, test_code, no_leaves=False):
@@ -34,7 +35,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         )
         with no_recursionlimit():
             self.assert_valid_s_exp(
-                to_list_nested(s_exp_from_string(s_exp)), no_leaves=no_leaves
+                to_list_nested(ns.parse_s_expression(s_exp)), no_leaves=no_leaves
             )
         s_exp_parsed = ParsedAST.parse_s_expression(s_exp)
         print(repr(s_exp_parsed))
