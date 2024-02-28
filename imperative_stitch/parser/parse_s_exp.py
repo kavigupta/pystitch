@@ -78,6 +78,8 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
         return NodeAST(typ, [])
     assert isinstance(x, ns.SExpression), str((type(x), x))
     tag, args = x.symbol, x.children
+    # remove any type information
+    tag = tag.split(".")[0]
     if tag.startswith("const-"):
         assert len(args) == 0
         is_leaf, leaf = s_exp_leaf_to_value(tag[len("const-") :])
