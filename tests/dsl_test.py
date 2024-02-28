@@ -9,7 +9,7 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
-from .utils import assertDSL
+from .utils import assertDSL, expand_with_slow_tests, small_set_examples
 
 
 class SubsetTest(unittest.TestCase):
@@ -128,16 +128,22 @@ class ProduceDslTest(unittest.TestCase):
         )
 
 
+def fit_to(programs):
+    dfa = export_dfa(TRANSITIONS)
+    programs = [ParsedAST.parse_python_module(p) for p in programs]
+    subset = DSLSubset.from_program(dfa, *programs, root="M")
+    dsl = create_dsl(export_dfa(TRANSITIONS), subset)
+    fam = ns.BigramProgramDistributionFamily(dsl)
+    counts = fam.count_programs(
+        [[program.to_type_annotated_ns_s_exp(dfa) for program in programs]]
+    )
+    dist = fam.counts_to_distribution(counts)
+    return fam, dist
+
+
 class EnumerateFittedDslTest(unittest.TestCase):
     def enumerate(self, *programs):
-        programs = [ParsedAST.parse_python_module(p) for p in programs]
-        subset = DSLSubset.from_program(self.dfa, *programs, root="M")
-        dsl = create_dsl(export_dfa(TRANSITIONS), subset)
-        fam = ns.BigramProgramDistributionFamily(dsl)
-        counts = fam.count_programs(
-            [[program.to_type_annotated_ns_s_exp(self.dfa) for program in programs]]
-        )
-        dist = fam.counts_to_distribution(counts)
+        fam, dist = fit_to(programs)
         out = [
             (
                 Fraction.from_float(np.exp(y)).limit_denominator(),
@@ -148,9 +154,6 @@ class EnumerateFittedDslTest(unittest.TestCase):
         out = sorted(out, key=lambda x: (-x[0], x[1]))
         print(out)
         return out
-
-    def setUp(self):
-        self.dfa = export_dfa(TRANSITIONS)
 
     def test_enumerate_fitted_dsl_basic(self):
         self.assertEqual(
