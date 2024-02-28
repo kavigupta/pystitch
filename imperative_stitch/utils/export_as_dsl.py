@@ -9,7 +9,7 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 
 from .classify_nodes import classify_nodes_in_program
 
-SEPARATOR = "::"
+SEPARATOR = "~"
 
 
 @dataclass
@@ -17,16 +17,16 @@ class DSLSubset:
     """
     Represents a subset of the python DSL. This is represented as
         - a dictionary from sequential type to a list of lengths.
-        - a dictionary from types to a list of constants of that type
+        - a dictionary from types to a list of leaves of that type
     """
 
     lengths_by_sequence_type: Dict[str, List[int]]
-    constants: Dict[str, List[str]]
+    leaves: Dict[str, List[str]]
 
     @classmethod
     def from_program(cls, dfa, *programs: Tuple[ParsedAST, ...], root: str):
         lengths_by_list_type = defaultdict(set)
-        constants = defaultdict(set)
+        leaves = defaultdict(set)
         for program in programs:
             code = program.to_ns_s_exp(dict(no_leaves=True))
             for node, state in list(classify_nodes_in_program(dfa, code, root)):
@@ -34,12 +34,12 @@ class DSLSubset:
                 if is_sequence_type(state):
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0:
-                    constants[state].add(node.symbol)
+                    leaves[state].add(node.symbol)
         return cls(
             lengths_by_sequence_type={
                 k: sorted(v) for k, v in lengths_by_list_type.items()
             },
-            constants={k: sorted(v) for k, v in constants.items()},
+            leaves={k: sorted(v) for k, v in leaves.items()},
         )
 
 
@@ -83,8 +83,8 @@ def create_dsl(dfa, dsl_subset):
                 dslf.concrete(
                     prod + SEPARATOR + clean_type(target), ns.render_type(typ), None
                 )
-    for target, constants in dsl_subset.constants.items():
-        for constant in constants:
+    for target, leaves in dsl_subset.leaves.items():
+        for constant in leaves:
             typ = ns.ArrowType((), ns.parse_type(target))
             dslf.concrete(constant + SEPARATOR + target, ns.render_type(typ), None)
     dslf.prune_to("M", tolerate_pruning_entire_productions=True)
