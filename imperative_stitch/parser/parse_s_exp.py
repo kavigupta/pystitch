@@ -18,6 +18,7 @@ from imperative_stitch.parser.parsed_ast import (
     StarrableElementAST,
     SymvarAST,
 )
+from imperative_stitch.utils.export_as_dsl import SEPARATOR
 
 from .symbol import Symbol
 
@@ -79,7 +80,7 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
     assert isinstance(x, ns.SExpression), str((type(x), x))
     tag, args = x.symbol, x.children
     # remove any type information
-    tag = tag.split(".")[0]
+    tag = tag.split(SEPARATOR)[0]
     if tag.startswith("const-"):
         assert len(args) == 0
         is_leaf, leaf = s_exp_leaf_to_value(tag[len("const-") :])
