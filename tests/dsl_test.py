@@ -9,7 +9,7 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
-from .utils import assertDSL, expand_with_slow_tests, small_set_examples
+from .utils import assertDSL
 
 
 class SubsetTest(unittest.TestCase):
