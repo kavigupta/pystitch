@@ -1,7 +1,7 @@
 import ast
-from textwrap import dedent
 import unittest
 from fractions import Fraction
+from textwrap import dedent
 
 import neurosym as ns
 import numpy as np
@@ -11,7 +11,7 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
-from .utils import assertDSL
+from .utils import assertDSL, expand_with_slow_tests, small_set_examples
 
 
 class SubsetTest(unittest.TestCase):
