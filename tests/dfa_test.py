@@ -1,5 +1,6 @@
 import ast
 import json
+import re
 import unittest
 from textwrap import dedent
 
@@ -40,6 +41,40 @@ reasonable_classifications = [
     ("Delete", "S"),
     ("Dict", "E"),
     ("DictComp", "E"),
+    *[
+        (x, "O")
+        for x in [
+            "Add",
+            "Sub",
+            "Mult",
+            "MatMult",
+            "Div",
+            "Mod",
+            "Pow",
+            "LShift",
+            "RShift",
+            "BitOr",
+            "BitXor",
+            "BitAnd",
+            "FloorDiv",
+            "Invert",
+            "Not",
+            "UAdd",
+            "USub",
+            "Eq",
+            "NotEq",
+            "Lt",
+            "LtE",
+            "Gt",
+            "GtE",
+            "Is",
+            "IsNot",
+            "In",
+            "NotIn",
+            "And",
+            "Or",
+        ]
+    ],
     ("ExceptHandler", "EH"),
     ("Expr", "S"),
     ("For", "S"),
@@ -62,15 +97,17 @@ reasonable_classifications = [
     ("Name", "L"),
     ("NamedExpr", "E"),
     ("Nonlocal", "S"),
+    ("Pass", "S"),
     ("Raise", "S"),
     ("Return", "S"),
+    ("Break", "S"),
+    ("Continue", "S"),
     ("Set", "E"),
     ("SetComp", "E"),
     ("_slice_content", "SliceRoot"),
     ("_slice_slice", "SliceRoot"),
     ("_slice_tuple", "SliceRoot"),
     ("Tuple", "SliceTuple"),
-    ("list", "listSliceRoot"),
     ("Slice", "Slice"),
     ("Starred", "L"),
     ("Starred", "Starred"),
@@ -92,20 +129,58 @@ reasonable_classifications = [
     ("arguments", "As"),
     ("comprehension", "C"),
     ("keyword", "K"),
-    ("list", "A"),
-    ("list", "C"),
-    ("list", "listE"),
-    ("list", "listE_starrable"),
-    ("list", "EH"),
-    ("list", "listF"),
-    ("list", "K"),
-    ("list", "L"),
-    ("list", "W"),
-    ("list", "O"),
-    ("list", "alias"),
-    ("list", "names"),
+    ("list", "[A]"),
+    ("list", "[C]"),
+    ("list", "[SliceRoot]"),
+    ("list", "[E]"),
+    ("list", "[StarredRoot]"),
+    ("list", "[EH]"),
+    ("list", "[F]"),
+    ("list", "[K]"),
+    ("list", "[L]"),
+    ("list", "[W]"),
+    ("list", "[O]"),
+    ("list", "[alias]"),
+    ("list", "[NameStr]"),
+    ("list", "[TI]"),
     ("/seq", "seqS"),
     ("withitem", "W"),
+    ("const-None", "E"),
+    # formatting
+    ("const-None", "F"),
+    ("const-s.*", "F"),
+    # vararg
+    ("const-None", "A"),
+    # type
+    (".*", "TA"),
+    ("const-None", "TC"),
+    # left value
+    ("const-None", "L"),
+    # Load/Store/Del
+    ("Load", "Ctx"),
+    ("Store", "Ctx"),
+    ("Del", "Ctx"),
+    # name
+    ("const-[&g].*", "Name"),
+    ("const-[&g].*", "NullableName"),
+    ("const-None", "NullableName"),
+    ("const-s.*", "NameStr"),
+    ("const-[&g].*", "NameStr"),  # imports
+    ("const-s.*", "NullableNameStr"),
+    ("const-None", "NullableNameStr"),
+    ("const-[&g].*", "NullableNameStr"),
+    # values
+    ("const-None", "Const"),
+    ("const-True", "Const"),
+    ("const-False", "Const"),
+    ("const-Ellipsis", "Const"),
+    ("const-[sbijf].*", "Const"),
+    # constkind
+    ("const-None", "ConstKind"),
+    ("const-s.*", "ConstKind"),
+    # constants
+    ("const-i[01]", "bool"),
+    ("const-i.*", "int"),
 ]
 
 
@@ -134,7 +209,7 @@ class TestClassifications(unittest.TestCase):
                     "seqS",
                 ),
                 ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
-                ("(list (Name &x:0 Store))", "L"),
+                ("(list (Name &x:0 Store))", "[L]"),
                 ("(Name &x:0 Store)", "L"),
                 ("(Constant i2 None)", "E"),
             ],
@@ -144,8 +219,11 @@ class TestClassifications(unittest.TestCase):
         self.assertEqual(
             self.classify_in_code(ParsedAST.parse_python_statement("x = 2"), "S"),
             [
-                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
-                ("(list (Name &x:0 Store))", "L"),
+                (
+                    "(Assign (list (Name &x:0 Store)) (Constant i2 None) None)",
+                    "S",
+                ),
+                ("(list (Name &x:0 Store))", "[L]"),
                 ("(Name &x:0 Store)", "L"),
                 ("(Constant i2 None)", "E"),
             ],
@@ -153,11 +231,18 @@ class TestClassifications(unittest.TestCase):
 
 
 class DFATest(unittest.TestCase):
-    def classify_elements_in_code(self, code):
+    def check_reasonable_classification(self, tag_to_check, state_to_check):
+        for tag, state in reasonable_classifications:
+            mat = re.match("^" + tag + "$", tag_to_check)
+            if mat and state == state_to_check:
+                return
+        self.fail(f"Unknown classification {tag_to_check} {state_to_check}")
+
+    def classify_elements_in_code_with_config(self, code, **kwargs):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = ParsedAST.parse_python_module(code).to_ns_s_exp(dict())
+            code = ParsedAST.parse_python_module(code).to_ns_s_exp(kwargs)
             classified = classify_nodes_in_program(dfa, code, "M")
             result = sorted(
                 {
@@ -166,16 +251,55 @@ class DFATest(unittest.TestCase):
                     if isinstance(x, ns.SExpression)
                 }
             )
-            extras = set(result) - set(reasonable_classifications)
-            if extras:
-                print(sorted(extras | set(reasonable_classifications)))
-                self.fail(f"Extras found in classification {extras}")
+            print(code)
+            for x, state in result:
+                self.check_reasonable_classification(x, state)
+
+    def classify_elements_in_code(self, code):
+        self.classify_elements_in_code_with_config(code)
+        self.classify_elements_in_code_with_config(code, no_leaves=True)
 
     @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         code = small_set_examples()[i]
         for element in ast.parse(code).body:
             self.classify_elements_in_code(ast.unparse(element))
+
+    def test_function(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                def f(x):
+                    pass
+                """
+            )
+        )
+        self.classify_elements_in_code(
+            dedent(
+                """
+                def f(x, *y, z=2, **w):
+                    pass
+                """
+            )
+        )
+
+    def test_with(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                with x:
+                    pass
+                """
+            )
+        )
+        self.classify_elements_in_code(
+            dedent(
+                """
+                with x as y:
+                    pass
+                """
+            )
+        )
 
     def test_annotation(self):
         self.classify_elements_in_code(
@@ -198,14 +322,31 @@ class DFATest(unittest.TestCase):
             )
         )
 
-    def test_for(self):
-        self.classify_elements_in_code("for x in range(10): pass")
+    def test_exception(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                try:
+                    x = 2
+                except:
+                    pass
+                """
+            )
+        )
 
     def test_comparison(self):
         self.classify_elements_in_code("x == 2")
 
+    def test_keyword(self):
+        self.classify_elements_in_code("f(x=2)")
+
     def test_aug_assign(self):
         self.classify_elements_in_code("(x := 2)")
+
+    def test_assign(self):
+        self.classify_elements_in_code("x = 2")
+        self.classify_elements_in_code("x = 2, 3")
+        self.classify_elements_in_code("x += 2")
 
     def test_tuple(self):
         self.classify_elements_in_code("(2, 3)")
@@ -230,10 +371,14 @@ class DFATest(unittest.TestCase):
         self.classify_elements_in_code("[2, 3, *x]")
         self.classify_elements_in_code("{2, 3, *x}")
 
+    def test_kwstarred(self):
+        self.classify_elements_in_code("f(2, 3, **x)")
+
     def test_import(self):
         self.classify_elements_in_code("import x")
         self.classify_elements_in_code("from x import y")
         self.classify_elements_in_code("from x import y as z")
+        self.classify_elements_in_code("from . import x")
 
     def test_global_nonlocal(self):
         self.classify_elements_in_code("global x")
@@ -241,6 +386,12 @@ class DFATest(unittest.TestCase):
 
     def test_joined_str(self):
         self.classify_elements_in_code("f'2 {459.67:.1f}'")
+
+    def test_type_annotation(self):
+        self.classify_elements_in_code("x: int = 2")
+        self.classify_elements_in_code("def f(x: int) -> int: pass")
+        self.classify_elements_in_code("x: List[int] = []")
+        self.classify_elements_in_code("x: Tuple[int, int] = (x, y)")
 
     def test_code(self):
         self.classify_elements_in_code(

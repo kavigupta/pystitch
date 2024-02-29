@@ -26,28 +26,28 @@ EXCLUDED_TAGS = [
 
 TRANSITIONS = frozendict(
     {
-        "M": {ast.Module: {"body": "seqS", "type_ignores": "X"}},
+        "M": {ast.Module: {"body": "seqS", "type_ignores": "[TI]"}},
         "S": {
             (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef): {
                 "body": "seqS",
-                "decorator_list": "listE",
-                "bases": "listE",
-                "name": "X",
+                "decorator_list": "[E]",
+                "bases": "[E]",
+                "name": "Name",
                 "args": "As",
-                "returns": "E",
-                "type_comment": "X",
-                "keywords": "K",
+                "returns": "TA",
+                "type_comment": "TC",
+                "keywords": "[K]",
             },
             ast.Return: {"value": "E"},
-            ast.Delete: {"targets": "L"},
+            ast.Delete: {"targets": "[L]"},
             (ast.Assign, ast.AugAssign, ast.AnnAssign): {
                 "value": "E",
-                "targets": "L",
+                "targets": "[L]",
                 "target": "L",
-                "type_comment": "X",
-                "op": "X",
-                "annotation": "E",
-                "simple": "X",
+                "type_comment": "TC",
+                "op": "O",
+                "annotation": "TA",
+                "simple": "bool",
             },
             (
                 ast.For,
@@ -63,24 +63,28 @@ TRANSITIONS = frozendict(
                 "body": "seqS",
                 "orelse": "seqS",
                 "finalbody": "seqS",
-                "items": "W",
-                "handlers": "EH",
+                "items": "[W]",
+                "handlers": "[EH]",
                 "target": "L",
-                "type_comment": "X",
+                "type_comment": "TC",
             },
             #         ast.Match: {"subject": "E", "cases": "C"},
             ast.Raise: {all: "E"},
             ast.Assert: {all: "E"},
-            (ast.Import, ast.ImportFrom): {"names": "alias"},
-            (ast.Global, ast.Nonlocal): {"names": "names"},
+            (ast.Import, ast.ImportFrom): {
+                "names": "[alias]",
+                "module": "NullableNameStr",
+                "level": "int",
+            },
+            (ast.Global, ast.Nonlocal): {"names": "[NameStr]"},
             ast.Expr: {"value": "E"},
         },
         "E": {
             (ast.BoolOp, ast.BinOp, ast.UnaryOp, ast.Compare): {
                 "op": "O",
-                "ops": "O",
-                "comparators": "listE",
-                "values": "listE",
+                "ops": "[O]",
+                "comparators": "[E]",
+                "values": "[E]",
                 all: "E",
             },
             ast.NamedExpr: {"value": "E", "target": "L"},
@@ -95,27 +99,29 @@ TRANSITIONS = frozendict(
                 ast.Yield,
                 ast.YieldFrom,
             ): {
-                "ctx": "X",
-                "elts": "listE_starrable",
-                "keys": "listE",
-                "values": "listE",
+                "ctx": "Ctx",
+                "elts": "[StarredRoot]",
+                "keys": "[E]",
+                "values": "[E]",
                 all: "E",
             },
             (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp): {
-                "generators": "C",
+                "generators": "[C]",
                 all: "E",
             },
             ast.Call: {
-                "keywords": "K",
-                "args": "listE_starrable",
+                "keywords": "[K]",
+                "args": "[StarredRoot]",
                 all: "E",
             },
-            ast.JoinedStr: {"values": "listF"},
-            (ast.Constant, ast.Name, ast.AnnAssign): {all: "X"},
+            ast.JoinedStr: {"values": "[F]"},
+            ast.Constant: {"value": "Const", "kind": "ConstKind"},
+            ast.Name: {"id": "Name", "ctx": "Ctx"},
             (ast.Attribute, ast.Subscript, ast.Starred): {
                 "value": "E",
+                "attr": "NameStr",
                 "slice": "SliceRoot",
-                all: "X",
+                "ctx": "Ctx",
             },
         },
         "SliceRoot": {
@@ -124,45 +130,45 @@ TRANSITIONS = frozendict(
             "_slice_tuple": {all: "SliceTuple"},
         },
         "SliceTuple": {
-            ast.Tuple: {"elts": "listSliceRoot", "ctx": "X"},
+            ast.Tuple: {"elts": "[SliceRoot]", "ctx": "Ctx"},
         },
-        "listSliceRoot": {"list": "SliceRoot"},
+        "[SliceRoot]": {"list": "SliceRoot"},
         "StarredRoot": {
             "_starred_content": {all: "E"},
             "_starred_starred": {all: "Starred"},
         },
-        "Starred": {ast.Starred: {"value": "E"}},
+        "Starred": {ast.Starred: {"value": "E", "ctx": "Ctx"}},
         "Slice": {
             ast.Slice: {"lower": "E", "upper": "E", "step": "E"},
         },
         "As": {
             ast.arguments: {
-                ("kw_defaults", "defaults"): "listE",
-                all: "A",
+                ("kw_defaults", "defaults"): "[E]",
+                ("args", "posonlyargs", "kwonlyargs"): "[A]",
+                ("vararg", "kwarg"): "A",
             }
         },
         "A": {
-            ast.arg: {"annotation": "E"},
+            ast.arg: {"annotation": "TA", "arg": "Name", "type_comment": "TC"},
         },
-        "X": {all: {all: "X"}},
         "F": {
-            ast.FormattedValue: {"value": "E", "format_spec": "F"},
+            ast.FormattedValue: {"value": "E", "format_spec": "F", "conversion": "int"},
             ast.Constant: {all: "F"},
-            ast.JoinedStr: {"values": "listF"},
+            ast.JoinedStr: {"values": "[F]"},
         },
         "C": {
             ast.comprehension: {
                 "target": "L",
                 "iter": "E",
-                "ifs": "listE",
-                "is_async": "X",
+                "ifs": "[E]",
+                "is_async": "bool",
             }
         },
-        "K": {ast.keyword: {"value": "E", "arg": "X"}},
+        "K": {ast.keyword: {"value": "E", "arg": "NullableNameStr"}},
         "EH": {
             ast.ExceptHandler: {
                 "type": "E",
-                "name": "X",
+                "name": "NullableName",
                 "body": "seqS",
             }
         },
@@ -173,23 +179,40 @@ TRANSITIONS = frozendict(
             }
         },
         "L": {
-            ast.Name: {all: "X"},
-            ast.Tuple: {all: "L"},
-            ast.List: {all: "L"},
-            ast.Subscript: {"value": "E", "slice": "SliceRoot"},
-            ast.Attribute: {"value": "E", "attr": "X"},
+            ast.Name: {
+                "id": "Name",
+                "ctx": "Ctx",
+            },
+            ast.Tuple: {"elts": "[L]", "ctx": "Ctx"},
+            ast.List: {"elts": "[L]", "ctx": "Ctx"},
+            ast.Subscript: {"value": "E", "slice": "SliceRoot", "ctx": "Ctx"},
+            ast.Attribute: {"value": "E", "attr": "NameStr", "ctx": "Ctx"},
             "list": "L",
             ast.Starred: {all: "L"},
             "_starred_content": {all: "L"},
             "_starred_starred": {all: "Starred"},
         },
         "seqS": {},
-        "listE": {"list": "E"},
-        "listE_starrable": {"list": "StarredRoot"},
-        "O": {"list": "O"},
-        "alias": {"list": "alias", ast.alias: {all: "X"}},
-        "names": {"list": "X"},
-        "listF": {"list": "F"},
+        "[E]": {"list": "E"},
+        "[StarredRoot]": {"list": "StarredRoot"},
+        "alias": {
+            ast.alias: {
+                "name": "NameStr",
+                "asname": "NullableNameStr",
+            },
+        },
+        "[NameStr]": {"list": "NameStr"},
+        "TA": {all: {all: "TA"}, "list": "TA"},
+        "[F]": {"list": "F"},
+        "[A]": {"list": "A"},
+        "[C]": {"list": "C"},
+        "[EH]": {"list": "EH"},
+        "[K]": {"list": "K"},
+        "[L]": {"list": "L"},
+        "[O]": {"list": "O"},
+        "[W]": {"list": "W"},
+        "[alias]": {"list": "alias"},
+        "[TI]": {"list": "TI"},
     }
 )
 
@@ -204,7 +227,7 @@ def compute_match(transition, key, default=None):
             return v
     if default is not None:
         return default
-    raise RuntimeError(f"could not find {key}")
+    raise RuntimeError(f"could not find {key} in {transition}")
 
 
 def compute_transition(transitions, state, typ, fields):
@@ -212,7 +235,7 @@ def compute_transition(transitions, state, typ, fields):
     transition = compute_match(transition, typ, default=False)
     if transition is False:
         return None
-    return [compute_match(transition, field, default="X") for field in fields]
+    return [compute_match(transition, field) for field in fields]
 
 
 def flatten_types(ts):
@@ -271,10 +294,8 @@ def export_dfa(transitions=TRANSITIONS):
         if missing:
             raise RuntimeError(f"in state {state}: missing {missing}")
 
-        result[state]["list"] = [transitions[state].get("list", state)]
-    for state in transitions:
-        result[state]["/seq"] = ["X"]
-        result[state]["/splice"] = ["X"]
+        if "list" in transitions[state]:
+            result[state]["list"] = [transitions[state]["list"]]
     result["seqS"]["/seq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
     return result
@@ -285,6 +306,9 @@ def classify_nodes_in_program(dfa, node, state):
         raise ValueError(f"expected SExpression or str, got {node}")
     yield node, state
     if not isinstance(node, ns.SExpression):
+        return
+    if not node.children:
+        # avoid looking up dfa[state][tag] when there are no children; allows sparser dfa
         return
     dfa_states = dfa[state][node.symbol]
     for i, child in enumerate(node.children):
