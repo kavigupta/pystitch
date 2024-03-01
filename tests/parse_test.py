@@ -48,6 +48,11 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.check("7")
         self.check("import abc")
 
+    def test_imports(self):
+        self.check("import os")
+        self.check("from os import path")
+        self.check("import os.path")
+
     def test_sequence_of_statements(self):
         self.maxDiff = None
         self.check("x = 2\ny = 3\nz = 4")

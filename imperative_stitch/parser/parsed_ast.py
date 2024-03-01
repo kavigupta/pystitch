@@ -90,6 +90,14 @@ class ParsedAST(ABC):
         Convert this ParsedAST into a pair s-expression.
         """
 
+    def to_type_annotated_ns_s_exp(self, dfa, start_state):
+        # pylint: disable=cyclic-import
+        from imperative_stitch.utils.export_as_dsl import add_disambiguating_type_tags
+
+        return add_disambiguating_type_tags(
+            dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
+        )
+
     def to_python(self):
         """
         Convert this ParsedAST into python code.
