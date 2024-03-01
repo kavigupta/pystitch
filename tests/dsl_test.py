@@ -74,7 +74,7 @@ class ProduceDslTest(unittest.TestCase):
     def test_produce_dsl_basic(self):
         program = ParsedAST.parse_python_module("x = x + 2; y = y + x + 2")
         subset = DSLSubset.from_program(self.dfa, program, root="M")
-        dsl = create_dsl(export_dfa(TRANSITIONS), subset)
+        dsl = create_dsl(export_dfa(TRANSITIONS), subset, "M")
         assertDSL(
             self,
             dsl.render(),
@@ -134,10 +134,10 @@ def fit_to(programs):
     dfa = export_dfa(TRANSITIONS)
     programs = [ParsedAST.parse_python_module(p) for p in programs]
     subset = DSLSubset.from_program(dfa, *programs, root="M")
-    dsl = create_dsl(export_dfa(TRANSITIONS), subset)
+    dsl = create_dsl(export_dfa(TRANSITIONS), subset, "M")
     fam = ns.BigramProgramDistributionFamily(dsl)
     counts = fam.count_programs(
-        [[program.to_type_annotated_ns_s_exp(dfa) for program in programs]]
+        [[program.to_type_annotated_ns_s_exp(dfa, "M") for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)
     return fam, dist

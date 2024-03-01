@@ -59,7 +59,7 @@ def clean_type(x):
     return x.replace("[", "_").replace("]", "_")
 
 
-def create_dsl(dfa, dsl_subset):
+def create_dsl(dfa, dsl_subset, start_state):
     dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
@@ -87,14 +87,14 @@ def create_dsl(dfa, dsl_subset):
         for constant in leaves:
             typ = ns.ArrowType((), ns.parse_type(target))
             dslf.concrete(constant + SEPARATOR + target, ns.render_type(typ), None)
-    dslf.prune_to("M", tolerate_pruning_entire_productions=True)
+    dslf.prune_to(start_state, tolerate_pruning_entire_productions=True)
     return dslf.finalize()
 
 
-def add_disambiguating_type_tags(dfa, prog):
+def add_disambiguating_type_tags(dfa, prog, start_state):
     prog = copy.deepcopy(prog)
     node_id_to_new_symbol = {}
-    for node, tag in classify_nodes_in_program(dfa, prog, "M"):
+    for node, tag in classify_nodes_in_program(dfa, prog, start_state):
         new_symbol = node.symbol + SEPARATOR + clean_type(tag)
         if is_sequence_type(tag):
             new_symbol += SEPARATOR + str(len(node.children))
