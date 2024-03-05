@@ -190,7 +190,7 @@ class MultiKindTest(unittest.TestCase):
             (BinOp (Constant i1 None) Mult (Constant i2 None))
             &x:0
             &y:0
-            (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None))
+            (/choiceseq (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None)))
         nil)
     """
 
@@ -200,7 +200,7 @@ class MultiKindTest(unittest.TestCase):
             (BinOp (Constant i4 None) Mult (Constant i3 None))
             &x:0
             &y:0 
-            /nothing)
+            (/choiceseq))
         nil)
     """
 
@@ -323,7 +323,7 @@ class MultiKindTest(unittest.TestCase):
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             """
-            fn_1(__code__('4 * 3'), __ref__(x), __ref__(y), None)
+            fn_1(__code__('4 * 3'), __ref__(x), __ref__(y), __code__(''))
             """,
         )
 

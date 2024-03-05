@@ -297,6 +297,7 @@ def export_dfa(transitions=TRANSITIONS):
         if "list" in transitions[state]:
             result[state]["list"] = [transitions[state]["list"]]
     result["seqS"]["/seq"] = ["S"]
+    result["seqS"]["/choiceseq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
     return result
 

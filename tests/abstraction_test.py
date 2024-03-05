@@ -108,7 +108,7 @@ class AbstractionRenderingTest(unittest.TestCase):
             "&a:0",
             "&b:0",
             "&d:0",
-            "/nothing",
+            "(/choiceseq)",
         ]
     ]
     fn_2_args = fn_2_args_w_nothing[:-1] + [
