@@ -141,7 +141,11 @@ class Abstraction:
             [
                 SequenceAST(
                     "/seq",
-                    [ParsedAST.expr_stmt(ParsedAST.name(LeafAST(Symbol(f"?{i}", None))))]
+                    [
+                        ParsedAST.expr_stmt(
+                            ParsedAST.name(LeafAST(Symbol(f"?{i}", None)))
+                        )
+                    ],
                 )
                 for i in range(self.choice_arity)
             ],

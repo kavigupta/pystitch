@@ -9,4 +9,3 @@ class Splice:
     # validate post init
     def __post_init__(self):
         assert isinstance(self.target, list), self.target
-    
