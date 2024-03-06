@@ -108,7 +108,7 @@ class Abstraction:
                 raise ValueError(
                     "Cannot add extract pragmas to a body with non-expression metavariables"
                 )
-            if not all(x == "S" for x in self.dfa_choicevars):
+            if not all(x == "seqS" for x in self.dfa_choicevars):
                 raise ValueError(
                     "Cannot add extract pragmas to a body with non-statement choicevars"
                 )
