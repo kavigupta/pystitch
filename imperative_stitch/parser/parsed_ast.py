@@ -279,15 +279,13 @@ class ParsedAST(ABC):
         )
 
     def wrap_in_choicevar(self):
-        return SpliceAST(
-            SequenceAST(
-                "/seq",
-                [
-                    ParsedAST.parse_python_statement("__start_choice__"),
-                    self,
-                    ParsedAST.parse_python_statement("__end_choice__"),
-                ],
-            )
+        return SequenceAST(
+            "/seq",
+            [
+                ParsedAST.parse_python_statement("__start_choice__"),
+                self,
+                ParsedAST.parse_python_statement("__end_choice__"),
+            ],
         )
 
 
@@ -333,6 +331,7 @@ class SequenceAST(ParsedAST):
     #         Symbol(name="__code__", scope=None),
     #         ParsedAST.constant(self.to_python()),
     #     )
+
 
 @dataclass
 class NodeAST(ParsedAST):
@@ -475,7 +474,7 @@ class ChoicevarAST(Variable):
         return ast.Name(id=self.sym)
 
     def _replace_with_substitute(self, arguments):
-        return arguments.choicevars[self.idx]
+        return SpliceAST(arguments.choicevars[self.idx])
 
 
 @dataclass
