@@ -16,6 +16,11 @@ class Arguments:
     symvars: list[ParsedAST]
     choicevars: list[ParsedAST]
 
+    def __post_init__(self):
+        assert all(isinstance(x, ParsedAST) for x in self.metavars), self.metavars
+        assert all(isinstance(x, ParsedAST) for x in self.symvars), self.symvars
+        assert all(isinstance(x, ParsedAST) for x in self.choicevars), self.choicevars
+
     @classmethod
     def from_list(cls, arguments, arity, sym_arity, choice_arity):
         assert len(arguments) == arity + sym_arity + choice_arity

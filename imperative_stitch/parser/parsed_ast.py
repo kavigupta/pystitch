@@ -3,7 +3,7 @@ import base64
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 
 import neurosym as ns
 
@@ -292,23 +292,13 @@ class ParsedAST(ABC):
 
 
 @dataclass
-class SpliceAST(ParsedAST):
-    content: ParsedAST
-
-    def to_ns_s_exp(self, config):
-        return ns.SExpression("/splice", [self.content.to_ns_s_exp(config)])
-
-    def to_python_ast(self):
-        return Splice(self.content.to_python_ast())
-
-    def map(self, fn):
-        return fn(SpliceAST(self.content.map(fn)))
-
-
-@dataclass
 class SequenceAST(ParsedAST):
     head: str
     elements: List[ParsedAST]
+
+    def __post_init__(self):
+        assert isinstance(self.head, str), self.head
+        assert all(isinstance(x, ParsedAST) for x in self.elements), self.elements
 
     def to_ns_s_exp(self, config):
         return ns.SExpression(self.head, [x.to_ns_s_exp(config) for x in self.elements])
@@ -573,3 +563,20 @@ class StarrableElementAST(ParsedAST):
 
     def map(self, fn):
         return fn(StarrableElementAST(self.content.map(fn)))
+
+
+@dataclass
+class SpliceAST(ParsedAST):
+    content: Union[SequenceAST, AbstractionCallAST]
+
+    def __post_init__(self):
+        assert isinstance(self.content, (SequenceAST, AbstractionCallAST)), self.content
+
+    def to_ns_s_exp(self, config):
+        return ns.SExpression("/splice", [self.content.to_ns_s_exp(config)])
+
+    def to_python_ast(self):
+        return Splice(self.content.to_python_ast())
+
+    def map(self, fn):
+        return fn(SpliceAST(self.content.map(fn)))
