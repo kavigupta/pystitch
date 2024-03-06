@@ -314,14 +314,6 @@ class SequenceAST(ParsedAST):
     def map(self, fn):
         return fn(SequenceAST(self.head, [x.map(fn) for x in self.elements]))
 
-    # def render_codevar(self):
-    #     if self.head != "/choiceseq":
-    #         return super().render_codevar()
-    #     return ParsedAST.call(
-    #         Symbol(name="__code__", scope=None),
-    #         ParsedAST.constant(self.to_python()),
-    #     )
-
 
 @dataclass
 class NodeAST(ParsedAST):
