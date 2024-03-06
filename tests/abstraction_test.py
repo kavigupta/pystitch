@@ -97,7 +97,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         dfa_root="S",
         dfa_symvars=["X", "X", "X", "X"],
         dfa_metavars=["E"],
-        dfa_choicevars=["S"],
+        dfa_choicevars=["seqS"],
     )
 
     fn_2_args_w_nothing = [

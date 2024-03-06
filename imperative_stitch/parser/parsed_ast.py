@@ -290,23 +290,13 @@ class ParsedAST(ABC):
 
 
 @dataclass
-class SpliceAST(ParsedAST):
-    content: ParsedAST
-
-    def to_ns_s_exp(self, config):
-        return ns.SExpression("/splice", [self.content.to_ns_s_exp(config)])
-
-    def to_python_ast(self):
-        return Splice(self.content.to_python_ast())
-
-    def map(self, fn):
-        return fn(SpliceAST(self.content.map(fn)))
-
-
-@dataclass
 class SequenceAST(ParsedAST):
     head: str
     elements: List[ParsedAST]
+
+    def __post_init__(self):
+        assert isinstance(self.head, str), self.head
+        assert all(isinstance(x, ParsedAST) for x in self.elements), self.elements
 
     def to_ns_s_exp(self, config):
         return ns.SExpression(self.head, [x.to_ns_s_exp(config) for x in self.elements])
@@ -331,6 +321,23 @@ class SequenceAST(ParsedAST):
     #         Symbol(name="__code__", scope=None),
     #         ParsedAST.constant(self.to_python()),
     #     )
+
+
+@dataclass
+class SpliceAST(ParsedAST):
+    content: SequenceAST
+
+    def __post_init__(self):
+        assert isinstance(self.content, SequenceAST), self.content
+
+    def to_ns_s_exp(self, config):
+        return ns.SExpression("/splice", [self.content.to_ns_s_exp(config)])
+
+    def to_python_ast(self):
+        return Splice(self.content.to_python_ast())
+
+    def map(self, fn):
+        return fn(SpliceAST(self.content.map(fn)))
 
 
 @dataclass
