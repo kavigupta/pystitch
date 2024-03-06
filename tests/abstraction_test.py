@@ -141,7 +141,7 @@ class AbstractionRenderingTest(unittest.TestCase):
             self,
             stub.to_python(),
             """
-            fn_2(__code__('print(2)'), __ref__(c), __ref__(a), __ref__(b), __ref__(d), None)
+            fn_2(__code__('print(2)'), __ref__(c), __ref__(a), __ref__(b), __ref__(d), __code__(''))
             """,
         )
 
