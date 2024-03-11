@@ -59,8 +59,9 @@ def clean_type(x):
     return x.replace("[", "_").replace("]", "_")
 
 
-def create_dsl(dfa, dsl_subset, start_state):
-    dslf = ns.DSLFactory()
+def create_dsl(dfa, dsl_subset, start_state, dslf=None):
+    if dslf is None:
+        dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
             if is_sequence_type(target):
