@@ -16,11 +16,41 @@ from imperative_stitch.utils.classify_nodes import export_dfa
 #     = assign_size + call_size + fn_name + 2 * n_returns * sym_size
 
 
-def run_julia_stitch(
+def run_julia_stitch(*args, iters, **kwargs):
+    output = run_julia_stitch_generic(
+        "cli/compress.jl", *args, **kwargs, extra_args=[f"--iterations={iters}"]
+    )
+    *_, tildes1, abstractions, tildes2, rewritten, newline = output.split("\n")
+    assert tildes1 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert tildes2 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert newline == ""
+    abstractions = json.loads(abstractions)
+    rewritten = json.loads(rewritten)
+    return abstractions, rewritten
+
+
+def run_julia_rewrite(code, abstractions, **kwargs):
+    output = run_julia_stitch_generic(
+        "cli/rewrite.jl",
+        code,
+        **kwargs,
+        extra_args=[
+            f"--abstractions={json.dumps(abstractions)}",
+        ],
+    )
+    *_, tildes, rewritten, newline = output.split("\n")
+    assert tildes == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    assert newline == ""
+    rewritten = json.loads(rewritten)
+    return rewritten
+
+
+def run_julia_stitch_generic(
+    path,
     code,
     *,
     stitch_jl_dir,
-    iters,
+    extra_args=(),
     max_arity,
     quiet=True,
     application_utility_metavar=-1,
@@ -52,8 +82,8 @@ def run_julia_stitch(
     cmd = [
         "julia",
         "--project=" + stitch_jl_dir,
-        os.path.join(stitch_jl_dir, "src/cli.jl"),
-        f"--iterations={iters}",
+        os.path.join(stitch_jl_dir, path),
+        f"--corpus={json.dumps(code)}",
         f"--max-arity={max_arity}",
         *([f"--dfa={os.path.abspath('data/dfa.json')}"] if include_dfa else []),
         f"--size-by-symbol={json.dumps(size_by_symbol)}",
@@ -66,26 +96,17 @@ def run_julia_stitch(
             if metavariable_statements
             else ["--dfa-metavariable-disallow-S", "--dfa-metavariable-disallow-seqS"]
         ),
+        *extra_args,
     ]
     if not quiet:
-        temp_txt = os.path.join(stitch_jl_dir, "temp.txt")
-        with open(temp_txt, "w") as f:
-            f.write(json.dumps(code))
         print("Run the following command to debug:")
-        print(" ".join([shlex.quote(x) for x in cmd]) + " < " + temp_txt)
+        print(" ".join([shlex.quote(x) for x in cmd]))
     abstractions = subprocess.run(
         cmd,
-        input=json.dumps(code).encode("utf-8"),
         capture_output=True,
         check=False,
     ).stdout
     abstractions = abstractions.decode("utf-8")
     if not quiet:
         print(abstractions)
-    *_, tildes1, abstractions, tildes2, rewritten, newline = abstractions.split("\n")
-    assert tildes1 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    assert tildes2 == "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    assert newline == ""
-    abstractions = json.loads(abstractions)
-    rewritten = json.loads(rewritten)
-    return abstractions, rewritten
+    return abstractions
