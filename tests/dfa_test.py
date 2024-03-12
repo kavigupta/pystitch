@@ -8,16 +8,12 @@ import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.parser.symbol import Symbol
-from imperative_stitch.utils.classify_nodes import (
-    TRANSITIONS,
-    classify_nodes_in_program,
-    export_dfa,
-)
+from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
 from imperative_stitch.utils.recursion import limit_to_size
 
 from .utils import expand_with_slow_tests, small_set_examples
 
-dfa = export_dfa(TRANSITIONS)
+dfa = export_dfa()
 
 reasonable_classifications = [
     ("alias", "alias"),
