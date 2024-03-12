@@ -279,15 +279,13 @@ class ParsedAST(ABC):
         )
 
     def wrap_in_choicevar(self):
-        return SpliceAST(
-            SequenceAST(
-                "/seq",
-                [
-                    ParsedAST.parse_python_statement("__start_choice__"),
-                    self,
-                    ParsedAST.parse_python_statement("__end_choice__"),
-                ],
-            )
+        return SequenceAST(
+            "/seq",
+            [
+                ParsedAST.parse_python_statement("__start_choice__"),
+                self,
+                ParsedAST.parse_python_statement("__end_choice__"),
+            ],
         )
 
 
@@ -458,7 +456,7 @@ class ChoicevarAST(Variable):
         return ast.Name(id=self.sym)
 
     def _replace_with_substitute(self, arguments):
-        return arguments.choicevars[self.idx]
+        return SpliceAST(arguments.choicevars[self.idx])
 
 
 @dataclass
@@ -484,25 +482,6 @@ class AbstractionCallAST(ParsedAST):
 
     def _replace_abstraction_calls(self, handle_to_replacement):
         return handle_to_replacement[self.handle]
-
-
-@dataclass
-class NothingAST(ParsedAST):
-    def to_ns_s_exp(self, config):
-        del config
-        return "/nothing"
-
-    def to_python_ast(self):
-        return Splice([])
-
-    def substitute(self, arguments):
-        return self
-
-    def map(self, fn):
-        return fn(self)
-
-    def render_codevar(self):
-        return ParsedAST.name(LeafAST(Symbol(name="None", scope=None)))
 
 
 @dataclass

@@ -11,7 +11,6 @@ from imperative_stitch.parser.parsed_ast import (
     ListAST,
     MetavarAST,
     NodeAST,
-    NothingAST,
     SequenceAST,
     SliceElementAST,
     SpliceAST,
@@ -68,8 +67,6 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
             return MetavarAST(x)
         if x.startswith("?"):
             return ChoicevarAST(x)
-        if x in {"/nothing"}:
-            return NothingAST()
 
         is_leaf, leaf = s_exp_leaf_to_value(x)
         if is_leaf:
@@ -88,7 +85,7 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
         return LeafAST(leaf)
     assert isinstance(tag, str), str(tag)
     args = [s_exp_to_parsed_ast(x) for x in args]
-    if tag in {"/seq", "/subseq"}:
+    if tag in {"/seq", "/subseq", "/choiceseq"}:
         return SequenceAST(tag, args)
     if tag in {"/splice"}:
         [arg] = args

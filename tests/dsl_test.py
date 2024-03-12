@@ -77,6 +77,7 @@ class ProduceDslTest(unittest.TestCase):
             self,
             dsl.render(),
             """
+            /choiceseq~seqS~2 :: (S, S) -> seqS
             /seq~seqS~2 :: (S, S) -> seqS
             /splice~S :: seqS -> S
             Add~O :: () -> O

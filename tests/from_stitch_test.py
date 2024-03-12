@@ -181,7 +181,7 @@ class MultiKindTest(unittest.TestCase):
         dfa_root="seqS",
         dfa_symvars=["X", "X"],
         dfa_metavars=["E"],
-        dfa_choicevars=["S"],
+        dfa_choicevars=["seqS"],
     )
 
     ctx_includes_choicevar = """
@@ -190,7 +190,19 @@ class MultiKindTest(unittest.TestCase):
             (BinOp (Constant i1 None) Mult (Constant i2 None))
             &x:0
             &y:0
-            (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None))
+            (/choiceseq (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None)))
+        nil)
+    """
+
+    ctx_includes_multi_choicevar = """
+    (Module
+        (fn_1
+            (BinOp (Constant i1 None) Mult (Constant i2 None))
+            &x:0
+            &y:0
+            (/choiceseq
+                (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None)
+                (Assign (list (Name &u:0 Store)) (Name &x:0 Load) None)))
         nil)
     """
 
@@ -200,7 +212,7 @@ class MultiKindTest(unittest.TestCase):
             (BinOp (Constant i4 None) Mult (Constant i3 None))
             &x:0
             &y:0 
-            /nothing)
+            (/choiceseq))
         nil)
     """
 
@@ -330,6 +342,17 @@ class MultiKindTest(unittest.TestCase):
             """,
         )
 
+    def test_stub_includes_multi_choicevar(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_includes_multi_choicevar)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python(),
+            r"""
+            fn_1(__code__('1 * 2'), __ref__(x), __ref__(y), __code__('z = x\nu = x'))
+            """,
+        )
+
     def test_stub_no_choicevar(self):
         assertSameCode(
             self,
@@ -337,7 +360,7 @@ class MultiKindTest(unittest.TestCase):
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             """
-            fn_1(__code__('4 * 3'), __ref__(x), __ref__(y), None)
+            fn_1(__code__('4 * 3'), __ref__(x), __ref__(y), __code__(''))
             """,
         )
 
@@ -400,6 +423,21 @@ class MultiKindTest(unittest.TestCase):
                 z = x
                 __end_choice__
             __end_extract__
+            """,
+        )
+
+    def test_injection_includes_multi_choicevar(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_includes_multi_choicevar)
+            .abstraction_calls_to_bodies(self.abstractions)
+            .to_python(),
+            """
+            if 1 * 2 * 3 * 4 * 5:
+                x = x + 1 * 2
+                y = [print, sum, u]
+                z = x
+                u = x
             """,
         )
 

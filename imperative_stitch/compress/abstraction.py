@@ -14,12 +14,12 @@ class Arguments:
 
     metavars: list[ParsedAST]
     symvars: list[ParsedAST]
-    choicevars: list[ParsedAST]
+    choicevars: list[SequenceAST]
 
     def __post_init__(self):
         assert all(isinstance(x, ParsedAST) for x in self.metavars), self.metavars
         assert all(isinstance(x, ParsedAST) for x in self.symvars), self.symvars
-        assert all(isinstance(x, ParsedAST) for x in self.choicevars), self.choicevars
+        assert all(isinstance(x, SequenceAST) for x in self.choicevars), self.choicevars
 
     @classmethod
     def from_list(cls, arguments, arity, sym_arity, choice_arity):
@@ -113,7 +113,7 @@ class Abstraction:
                 raise ValueError(
                     "Cannot add extract pragmas to a body with non-expression metavariables"
                 )
-            if not all(x == "S" for x in self.dfa_choicevars):
+            if not all(x == "seqS" for x in self.dfa_choicevars):
                 raise ValueError(
                     "Cannot add extract pragmas to a body with non-statement choicevars"
                 )
@@ -139,7 +139,14 @@ class Abstraction:
             [ParsedAST.name(LeafAST(Symbol(f"#{i}", None))) for i in range(self.arity)],
             [LeafAST(Symbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
             [
-                ParsedAST.expr_stmt(ParsedAST.name(LeafAST(Symbol(f"?{i}", None))))
+                SequenceAST(
+                    "/seq",
+                    [
+                        ParsedAST.expr_stmt(
+                            ParsedAST.name(LeafAST(Symbol(f"?{i}", None)))
+                        )
+                    ],
+                )
                 for i in range(self.choice_arity)
             ],
         )
