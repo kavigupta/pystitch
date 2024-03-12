@@ -6,7 +6,7 @@ import numpy as np
 
 from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
+from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 from .utils import assertDSL
@@ -14,7 +14,7 @@ from .utils import assertDSL
 
 class SubsetTest(unittest.TestCase):
     def setUp(self):
-        self.dfa = export_dfa(TRANSITIONS)
+        self.dfa = export_dfa()
 
     def test_subset_basic(self):
         subset = DSLSubset.from_program(
@@ -67,12 +67,12 @@ class SubsetTest(unittest.TestCase):
 
 class ProduceDslTest(unittest.TestCase):
     def setUp(self):
-        self.dfa = export_dfa(TRANSITIONS)
+        self.dfa = export_dfa()
 
     def test_produce_dsl_basic(self):
         program = ParsedAST.parse_python_module("x = x + 2; y = y + x + 2")
         subset = DSLSubset.from_program(self.dfa, program, root="M")
-        dsl = create_dsl(export_dfa(TRANSITIONS), subset, "M")
+        dsl = create_dsl(export_dfa(), subset, "M")
         assertDSL(
             self,
             dsl.render(),
@@ -130,10 +130,10 @@ class ProduceDslTest(unittest.TestCase):
 
 
 def fit_to(programs):
-    dfa = export_dfa(TRANSITIONS)
+    dfa = export_dfa()
     programs = [ParsedAST.parse_python_module(p) for p in programs]
     subset = DSLSubset.from_program(dfa, *programs, root="M")
-    dsl = create_dsl(export_dfa(TRANSITIONS), subset, "M")
+    dsl = create_dsl(export_dfa(), subset, "M")
     fam = ns.BigramProgramDistributionFamily(dsl)
     counts = fam.count_programs(
         [[program.to_type_annotated_ns_s_exp(dfa, "M") for program in programs]]
