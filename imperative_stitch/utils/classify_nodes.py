@@ -252,11 +252,17 @@ def flatten_types(ts):
     yield ts
 
 
-def export_dfa(*, transitions=TRANSITIONS):
+def export_dfa(*, abstrs=frozendict({}), transitions=TRANSITIONS):
     """
     Takes a transition dictionary of the form above and converts
     it to a dict[state, dict[tag, list[state]]]
     """
+
+    if isinstance(abstrs, (list, tuple)):
+        abstrs = {x.name: x for x in abstrs}
+
+    assert isinstance(abstrs, (dict, frozendict)), f"expected dict, got {abstrs}"
+
     all_tags = [
         x
         for x in dir(ast)
@@ -299,6 +305,13 @@ def export_dfa(*, transitions=TRANSITIONS):
     result["seqS"]["/seq"] = ["S"]
     result["seqS"]["/choiceseq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
+
+    for k, abstr in abstrs.items():
+        assert k == abstr.name, (k, abstr.name)
+        result[abstr.dfa_root][k] = (
+            abstr.dfa_metavars + abstr.dfa_symvars + abstr.dfa_choicevars
+        )
+
     return result
 
 
