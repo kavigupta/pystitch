@@ -252,7 +252,7 @@ def flatten_types(ts):
     yield ts
 
 
-def export_dfa(transitions=TRANSITIONS):
+def export_dfa(*, transitions=TRANSITIONS):
     """
     Takes a transition dictionary of the form above and converts
     it to a dict[state, dict[tag, list[state]]]
