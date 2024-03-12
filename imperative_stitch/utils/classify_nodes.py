@@ -323,6 +323,10 @@ def classify_nodes_in_program(dfa, node, state):
     if not node.children:
         # avoid looking up dfa[state][tag] when there are no children; allows sparser dfa
         return
+    if state not in dfa:
+        raise ValueError(f"state {state} not in dfa")
+    if node.symbol not in dfa[state]:
+        raise ValueError(f"symbol {node.symbol} not in dfa[{state}]")
     dfa_states = dfa[state][node.symbol]
     for i, child in enumerate(node.children):
         yield from classify_nodes_in_program(
