@@ -1,7 +1,10 @@
 import ast
 import unittest
 
+import neurosym as ns
+
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
+from imperative_stitch.utils.recursion import no_recursionlimit
 from tests.abstraction_test import assertSameCode
 
 from .utils import expand_with_slow_tests, small_set_examples
@@ -11,29 +14,44 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def canonicalize(self, python_code):
         return ast.unparse(ast.parse(python_code))
 
-    def assert_valid_s_exp(self, s_exp):
-        if not isinstance(s_exp, list) or not s_exp:
+    def assert_valid_s_exp(self, s_exp, no_leaves):
+        if not isinstance(s_exp, ns.SExpression):
+            assert isinstance(s_exp, str)
+            if no_leaves:
+                self.fail(f"leaf: {s_exp}")
             return
-        if s_exp[0] not in {"/seq"}:
-            self.assertTrue(isinstance(s_exp[0], type), repr(s_exp[0]))
-            self.assertTrue(len(s_exp) > 1, repr(s_exp))
-        for y in s_exp[1:]:
-            self.assert_valid_s_exp(y)
+        if s_exp.symbol not in {"/seq"}:
+            self.assertTrue(isinstance(s_exp.symbol, str), repr(s_exp.symbol))
+            if not no_leaves:
+                self.assertTrue(len(s_exp.children) >= 1, repr(s_exp))
+        for y in s_exp.children:
+            self.assert_valid_s_exp(y, no_leaves)
 
-    def check(self, test_code):
+    def check_with_args(self, test_code, no_leaves=False):
         test_code = self.canonicalize(test_code)
-        s_exp = python_to_s_exp(test_code, renderer_kwargs=dict(columns=80))
-        # print(s_exp)
+        s_exp = python_to_s_exp(
+            test_code, renderer_kwargs=dict(columns=80), no_leaves=no_leaves
+        )
+        with no_recursionlimit():
+            self.assert_valid_s_exp(ns.parse_s_expression(s_exp), no_leaves=no_leaves)
         s_exp_parsed = ParsedAST.parse_s_expression(s_exp)
         print(repr(s_exp_parsed))
-        self.assert_valid_s_exp(s_exp_parsed)
         modified = s_exp_to_python(s_exp)
         self.assertEqual(test_code, modified)
+
+    def check(self, test_code):
+        self.check_with_args(test_code)
+        self.check_with_args(test_code, no_leaves=True)
 
     def test_basic_one_liners(self):
         self.check("x = 2")
         self.check("7")
         self.check("import abc")
+
+    def test_imports(self):
+        self.check("import os")
+        self.check("from os import path")
+        self.check("import os.path")
 
     def test_sequence_of_statements(self):
         self.maxDiff = None

@@ -1,19 +1,19 @@
 import ast
 import json
+import re
 import unittest
 from textwrap import dedent
 
-from s_expression_parser import Pair, ParserConfig, Renderer, nil, parse
+import neurosym as ns
 
-from imperative_stitch.parser import python_to_s_exp
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.parser.symbol import Symbol
-from imperative_stitch.utils.classify_nodes import TRANSITIONS, export_dfa
+from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
 from imperative_stitch.utils.recursion import limit_to_size
 
 from .utils import expand_with_slow_tests, small_set_examples
 
-dfa = export_dfa(TRANSITIONS)
+dfa = export_dfa()
 
 reasonable_classifications = [
     ("alias", "alias"),
@@ -37,6 +37,40 @@ reasonable_classifications = [
     ("Delete", "S"),
     ("Dict", "E"),
     ("DictComp", "E"),
+    *[
+        (x, "O")
+        for x in [
+            "Add",
+            "Sub",
+            "Mult",
+            "MatMult",
+            "Div",
+            "Mod",
+            "Pow",
+            "LShift",
+            "RShift",
+            "BitOr",
+            "BitXor",
+            "BitAnd",
+            "FloorDiv",
+            "Invert",
+            "Not",
+            "UAdd",
+            "USub",
+            "Eq",
+            "NotEq",
+            "Lt",
+            "LtE",
+            "Gt",
+            "GtE",
+            "Is",
+            "IsNot",
+            "In",
+            "NotIn",
+            "And",
+            "Or",
+        ]
+    ],
     ("ExceptHandler", "EH"),
     ("Expr", "S"),
     ("For", "S"),
@@ -59,15 +93,17 @@ reasonable_classifications = [
     ("Name", "L"),
     ("NamedExpr", "E"),
     ("Nonlocal", "S"),
+    ("Pass", "S"),
     ("Raise", "S"),
     ("Return", "S"),
+    ("Break", "S"),
+    ("Continue", "S"),
     ("Set", "E"),
     ("SetComp", "E"),
     ("_slice_content", "SliceRoot"),
     ("_slice_slice", "SliceRoot"),
     ("_slice_tuple", "SliceRoot"),
     ("Tuple", "SliceTuple"),
-    ("list", "listSliceRoot"),
     ("Slice", "Slice"),
     ("Starred", "L"),
     ("Starred", "Starred"),
@@ -89,85 +125,177 @@ reasonable_classifications = [
     ("arguments", "As"),
     ("comprehension", "C"),
     ("keyword", "K"),
-    ("list", "A"),
-    ("list", "C"),
-    ("list", "listE"),
-    ("list", "listE_starrable"),
-    ("list", "EH"),
-    ("list", "listF"),
-    ("list", "K"),
-    ("list", "L"),
-    ("list", "W"),
-    ("list", "O"),
-    ("list", "alias"),
-    ("list", "names"),
+    ("list", "[A]"),
+    ("list", "[C]"),
+    ("list", "[SliceRoot]"),
+    ("list", "[E]"),
+    ("list", "[StarredRoot]"),
+    ("list", "[EH]"),
+    ("list", "[F]"),
+    ("list", "[K]"),
+    ("list", "[L]"),
+    ("list", "[W]"),
+    ("list", "[O]"),
+    ("list", "[alias]"),
+    ("list", "[NameStr]"),
+    ("list", "[TI]"),
     ("/seq", "seqS"),
     ("withitem", "W"),
+    ("const-None", "E"),
+    # formatting
+    ("const-None", "F"),
+    ("const-s.*", "F"),
+    # vararg
+    ("const-None", "A"),
+    # type
+    (".*", "TA"),
+    ("const-None", "TC"),
+    # left value
+    ("const-None", "L"),
+    # Load/Store/Del
+    ("Load", "Ctx"),
+    ("Store", "Ctx"),
+    ("Del", "Ctx"),
+    # name
+    ("const-[&g].*", "Name"),
+    ("const-[&g].*", "NullableName"),
+    ("const-None", "NullableName"),
+    ("const-s.*", "NameStr"),
+    ("const-[&g].*", "NameStr"),  # imports
+    ("const-s.*", "NullableNameStr"),
+    ("const-None", "NullableNameStr"),
+    ("const-[&g].*", "NullableNameStr"),
+    # values
+    ("const-None", "Const"),
+    ("const-True", "Const"),
+    ("const-False", "Const"),
+    ("const-Ellipsis", "Const"),
+    ("const-[sbijf].*", "Const"),
+    # constkind
+    ("const-None", "ConstKind"),
+    ("const-s.*", "ConstKind"),
+    # constants
+    ("const-i[01]", "bool"),
+    ("const-i.*", "int"),
 ]
 
 
-def to_list_nested(x):
-    if x is nil:
-        return []
-    if isinstance(x, Pair):
-        return [to_list_nested(x.car)] + to_list_nested(x.cdr)
-    return x
+class TestClassifications(unittest.TestCase):
+    def classify_in_code(self, code, start_state):
+        classified = [
+            (ns.render_s_expression(x), tag)
+            for x, tag in classify_nodes_in_program(
+                dfa, code.to_ns_s_exp(dict()), start_state
+            )
+            if isinstance(x, ns.SExpression)
+        ]
+        print(classified)
+        return classified
 
+    def test_module_classify(self):
+        self.assertEqual(
+            self.classify_in_code(ParsedAST.parse_python_module("x = 2"), "M"),
+            [
+                (
+                    "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)",
+                    "M",
+                ),
+                (
+                    "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))",
+                    "seqS",
+                ),
+                ("(Assign (list (Name &x:0 Store)) (Constant i2 None) None)", "S"),
+                ("(list (Name &x:0 Store))", "[L]"),
+                ("(Name &x:0 Store)", "L"),
+                ("(Constant i2 None)", "E"),
+            ],
+        )
 
-def from_list_nested(x):
-    if not x:
-        return nil
-    if not isinstance(x, list):
-        return x
-    return Pair(from_list_nested(x[0]), from_list_nested(x[1:]))
-
-
-def classify(x, state, *, mutate):
-    if not isinstance(x, list):
-        return
-    yield x, state
-    if x[0] not in dfa[state]:
-        raise ValueError(f"Unknown state {x[0]} in {state}")
-    elements = dfa[state][x[0]]
-    if mutate:
-        x[0] += "::" + state
-    for i, el in enumerate(x[1:]):
-        yield from classify(el, elements[i % len(elements)], mutate=mutate)
-
-
-def prep_for_classification(parsed_ast):
-    code = parsed_ast.to_s_exp()
-    # pylint: disable=unbalanced-tuple-unpacking
-    (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-    code = to_list_nested(code)
-    return code
-
-
-def classify_code(parsed_ast, start_state, *, mutate):
-    code = prep_for_classification(parsed_ast)
-    return list(classify(code, start_state, mutate=mutate))
+    def test_statement_classify(self):
+        self.assertEqual(
+            self.classify_in_code(ParsedAST.parse_python_statement("x = 2"), "S"),
+            [
+                (
+                    "(Assign (list (Name &x:0 Store)) (Constant i2 None) None)",
+                    "S",
+                ),
+                ("(list (Name &x:0 Store))", "[L]"),
+                ("(Name &x:0 Store)", "L"),
+                ("(Constant i2 None)", "E"),
+            ],
+        )
 
 
 class DFATest(unittest.TestCase):
-    def classify_elements_in_code(self, code):
+    def check_reasonable_classification(self, tag_to_check, state_to_check):
+        for tag, state in reasonable_classifications:
+            mat = re.match("^" + tag + "$", tag_to_check)
+            if mat and state == state_to_check:
+                return
+        self.fail(f"Unknown classification {tag_to_check} {state_to_check}")
+
+    def classify_elements_in_code_with_config(self, code, **kwargs):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = prep_for_classification(ParsedAST.parse_python_module(code))
-            classified = classify(code, "M", mutate=False)
-            result = sorted({(x, state) for ((x, *_), state) in classified})
-            list(classify(code, "M", mutate=True))
+            code = ParsedAST.parse_python_module(code).to_ns_s_exp(kwargs)
+            classified = classify_nodes_in_program(dfa, code, "M")
+            result = sorted(
+                {
+                    (x.symbol, state)
+                    for (x, state) in classified
+                    if isinstance(x, ns.SExpression)
+                }
+            )
             print(code)
-            extras = set(result) - set(reasonable_classifications)
-            if extras:
-                print(sorted(extras | set(reasonable_classifications)))
-                self.fail(f"Extras found in classification {extras}")
+            for x, state in result:
+                self.check_reasonable_classification(x, state)
+
+    def classify_elements_in_code(self, code):
+        self.classify_elements_in_code_with_config(code)
+        self.classify_elements_in_code_with_config(code, no_leaves=True)
 
     @expand_with_slow_tests(len(small_set_examples()))
     def test_realistic(self, i):
         code = small_set_examples()[i]
         for element in ast.parse(code).body:
             self.classify_elements_in_code(ast.unparse(element))
+
+    def test_function(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                def f(x):
+                    pass
+                """
+            )
+        )
+        self.classify_elements_in_code(
+            dedent(
+                """
+                def f(x, *y, z=2, **w):
+                    pass
+                """
+            )
+        )
+
+    def test_with(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                with x:
+                    pass
+                """
+            )
+        )
+        self.classify_elements_in_code(
+            dedent(
+                """
+                with x as y:
+                    pass
+                """
+            )
+        )
 
     def test_annotation(self):
         self.classify_elements_in_code(
@@ -190,11 +318,31 @@ class DFATest(unittest.TestCase):
             )
         )
 
+    def test_exception(self):
+        self.classify_elements_in_code(
+            dedent(
+                """
+                try:
+                    x = 2
+                except:
+                    pass
+                """
+            )
+        )
+
     def test_comparison(self):
         self.classify_elements_in_code("x == 2")
 
+    def test_keyword(self):
+        self.classify_elements_in_code("f(x=2)")
+
     def test_aug_assign(self):
         self.classify_elements_in_code("(x := 2)")
+
+    def test_assign(self):
+        self.classify_elements_in_code("x = 2")
+        self.classify_elements_in_code("x = 2, 3")
+        self.classify_elements_in_code("x += 2")
 
     def test_tuple(self):
         self.classify_elements_in_code("(2, 3)")
@@ -219,10 +367,14 @@ class DFATest(unittest.TestCase):
         self.classify_elements_in_code("[2, 3, *x]")
         self.classify_elements_in_code("{2, 3, *x}")
 
+    def test_kwstarred(self):
+        self.classify_elements_in_code("f(2, 3, **x)")
+
     def test_import(self):
         self.classify_elements_in_code("import x")
         self.classify_elements_in_code("from x import y")
         self.classify_elements_in_code("from x import y as z")
+        self.classify_elements_in_code("from . import x")
 
     def test_global_nonlocal(self):
         self.classify_elements_in_code("global x")
@@ -230,6 +382,12 @@ class DFATest(unittest.TestCase):
 
     def test_joined_str(self):
         self.classify_elements_in_code("f'2 {459.67:.1f}'")
+
+    def test_type_annotation(self):
+        self.classify_elements_in_code("x: int = 2")
+        self.classify_elements_in_code("def f(x: int) -> int: pass")
+        self.classify_elements_in_code("x: List[int] = []")
+        self.classify_elements_in_code("x: Tuple[int, int] = (x, y)")
 
     def test_code(self):
         self.classify_elements_in_code(
@@ -246,15 +404,14 @@ class TestExprNodeValidity(unittest.TestCase):
         with limit_to_size(code):
             print("#" * 80)
             print(code)
-            code = python_to_s_exp(code)
-            print(code)
-            # pylint: disable=unbalanced-tuple-unpacking
-            (code,) = parse(code, ParserConfig(prefix_symbols=[], dots_are_cons=False))
-            code = to_list_nested(code)
+            code = ParsedAST.parse_python_module(code)
             e_nodes = [
-                x for x, state in classify(code, "M", mutate=False) if state == "E"
+                ns.render_s_expression(x)
+                for x, state in classify_nodes_in_program(
+                    dfa, code.to_ns_s_exp(dict()), "M"
+                )
+                if state == "E" and isinstance(x, ns.SExpression)
             ]
-            e_nodes = [Renderer().render(from_list_nested(x)) for x in e_nodes]
             return e_nodes
 
     def assertENodeReal(self, node):
@@ -280,6 +437,17 @@ class TestExprNodeValidity(unittest.TestCase):
         e_nodes = self.e_nodes(code)
         for node in e_nodes:
             self.assertENodeReal(node)
+
+    def test_e_nodes_basic(self):
+        e_nodes = self.e_nodes("x == 2")
+        self.assertEqual(
+            e_nodes,
+            [
+                "(Compare (Name g_x Load) (list Eq) (list (Constant i2 None)))",
+                "(Name g_x Load)",
+                "(Constant i2 None)",
+            ],
+        )
 
     def test_slice(self):
         self.assertENodesReal("y = x[2:3]")
