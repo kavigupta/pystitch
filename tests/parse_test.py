@@ -174,3 +174,10 @@ class AbstractionCallsTest(unittest.TestCase):
             """,
             substituted.to_python(),
         )
+
+    def test_starred_content_with_abstraction(self):
+        program = """(Assign (list (Name &x:0 Store)) (Tuple (list (_starred_content (Constant i2 None)) (_starred_content (fn_1))) Load) None)"""
+        program_procd = ns.render_s_expression(
+            ParsedAST.parse_s_expression(program).to_ns_s_exp(dict(no_leaves=False))
+        )
+        self.assertEqual(program, program_procd)
