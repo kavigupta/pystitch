@@ -175,9 +175,249 @@ class AbstractionCallsTest(unittest.TestCase):
             substituted.to_python(),
         )
 
-    def test_starred_content_with_abstraction(self):
-        program = """(Assign (list (Name &x:0 Store)) (Tuple (list (_starred_content (Constant i2 None)) (_starred_content (fn_1))) Load) None)"""
+    def assertParseUnparseSExp(self, program):
+        program = ns.render_s_expression(ns.parse_s_expression(program))
         program_procd = ns.render_s_expression(
             ParsedAST.parse_s_expression(program).to_ns_s_exp(dict(no_leaves=False))
         )
         self.assertEqual(program, program_procd)
+
+    def test_starred_content_with_abstraction(self):
+        self.assertParseUnparseSExp("(_starred_content (fn_23))")
+
+    def test_starred_content_with_abstraction_medium(self):
+        self.assertParseUnparseSExp(
+            """
+            (Assign
+                (list (Name &x:0 Store))
+                (Tuple (list (_starred_content (Constant i2 None)) (_starred_content (fn_1))) Load)
+                None
+            )
+            """
+        )
+
+    def test_starred_content_with_abstraction_large_test(self):
+        self.assertParseUnparseSExp(
+            """
+            (Module
+                (/seq
+                    (FunctionDef
+                        &find_path:0
+                        (arguments
+                            nil
+                            (list
+                                (arg &N:1 None None)
+                                (arg &K:1 None None)
+                                (arg &items:1 None None)
+                                (arg &M:1 None None)
+                                (arg &purchase:1 None None)
+                            )
+                            None
+                            nil
+                            nil
+                            None
+                            nil
+                        )
+                        (/seq
+                            (/splice (fn_3 &item_to_store:1 &item:1 &i:1 &items:1 (/choiceseq)))
+                            (Assign (list (Name &possible_paths:1 Store)) (Constant i1 None) None)
+                            (Assign (list (Name &last_store:1 Store)) (UnaryOp USub (Constant i1 None)) None)
+                            (For
+                                (Name &item:1 Store)
+                                (Name &purchase:1 Load)
+                                (/seq
+                                    (If
+                                        (Compare
+                                            (Name &item:1 Load)
+                                            (list In)
+                                            (list (Name &item_to_store:1 Load))
+                                        )
+                                        (/seq
+                                            (Assign
+                                                (list (Name &stores_with_item:1 Store))
+                                                (Subscript
+                                                    (Name &item_to_store:1 Load)
+                                                    (_slice_content (Name &item:1 Load))
+                                                    Load
+                                                )
+                                                None
+                                            )
+                                            (Assign
+                                                (list (Name &stores_with_item:1 Store))
+                                                (ListComp
+                                                    (Name &store:2 Load)
+                                                    (list
+                                                        (comprehension
+                                                            (Name &store:2 Store)
+                                                            (Name &stores_with_item:1 Load)
+                                                            (list
+                                                                (Compare
+                                                                    (Name &store:2 Load)
+                                                                    (list Gt)
+                                                                    (list (Name &last_store:1 Load))
+                                                                )
+                                                            )
+                                                            i0
+                                                        )
+                                                    )
+                                                )
+                                                None
+                                            )
+                                            (If
+                                                (UnaryOp Not (Name &stores_with_item:1 Load))
+                                                (/seq (Return (Constant s_impossible None)))
+                                                (/seq
+                                                    (If
+                                                        (fn_8 &stores_with_item:1)
+                                                        (/seq
+                                                            (AugAssign
+                                                                (Name &possible_paths:1 Store)
+                                                                Mult
+                                                                (Call
+                                                                    (Name g_len Load)
+                                                                    (list
+                                                                        (_starred_content
+                                                                            (Name &stores_with_item:1 Load)
+                                                                        )
+                                                                    )
+                                                                    nil
+                                                                )
+                                                            )
+                                                            (Assign
+                                                                (list (Name &last_store:1 Store))
+                                                                (Call
+                                                                    (Name g_min Load)
+                                                                    (list
+                                                                        (_starred_content
+                                                                            (Name &stores_with_item:1 Load)
+                                                                        )
+                                                                    )
+                                                                    nil
+                                                                )
+                                                                None
+                                                            )
+                                                        )
+                                                        (/seq
+                                                            (Assign
+                                                                (list (Name &last_store:1 Store))
+                                                                (Subscript
+                                                                    (Name &stores_with_item:1 Load)
+                                                                    (_slice_content (Constant i0 None))
+                                                                    Load
+                                                                )
+                                                                None
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        (/seq (Return (Constant s_impossible None)))
+                                    )
+                                )
+                                (/seq)
+                                None
+                            )
+                            (fn_22 (Name &possible_paths:1 Load))
+                        )
+                        nil
+                        None
+                        None
+                    )
+                    (Assign
+                        (list (Name &N:0 Store))
+                        (Call (Name g_int Load) (list (_starred_content (fn_23))) nil)
+                        None
+                    )
+                    (Assign
+                        (list (Name &K:0 Store))
+                        (Call (Name g_int Load) (list (_starred_content (fn_23))) nil)
+                        None
+                    )
+                    (Assign (list (Name &items:0 Store)) (List nil Load) None)
+                    (For
+                        (Name &_:0 Store)
+                        (Call (Name g_range Load) (list (_starred_content (Name &K:0 Load))) nil)
+                        (/seq
+                            (Assign
+                                (list
+                                    (Tuple
+                                        (list
+                                            (_starred_content (Name &i:0 Store))
+                                            (_starred_content (Name &item:0 Store))
+                                        )
+                                        Store
+                                    )
+                                )
+                                (fn_11)
+                                None
+                            )
+                            (Expr
+                                (Call
+                                    (Attribute (Name &items:0 Load) s_append Load)
+                                    (list
+                                        (_starred_content
+                                            (Tuple
+                                                (list
+                                                    (_starred_content
+                                                        (Call
+                                                            (Name g_int Load)
+                                                            (list (_starred_content (Name &i:0 Load)))
+                                                            nil
+                                                        )
+                                                    )
+                                                    (_starred_content (Name &item:0 Load))
+                                                )
+                                                Load
+                                            )
+                                        )
+                                    )
+                                    nil
+                                )
+                            )
+                        )
+                        (/seq)
+                        None
+                    )
+                    (Assign
+                        (list (Name &M:0 Store))
+                        (Call (Name g_int Load) (list (_starred_content (fn_23))) nil)
+                        None
+                    )
+                    (Assign (list (Name &purchase:0 Store)) (List nil Load) None)
+                    (For
+                        (Name &_:0 Store)
+                        (Call (Name g_range Load) (list (_starred_content (Name &M:0 Load))) nil)
+                        (/seq
+                            (Expr
+                                (Call
+                                    (Attribute (Name &purchase:0 Load) s_append Load)
+                                    (list (_starred_content (fn_23)))
+                                    nil
+                                )
+                            )
+                        )
+                        (/seq)
+                        None
+                    )
+                    (Assign
+                        (list (Name &result:0 Store))
+                        (Call
+                            (Name &find_path:0 Load)
+                            (list
+                                (_starred_content (Name &N:0 Load))
+                                (_starred_content (Name &K:0 Load))
+                                (_starred_content (Name &items:0 Load))
+                                (_starred_content (Name &M:0 Load))
+                                (_starred_content (Name &purchase:0 Load))
+                            )
+                            nil
+                        )
+                        None
+                    )
+                    (Expr (Call (Name g_print Load) (list (_starred_content (Name &result:0 Load))) nil))
+                )
+                nil
+            )
+            """
+        )
