@@ -528,10 +528,11 @@ class StarrableElementAST(ParsedAST):
 
     def to_ns_s_exp(self, config):
         # pylint: disable=no-member
-        assert isinstance(self.content, NodeAST), self.content
-        content: NodeAST = self.content
-        if content.typ is ast.Starred:
-            return ns.SExpression("_starred_starred", [content.to_ns_s_exp(config)])
+        assert isinstance(self.content, (NodeAST, AbstractionCallAST)), self.content
+        if isinstance(self.content, NodeAST) and self.content.typ is ast.Starred:
+            return ns.SExpression(
+                "_starred_starred", [self.content.to_ns_s_exp(config)]
+            )
         return ns.SExpression("_starred_content", [self.content.to_ns_s_exp(config)])
 
     def to_python_ast(self):
