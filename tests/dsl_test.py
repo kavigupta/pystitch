@@ -138,7 +138,7 @@ def fit_to(programs):
     counts = fam.count_programs(
         [[program.to_type_annotated_ns_s_exp(dfa, "M") for program in programs]]
     )
-    dist = fam.counts_to_distribution(counts)
+    dist = fam.counts_to_distribution(counts)[0]
     return fam, dist
 
 
