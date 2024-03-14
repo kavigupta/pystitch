@@ -7,7 +7,7 @@ import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
 
-from .classify_nodes import classify_nodes_in_program
+from .classify_nodes import BAD_TYPES, classify_nodes_in_program
 
 SEPARATOR = "~"
 
@@ -61,7 +61,12 @@ def is_sequence(type_name, head_symbol):
         return False
     seq_type = is_sequence_type(type_name)
     seq_symbol = is_sequence_symbol(head_symbol)
-    assert seq_type == seq_symbol
+    assert seq_type == seq_symbol or seq_type in BAD_TYPES, (
+        seq_type,
+        seq_symbol,
+        type_name,
+        head_symbol,
+    )
     return seq_type
 
 

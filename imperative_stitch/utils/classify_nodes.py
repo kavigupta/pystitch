@@ -24,6 +24,9 @@ EXCLUDED_TAGS = [
     "TryStar",
 ]
 
+# types we do not care about, so just send them to the same state
+BAD_TYPES = ["TA"]
+
 TRANSITIONS = frozendict(
     {
         "M": {ast.Module: {"body": "seqS", "type_ignores": "[TI]"}},
