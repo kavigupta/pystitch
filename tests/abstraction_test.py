@@ -3,6 +3,8 @@ from textwrap import dedent
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.utils.classify_nodes import export_dfa
+from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 
 def assertSameCode(test, actual, expected):
@@ -299,3 +301,15 @@ class AbstractionRenderingTest(unittest.TestCase):
                     print(0)
             """,
         )
+
+    def test_dfa_with_abstractions_works(self):
+        export_dfa(abstrs={"fn_1": self.fn_1, "fn_2": self.fn_2})
+
+    def test_dsl_with_abstractions_works(self):
+        dfa = export_dfa(abstrs={"fn_1": self.fn_1, "fn_2": self.fn_2})
+        subset = DSLSubset.from_program(
+            dfa,
+            ParsedAST.parse_python_module("x = x + 2; y = y + x + 2"),
+            root="M",
+        )
+        create_dsl(dfa, subset, "M")
