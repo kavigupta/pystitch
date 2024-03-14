@@ -125,7 +125,6 @@ class ProduceDslTest(unittest.TestCase):
             const-None~ConstKind :: () -> ConstKind
             const-None~TC :: () -> TC
             const-i2~Const :: () -> Const
-            list~L :: L -> L
             list~_L_~1 :: L -> [L]
             list~_TI_~0 :: () -> [TI]
             """,

@@ -187,7 +187,6 @@ TRANSITIONS = frozendict(
             ast.List: {"elts": "[L]", "ctx": "Ctx"},
             ast.Subscript: {"value": "E", "slice": "SliceRoot", "ctx": "Ctx"},
             ast.Attribute: {"value": "E", "attr": "NameStr", "ctx": "Ctx"},
-            "list": "L",
             ast.Starred: {all: "L"},
             "_starred_content": {all: "L"},
             "_starred_starred": {all: "Starred"},

@@ -52,6 +52,10 @@ def is_sequence_type(x):
     return x.name == "seqS"
 
 
+def is_sequence_symbol(x):
+    return x in ["/seq", "/subseq", "list", "/choiceseq"]
+
+
 def clean_type(x):
     """
     Replace [] with __ in the type name
@@ -64,7 +68,7 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
         dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
-            if is_sequence_type(target):
+            if is_sequence_symbol(prod):
                 assert len(dfa[target][prod]) == 1
                 for length in dsl_subset.lengths_by_sequence_type.get(target, []):
                     typ = ns.ArrowType(
@@ -77,6 +81,8 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
                         None,
                     )
             else:
+                if is_sequence_type(target):
+                    assert prod.startswith("fn_"), f"Unexpected sequence prod {prod}"
                 typ = ns.ArrowType(
                     tuple(ns.parse_type(x) for x in dfa[target][prod]),
                     ns.parse_type(target),
