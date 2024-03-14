@@ -7,7 +7,7 @@ import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
 
-from .classify_nodes import classify_nodes_in_program
+from .classify_nodes import BAD_TYPES, classify_nodes_in_program
 
 SEPARATOR = "~"
 
@@ -31,7 +31,7 @@ class DSLSubset:
             code = program.to_ns_s_exp(dict(no_leaves=True))
             for node, state in list(classify_nodes_in_program(dfa, code, root)):
                 assert isinstance(node, ns.SExpression)
-                if is_sequence_type(state):
+                if is_sequence(state, node.symbol):
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not node.symbol.startswith("fn_"):
                     leaves[state].add(node.symbol)
@@ -56,6 +56,20 @@ def is_sequence_symbol(x):
     return x in ["/seq", "/subseq", "list", "/choiceseq"]
 
 
+def is_sequence(type_name, head_symbol):
+    if head_symbol.startswith("fn_"):
+        return False
+    seq_type = is_sequence_type(type_name)
+    seq_symbol = is_sequence_symbol(head_symbol)
+    assert seq_type == seq_symbol or type_name in BAD_TYPES, (
+        seq_type,
+        seq_symbol,
+        type_name,
+        head_symbol,
+    )
+    return seq_type
+
+
 def clean_type(x):
     """
     Replace [] with __ in the type name
@@ -68,7 +82,7 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
         dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
-            if is_sequence_symbol(prod):
+            if is_sequence(target, prod):
                 assert len(dfa[target][prod]) == 1
                 for length in dsl_subset.lengths_by_sequence_type.get(target, []):
                     typ = ns.ArrowType(
@@ -81,8 +95,6 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
                         None,
                     )
             else:
-                if is_sequence_type(target):
-                    assert prod.startswith("fn_"), f"Unexpected sequence prod {prod}"
                 typ = ns.ArrowType(
                     tuple(ns.parse_type(x) for x in dfa[target][prod]),
                     ns.parse_type(target),
@@ -103,7 +115,7 @@ def add_disambiguating_type_tags(dfa, prog, start_state):
     node_id_to_new_symbol = {}
     for node, tag in classify_nodes_in_program(dfa, prog, start_state):
         new_symbol = node.symbol + SEPARATOR + clean_type(tag)
-        if is_sequence_type(tag):
+        if is_sequence(tag, node.symbol):
             new_symbol += SEPARATOR + str(len(node.children))
         node_id_to_new_symbol[id(node)] = new_symbol
     return replace_symbols(prog, node_id_to_new_symbol)
