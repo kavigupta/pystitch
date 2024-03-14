@@ -27,7 +27,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         return mask
 
     def on_entry(self, position: int, symbol: int):
-        print("handlers", self.handlers)
         if not self.handlers:
             assert position == symbol == 0
             self.handlers.append(DefaultHandler(self, set()))
@@ -96,22 +95,17 @@ class AssignmentHandler(Handler):
         pass
 
     def on_exit(self):
-        print("EXITING ASSIGNMENT", self.defined_symbols)
         self.valid_symbols |= self.defined_symbols
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        print("entering assignment child", position)
         if position == self.children["target"]:
             return targets_handler(self.mask, self.valid_symbols)
         return DefaultHandler(self.mask, self.valid_symbols)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
-        print("exiting assignment child", position)
         if position == self.children["target"]:
-            print(child.handlers)
             target_handlers = child.handlers.values()
             for handler in target_handlers:
-                print("TARGET HANDLER", handler.defined_symbols)
                 self.defined_symbols |= handler.defined_symbols
 
     def currently_defined_names(self) -> set[str]:
@@ -137,7 +131,6 @@ class ListHandler(Handler):
         pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        print("new handler for", self)
         self.handlers[position] = self.handler_type(symbol)(
             self.mask, self.valid_symbols, *self.args
         )
@@ -203,7 +196,6 @@ class NameTargetHandler(Handler):
         pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        print("NAME TARGET")
         if position == self.fields["id"]:
             self.defined_symbols.add(symbol)
         return DefaultHandler(self.mask, self.valid_symbols)
