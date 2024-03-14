@@ -130,6 +130,27 @@ class ProduceDslTest(unittest.TestCase):
             """,
         )
 
+    def test_fit_to_programs_including_abstractions(self):
+        new_dfa = {"E": {}, "seqS": {}}
+        new_dfa["E"]["fn_1"] = []
+        new_dfa["E"]["fn_2"] = ["seqS"]
+        new_dfa["seqS"]["fn_param_1"] = ["E"]
+        test_programs = [
+            ParsedAST.parse_s_expression(p)
+            for p in ["(fn_1)", "(fn_2 (fn_param_1 (fn_1)))"]
+        ]
+        new_subset = DSLSubset.from_program(new_dfa, *test_programs, root="E")
+        new_dsl = create_dsl(new_dfa, new_subset, "E")
+        assertDSL(
+            self,
+            new_dsl.render(),
+            """
+            fn_1~E :: () -> E
+            fn_2~E :: seqS -> E
+            fn_param_1~seqS :: E -> seqS
+            """,
+        )
+
 
 def fit_to(programs):
     dfa = export_dfa()
