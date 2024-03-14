@@ -208,16 +208,42 @@ class EnumerateFittedDslTest(unittest.TestCase):
         self.assertEqual(
             self.enumerate("x = 2; y = x", "y = 2; x = y"),
             [
-                (Fraction(1, 16), "x = 2\nx = 2"),
-                (Fraction(1, 16), "x = 2\nx = x"),
-                (Fraction(1, 16), "x = 2\ny = 2"),
-                (Fraction(1, 16), "x = 2\ny = x"),
-                (Fraction(1, 16), "y = 2\nx = 2"),
-                (Fraction(1, 16), "y = 2\nx = y"),
-                (Fraction(1, 16), "y = 2\ny = 2"),
-                (Fraction(1, 16), "y = 2\ny = y"),
+                (Fraction(1, 8), "x = 2\nx = 2"),
+                (Fraction(1, 8), "x = 2\nx = x"),
+                (Fraction(1, 8), "x = 2\ny = 2"),
+                (Fraction(1, 8), "x = 2\ny = x"),
+                (Fraction(1, 8), "y = 2\nx = 2"),
+                (Fraction(1, 8), "y = 2\nx = y"),
+                (Fraction(1, 8), "y = 2\ny = 2"),
+                (Fraction(1, 8), "y = 2\ny = y"),
             ],
         )
+
+    def test_enumerate_def_use_check_wglobal(self):
+        self.assertEqual(
+            self.enumerate("x = print; y = x", "y = print; x = y"),
+            [
+                (Fraction(1, 6), "x = print\nx = print"),
+                (Fraction(1, 6), "x = print\ny = print"),
+                (Fraction(1, 6), "y = print\nx = print"),
+                (Fraction(1, 6), "y = print\ny = print"),
+                (Fraction(1, 12), "x = print\nx = x"),
+                (Fraction(1, 12), "x = print\ny = x"),
+                (Fraction(1, 12), "y = print\nx = y"),
+                (Fraction(1, 12), "y = print\ny = y"),
+            ],
+        )
+
+    def test_likelihood_def_use_check(self):
+        p = ["x = 2; y = x", "y = 2; x = y"]
+        dfa, _, fam, dist = fit_to(p)
+        like = fam.compute_likelihood(
+            dist,
+            ParsedAST.parse_python_module("x = 2\ny = x").to_type_annotated_ns_s_exp(
+                dfa, "M"
+            ),
+        )
+        self.assertAlmostEqual(like, np.log(1 / 2 * 1 * 1 / 2 * 1 / 2))
 
     def annotate_alternates(self, chosen, alts):
         print(chosen, alts)

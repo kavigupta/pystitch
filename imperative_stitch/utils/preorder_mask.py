@@ -4,27 +4,33 @@ from typing import List
 import neurosym as ns
 
 NAME_REGEX = re.compile(r"const-&(\w+):(\d+)~Name")
+GLOBAL_REGEX = re.compile(r"const-g_(\w+)~Name")
 
 
 class DefUseChainPreorderMask(ns.PreorderMask):
     def __init__(self, tree_dist, dsl):
         super().__init__(tree_dist)
         self.dsl = dsl
+        self.has_global_available = any(
+            GLOBAL_REGEX.match(x) for x, _ in self.tree_dist.symbols
+        )
         self.handlers = []
+
+    def _matches(self, handler, symbol_id):
+        symbol, _ = self.tree_dist.symbols[symbol_id]
+        names = handler.currently_defined_names()
+        if symbol == "Name~E":
+            return self.has_global_available or len(names) > 0
+        mat = NAME_REGEX.match(symbol)
+        if not mat:
+            return True
+        return symbol_id in names
 
     def compute_mask(self, position: int, symbols: List[int]) -> List[bool]:
         handler = self.handlers[-1]
         if handler.is_defining(position):
             return [True] * len(symbols)
-        mask = []
-        for symbol_id in symbols:
-            symbol, _ = self.tree_dist.symbols[symbol_id]
-            mat = NAME_REGEX.match(symbol)
-            if not mat:
-                mask.append(True)
-                continue
-            mask.append(symbol_id in handler.currently_defined_names())
-        return mask
+        return [self._matches(handler, symbol) for symbol in symbols]
 
     def on_entry(self, position: int, symbol: int):
         if not self.handlers:
@@ -112,7 +118,7 @@ class AssignmentHandler(Handler):
         return self.valid_symbols
 
     def is_defining(self, position: int) -> bool:
-        return False
+        return position == self.children["target"]
 
 
 class ListHandler(Handler):
@@ -143,7 +149,7 @@ class ListHandler(Handler):
         return self.valid_symbols
 
     def is_defining(self, position: int) -> bool:
-        return False
+        return True
 
 
 class DefaultHandler(Handler):
