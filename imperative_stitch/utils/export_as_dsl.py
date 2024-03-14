@@ -33,7 +33,7 @@ class DSLSubset:
                 assert isinstance(node, ns.SExpression)
                 if is_sequence_type(state):
                     lengths_by_list_type[state].add(len(node.children))
-                elif len(node.children) == 0:
+                elif len(node.children) == 0 and not node.symbol.startswith("fn_"):
                     leaves[state].add(node.symbol)
         return cls(
             lengths_by_sequence_type={
