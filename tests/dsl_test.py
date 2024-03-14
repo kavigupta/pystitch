@@ -8,6 +8,7 @@ from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
+from imperative_stitch.utils.preorder_mask import DefUseChainPreorderMask
 
 from .utils import assertDSL
 
@@ -134,7 +135,9 @@ def fit_to(programs):
     programs = [ParsedAST.parse_python_module(p) for p in programs]
     subset = DSLSubset.from_program(dfa, *programs, root="M")
     dsl = create_dsl(export_dfa(), subset, "M")
-    fam = ns.BigramProgramDistributionFamily(dsl)
+    fam = ns.BigramProgramDistributionFamily(
+        dsl, additional_preorder_masks=[DefUseChainPreorderMask]
+    )
     counts = fam.count_programs(
         [[program.to_type_annotated_ns_s_exp(dfa, "M") for program in programs]]
     )
@@ -199,3 +202,76 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 (Fraction(1, 4), "y = 3"),
             ],
         )
+
+    def test_enumerate_def_use_check(self):
+        self.assertEqual(
+            self.enumerate("x = 2; y = x", "y = 3; x = y"),
+            [
+                (Fraction(1, 64), "x = 2\nx = 2"),
+                (Fraction(1, 64), "x = 2\nx = 3"),
+                (Fraction(1, 64), "x = 2\nx = x"),
+                (Fraction(1, 64), "x = 2\nx = y"),
+                (Fraction(1, 64), "x = 2\ny = 2"),
+                (Fraction(1, 64), "x = 2\ny = 3"),
+                (Fraction(1, 64), "x = 2\ny = x"),
+                (Fraction(1, 64), "x = 2\ny = y"),
+                (Fraction(1, 64), "x = 3\nx = 2"),
+                (Fraction(1, 64), "x = 3\nx = 3"),
+                (Fraction(1, 64), "x = 3\nx = x"),
+                (Fraction(1, 64), "x = 3\nx = y"),
+                (Fraction(1, 64), "x = 3\ny = 2"),
+                (Fraction(1, 64), "x = 3\ny = 3"),
+                (Fraction(1, 64), "x = 3\ny = x"),
+                (Fraction(1, 64), "x = 3\ny = y"),
+                (Fraction(1, 64), "x = x\nx = 2"),
+                (Fraction(1, 64), "x = x\nx = 3"),
+                (Fraction(1, 64), "x = x\nx = x"),
+                (Fraction(1, 64), "x = x\nx = y"),
+                (Fraction(1, 64), "x = x\ny = 2"),
+                (Fraction(1, 64), "x = x\ny = 3"),
+                (Fraction(1, 64), "x = x\ny = x"),
+                (Fraction(1, 64), "x = x\ny = y"),
+                (Fraction(1, 64), "x = y\nx = 2"),
+                (Fraction(1, 64), "x = y\nx = 3"),
+                (Fraction(1, 64), "x = y\nx = x"),
+                (Fraction(1, 64), "x = y\nx = y"),
+                (Fraction(1, 64), "x = y\ny = 2"),
+                (Fraction(1, 64), "x = y\ny = 3"),
+                (Fraction(1, 64), "x = y\ny = x"),
+                (Fraction(1, 64), "x = y\ny = y"),
+                (Fraction(1, 64), "y = 2\nx = 2"),
+                (Fraction(1, 64), "y = 2\nx = 3"),
+                (Fraction(1, 64), "y = 2\nx = x"),
+                (Fraction(1, 64), "y = 2\nx = y"),
+                (Fraction(1, 64), "y = 2\ny = 2"),
+                (Fraction(1, 64), "y = 2\ny = 3"),
+                (Fraction(1, 64), "y = 2\ny = x"),
+                (Fraction(1, 64), "y = 2\ny = y"),
+                (Fraction(1, 64), "y = 3\nx = 2"),
+                (Fraction(1, 64), "y = 3\nx = 3"),
+                (Fraction(1, 64), "y = 3\nx = x"),
+                (Fraction(1, 64), "y = 3\nx = y"),
+                (Fraction(1, 64), "y = 3\ny = 2"),
+                (Fraction(1, 64), "y = 3\ny = 3"),
+                (Fraction(1, 64), "y = 3\ny = x"),
+                (Fraction(1, 64), "y = 3\ny = y"),
+                (Fraction(1, 64), "y = x\nx = 2"),
+                (Fraction(1, 64), "y = x\nx = 3"),
+                (Fraction(1, 64), "y = x\nx = x"),
+                (Fraction(1, 64), "y = x\nx = y"),
+                (Fraction(1, 64), "y = x\ny = 2"),
+                (Fraction(1, 64), "y = x\ny = 3"),
+                (Fraction(1, 64), "y = x\ny = x"),
+                (Fraction(1, 64), "y = x\ny = y"),
+                (Fraction(1, 64), "y = y\nx = 2"),
+                (Fraction(1, 64), "y = y\nx = 3"),
+                (Fraction(1, 64), "y = y\nx = x"),
+                (Fraction(1, 64), "y = y\nx = y"),
+                (Fraction(1, 64), "y = y\ny = 2"),
+                (Fraction(1, 64), "y = y\ny = 3"),
+                (Fraction(1, 64), "y = y\ny = x"),
+                (Fraction(1, 64), "y = y\ny = y"),
+            ],
+        )
+
+        1/0
