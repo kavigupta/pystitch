@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
 import re
+from abc import ABC, abstractmethod
 from typing import List
+
 import neurosym as ns
 
 NAME_REGEX = re.compile(r"const-&(\w+):(\d+)~Name")
@@ -51,7 +52,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
 
 class Handler(ABC):
-
     @abstractmethod
     def on_enter(self):
         pass
@@ -122,7 +122,6 @@ class AssignmentHandler(Handler):
 
 
 class ListHandler(Handler):
-
     def __init__(self, handler_type, mask, valid_symbols, *args):
         self.handlers = {}
         self.handler_type = handler_type
@@ -153,7 +152,6 @@ class ListHandler(Handler):
 
 
 class DefaultHandler(Handler):
-
     statement_handlers = {
         x.name: x
         for x in [

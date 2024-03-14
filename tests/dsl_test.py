@@ -1,6 +1,6 @@
-from textwrap import dedent
 import unittest
 from fractions import Fraction
+from textwrap import dedent
 
 import neurosym as ns
 import numpy as np
