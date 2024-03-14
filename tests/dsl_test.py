@@ -162,33 +162,33 @@ class EnumerateFittedDslTest(unittest.TestCase):
 
     def test_enumerate_fitted_dsl_basic(self):
         self.assertEqual(
-            self.enumerate("x = x + 2 + 2"),
+            self.enumerate("x = y + 2 + 2"),
             [
-                (Fraction(1, 2), "x = x + 2"),
-                (Fraction(1, 4), "x = x + 2 + 2"),
-                (Fraction(1, 8), "x = x + 2 + 2 + 2"),
-                (Fraction(1, 16), "x = x + 2 + 2 + 2 + 2"),
-                (Fraction(1, 32), "x = x + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 64), "x = x + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 128), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 256), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 512), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 1024), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 2), "x = y + 2"),
+                (Fraction(1, 4), "x = y + 2 + 2"),
+                (Fraction(1, 8), "x = y + 2 + 2 + 2"),
+                (Fraction(1, 16), "x = y + 2 + 2 + 2 + 2"),
+                (Fraction(1, 32), "x = y + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 64), "x = y + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 128), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 256), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 512), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 1024), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
                 (
                     Fraction(1, 2048),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
                 (
                     Fraction(1, 4096),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
                 (
                     Fraction(1, 8192),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
                 (
                     Fraction(1, 16384),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
             ],
         )
@@ -206,76 +206,18 @@ class EnumerateFittedDslTest(unittest.TestCase):
 
     def test_enumerate_def_use_check(self):
         self.assertEqual(
-            self.enumerate("x = 2; y = x", "y = 3; x = y"),
+            self.enumerate("x = 2; y = x", "y = 2; x = y"),
             [
-                (Fraction(1, 64), "x = 2\nx = 2"),
-                (Fraction(1, 64), "x = 2\nx = 3"),
-                (Fraction(1, 64), "x = 2\nx = x"),
-                (Fraction(1, 64), "x = 2\nx = y"),
-                (Fraction(1, 64), "x = 2\ny = 2"),
-                (Fraction(1, 64), "x = 2\ny = 3"),
-                (Fraction(1, 64), "x = 2\ny = x"),
-                (Fraction(1, 64), "x = 2\ny = y"),
-                (Fraction(1, 64), "x = 3\nx = 2"),
-                (Fraction(1, 64), "x = 3\nx = 3"),
-                (Fraction(1, 64), "x = 3\nx = x"),
-                (Fraction(1, 64), "x = 3\nx = y"),
-                (Fraction(1, 64), "x = 3\ny = 2"),
-                (Fraction(1, 64), "x = 3\ny = 3"),
-                (Fraction(1, 64), "x = 3\ny = x"),
-                (Fraction(1, 64), "x = 3\ny = y"),
-                (Fraction(1, 64), "x = x\nx = 2"),
-                (Fraction(1, 64), "x = x\nx = 3"),
-                (Fraction(1, 64), "x = x\nx = x"),
-                (Fraction(1, 64), "x = x\nx = y"),
-                (Fraction(1, 64), "x = x\ny = 2"),
-                (Fraction(1, 64), "x = x\ny = 3"),
-                (Fraction(1, 64), "x = x\ny = x"),
-                (Fraction(1, 64), "x = x\ny = y"),
-                (Fraction(1, 64), "x = y\nx = 2"),
-                (Fraction(1, 64), "x = y\nx = 3"),
-                (Fraction(1, 64), "x = y\nx = x"),
-                (Fraction(1, 64), "x = y\nx = y"),
-                (Fraction(1, 64), "x = y\ny = 2"),
-                (Fraction(1, 64), "x = y\ny = 3"),
-                (Fraction(1, 64), "x = y\ny = x"),
-                (Fraction(1, 64), "x = y\ny = y"),
-                (Fraction(1, 64), "y = 2\nx = 2"),
-                (Fraction(1, 64), "y = 2\nx = 3"),
-                (Fraction(1, 64), "y = 2\nx = x"),
-                (Fraction(1, 64), "y = 2\nx = y"),
-                (Fraction(1, 64), "y = 2\ny = 2"),
-                (Fraction(1, 64), "y = 2\ny = 3"),
-                (Fraction(1, 64), "y = 2\ny = x"),
-                (Fraction(1, 64), "y = 2\ny = y"),
-                (Fraction(1, 64), "y = 3\nx = 2"),
-                (Fraction(1, 64), "y = 3\nx = 3"),
-                (Fraction(1, 64), "y = 3\nx = x"),
-                (Fraction(1, 64), "y = 3\nx = y"),
-                (Fraction(1, 64), "y = 3\ny = 2"),
-                (Fraction(1, 64), "y = 3\ny = 3"),
-                (Fraction(1, 64), "y = 3\ny = x"),
-                (Fraction(1, 64), "y = 3\ny = y"),
-                (Fraction(1, 64), "y = x\nx = 2"),
-                (Fraction(1, 64), "y = x\nx = 3"),
-                (Fraction(1, 64), "y = x\nx = x"),
-                (Fraction(1, 64), "y = x\nx = y"),
-                (Fraction(1, 64), "y = x\ny = 2"),
-                (Fraction(1, 64), "y = x\ny = 3"),
-                (Fraction(1, 64), "y = x\ny = x"),
-                (Fraction(1, 64), "y = x\ny = y"),
-                (Fraction(1, 64), "y = y\nx = 2"),
-                (Fraction(1, 64), "y = y\nx = 3"),
-                (Fraction(1, 64), "y = y\nx = x"),
-                (Fraction(1, 64), "y = y\nx = y"),
-                (Fraction(1, 64), "y = y\ny = 2"),
-                (Fraction(1, 64), "y = y\ny = 3"),
-                (Fraction(1, 64), "y = y\ny = x"),
-                (Fraction(1, 64), "y = y\ny = y"),
+                (Fraction(1, 16), "x = 2\nx = 2"),
+                (Fraction(1, 16), "x = 2\nx = x"),
+                (Fraction(1, 16), "x = 2\ny = 2"),
+                (Fraction(1, 16), "x = 2\ny = x"),
+                (Fraction(1, 16), "y = 2\nx = 2"),
+                (Fraction(1, 16), "y = 2\nx = y"),
+                (Fraction(1, 16), "y = 2\ny = 2"),
+                (Fraction(1, 16), "y = 2\ny = y"),
             ],
         )
-
-        1 / 0
 
     def annotate_alternates(self, chosen, alts):
         print(chosen, alts)
@@ -309,12 +251,12 @@ class EnumerateFittedDslTest(unittest.TestCase):
         code = self.annotate_program("x = 2; y = x; z = y")
         print(code)
         self.assertEqual(
-            code,
+            code.strip(),
             dedent(
                 """
                 x?y,z = 2
                 y?x,z = x
                 z?x,y = y?x
                 """
-            ),
+            ).strip(),
         )
