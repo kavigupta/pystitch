@@ -1,3 +1,5 @@
+import re
+from textwrap import dedent
 import unittest
 from fractions import Fraction
 
@@ -8,7 +10,7 @@ from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
-from imperative_stitch.utils.preorder_mask import DefUseChainPreorderMask
+from imperative_stitch.utils.preorder_mask import NAME_REGEX, DefUseChainPreorderMask
 
 from .utils import assertDSL
 
@@ -142,12 +144,12 @@ def fit_to(programs):
         [[program.to_type_annotated_ns_s_exp(dfa, "M") for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
-    return fam, dist
+    return dfa, dsl, fam, dist
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
     def enumerate(self, *programs):
-        fam, dist = fit_to(programs)
+        _, _, fam, dist = fit_to(programs)
         out = [
             (
                 Fraction.from_float(np.exp(y)).limit_denominator(),
@@ -274,4 +276,46 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ],
         )
 
-        1/0
+        1 / 0
+
+    def annotate_alternates(self, chosen, alts):
+        print(chosen, alts)
+        mat = NAME_REGEX.match(chosen)
+        if not mat:
+            return chosen
+        name, scope = mat.groups()
+        alts = [NAME_REGEX.match(alt) for alt in alts]
+        alts = {x.group(1) for x in alts if x} - {name}
+        alts = sorted(alts)
+        if alts:
+            name = f"{name}?{','.join(alts)}"
+        return f"const-&{name}:{scope}~Name"
+
+    def annotate_program(self, program):
+        dfa, dsl, fam, _ = fit_to([program])
+        return ParsedAST.parse_s_expression(
+            ns.render_s_expression(
+                ns.annotate_with_alternate_symbols(
+                    ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
+                        dfa, "M"
+                    ),
+                    fam.tree_distribution_skeleton,
+                    lambda tree_dist: DefUseChainPreorderMask(tree_dist, dsl),
+                    self.annotate_alternates,
+                )
+            )
+        ).to_python()
+
+    def test_annotate_alternate_symbols(self):
+        code = self.annotate_program("x = 2; y = x; z = y")
+        print(code)
+        self.assertEqual(
+            code,
+            dedent(
+                """
+                x?y,z = 2
+                y?x,z = x
+                z?x,y = y?x
+                """
+            ),
+        )

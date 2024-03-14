@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
+import re
 from typing import List
 import neurosym as ns
+
+NAME_REGEX = re.compile(r"const-&(\w+):(\d+)~Name")
 
 
 class DefUseChainPreorderMask(ns.PreorderMask):
@@ -11,9 +14,17 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
     def compute_mask(self, position: int, symbols: List[int]) -> List[bool]:
         handler = self.handlers[-1]
-        print([self.tree_dist.symbols[s] for s in symbols])
-        print(handler.currently_defined_names())
-        return [True] * len(symbols)
+        if handler.is_defining(position):
+            return [True] * len(symbols)
+        mask = []
+        for symbol_id in symbols:
+            symbol, _ = self.tree_dist.symbols[symbol_id]
+            mat = NAME_REGEX.match(symbol)
+            if not mat:
+                mask.append(True)
+                continue
+            mask.append(symbol_id in handler.currently_defined_names())
+        return mask
 
     def on_entry(self, position: int, symbol: int):
         print("handlers", self.handlers)
@@ -107,7 +118,7 @@ class AssignmentHandler(Handler):
         return self.valid_symbols
 
     def is_defining(self, position: int) -> bool:
-        return True
+        return False
 
 
 class ListHandler(Handler):
