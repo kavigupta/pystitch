@@ -12,7 +12,7 @@ from imperative_stitch.analyze_program.extract.input_output_variables import (
 )
 from imperative_stitch.data.parse_extract import parse_extract_pragma
 
-from .utils import canonicalize
+from ..utils import canonicalize
 
 
 class IOVariablesTest(unittest.TestCase):

@@ -3,7 +3,7 @@ import unittest
 
 from imperative_stitch.analyze_program.extract.loop import replace_break_and_continue
 
-from .utils import canonicalize
+from ..utils import canonicalize
 
 
 class ReplaceBreakAndContinueTest(unittest.TestCase):

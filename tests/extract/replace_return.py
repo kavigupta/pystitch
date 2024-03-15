@@ -3,7 +3,7 @@ import unittest
 
 from imperative_stitch.analyze_program.extract import remove_unnecessary_returns
 
-from .utils import canonicalize
+from ..utils import canonicalize
 
 
 class RemoveUnnecessaryReturnsTest(unittest.TestCase):

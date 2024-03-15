@@ -5,9 +5,8 @@ import neurosym as ns
 
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.recursion import no_recursionlimit
-from tests.abstraction_test import assertSameCode
-
-from .utils import expand_with_slow_tests, small_set_examples
+from tests.abstraction_handling.abstraction_test import assertSameCode
+from tests.utils import expand_with_slow_tests, small_set_examples
 
 
 class ParseUnparseInverseTest(unittest.TestCase):
