@@ -81,11 +81,6 @@ class Handler(ABC):
         pass
 
     def currently_defined_names(self):
-        for symbol in self.currently_defined_symbols():
-            print(
-                self.mask.tree_dist.symbols[symbol][0],
-                NAME_REGEX.match(self.mask.tree_dist.symbols[symbol][0]),
-            )
         return [
             NAME_REGEX.match(self.mask.tree_dist.symbols[symbol][0]).group(1)
             for symbol in self.currently_defined_symbols()

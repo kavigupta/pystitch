@@ -10,7 +10,6 @@ from tests.dsl_tests.dsl_test import fit_to
 
 class EnumerateFittedDslTest(unittest.TestCase):
     def annotate_alternates(self, chosen, alts):
-        print(chosen, alts)
         mat = NAME_REGEX.match(chosen)
         if not mat:
             return chosen
@@ -54,16 +53,18 @@ class EnumerateFittedDslTest(unittest.TestCase):
         )
 
     def test_basic_import(self):
-        code = self.annotate_program("2; import os; x = os; x = os")
+        # the 2 in front is necessary to force the import to not be pulled
+        code = self.annotate_program("2; import os; import sys as y; x = os; x = os")
         print(code)
         self.assertEqual(
             code.strip(),
             dedent(
                 """
                 2
-                import os?x
-                x?os = os
-                x?os = os?x
+                import os?x,y
+                import sys as y?os,x
+                x?os,y = os?y
+                x?os,y = os?x,y
                 """
             ).strip(),
         )
