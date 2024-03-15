@@ -435,7 +435,7 @@ class RewriteTest(GenericExtractTest):
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
-        from .abstraction_handling.dfa_test import dfa
+        from ..abstraction_handling.dfa_test import dfa
 
         convert = lambda b: ParsedAST.from_python_ast(b, descoper={}).to_ns_s_exp(
             dict()
