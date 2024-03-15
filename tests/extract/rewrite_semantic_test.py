@@ -3,9 +3,9 @@ import ast
 from permacache import stable_hash
 
 from imperative_stitch.utils.run_code import normalize_output, run_python
-from .rewrite_test import GenericRewriteRealisticTest
 
 from ..utils import expand_with_slow_tests, small_set_runnable_code_examples
+from .rewrite_test import GenericRewriteRealisticTest
 
 TEST_VERSION = 1
 

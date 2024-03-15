@@ -8,7 +8,6 @@ from imperative_stitch.analyze_program.extract.errors import (
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.ast_utils import ReplaceNodes
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program
-
 from tests.extract.extract_test import GenericExtractRealisticTest, GenericExtractTest
 from tests.utils import expand_with_slow_tests, small_set_examples
 
