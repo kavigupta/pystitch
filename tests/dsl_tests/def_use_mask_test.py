@@ -14,7 +14,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         mat = NAME_REGEX.match(chosen)
         if not mat:
             return chosen
-        name, scope = mat.groups()
+        name, scope, _ = mat.groups()
         alts = [NAME_REGEX.match(alt) for alt in alts]
         alts = {x.group(1) for x in alts if x}
         self.assertIn(name, alts)
@@ -49,6 +49,21 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 x?y,z = 2
                 y?x,z = x
                 z?x,y = y?x
+                """
+            ).strip(),
+        )
+
+    def test_basic_import(self):
+        code = self.annotate_program("2; import os; x = os; x = os")
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            dedent(
+                """
+                2
+                import os?x
+                x?os = os
+                x?os = os?x
                 """
             ).strip(),
         )
