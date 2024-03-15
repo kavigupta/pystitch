@@ -605,7 +605,7 @@ class RealDataTest(unittest.TestCase):
         except NotApplicable:
             # This is fine, we can't rewrite this example
             return
-        from .rewrite_semantic_test import RewriteSemanticsTest
+        from ..rewrite_semantic_test import RewriteSemanticsTest
 
         assert len(rewritten) == len(eg["code"])
 

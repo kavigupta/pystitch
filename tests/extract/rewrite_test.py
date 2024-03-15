@@ -9,8 +9,8 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.ast_utils import ReplaceNodes
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program
 
-from .extract_test import GenericExtractRealisticTest, GenericExtractTest
-from .utils import expand_with_slow_tests, small_set_examples
+from tests.extract.extract_test import GenericExtractRealisticTest, GenericExtractTest
+from tests.utils import expand_with_slow_tests, small_set_examples
 
 
 class RewriteTest(GenericExtractTest):
@@ -435,7 +435,7 @@ class RewriteTest(GenericExtractTest):
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
-        from .dfa_test import dfa
+        from .abstraction_handling.dfa_test import dfa
 
         convert = lambda b: ParsedAST.from_python_ast(b, descoper={}).to_ns_s_exp(
             dict()
