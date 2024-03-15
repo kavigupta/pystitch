@@ -11,7 +11,7 @@ from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from imperative_stitch.utils.preorder_mask import NAME_REGEX, DefUseChainPreorderMask
 
-from .utils import assertDSL
+from ..utils import assertDSL
 
 
 class SubsetTest(unittest.TestCase):

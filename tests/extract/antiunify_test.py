@@ -13,8 +13,8 @@ from imperative_stitch.utils.ast_utils import (
     ast_nodes_in_order,
     field_is_body,
 )
-from tests.extract_test import GenericExtractTest
-from tests.rewrite_test import GenericRewriteRealisticTest
+from tests.extract.extract_test import GenericExtractTest
+from tests.extract.rewrite_test import GenericRewriteRealisticTest
 from tests.utils import canonicalize, expand_with_slow_tests, small_set_examples
 
 

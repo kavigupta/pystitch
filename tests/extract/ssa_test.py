@@ -12,7 +12,7 @@ from imperative_stitch.analyze_program.ssa.banned_component import BannedCompone
 from imperative_stitch.analyze_program.ssa.render import render_phi_map
 from imperative_stitch.analyze_program.structures.per_function_cfg import PerFunctionCFG
 
-from .utils import expand_with_slow_tests, small_set_examples
+from ..utils import expand_with_slow_tests, small_set_examples
 
 
 def run_ssa_on_single_function(code):
