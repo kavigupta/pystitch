@@ -16,7 +16,9 @@ class EnumerateFittedDslTest(unittest.TestCase):
             return chosen
         name, scope = mat.groups()
         alts = [NAME_REGEX.match(alt) for alt in alts]
-        alts = {x.group(1) for x in alts if x} - {name}
+        alts = {x.group(1) for x in alts if x}
+        self.assertIn(name, alts)
+        alts.remove(name)
         alts = sorted(alts)
         if alts:
             name = f"{name}?{','.join(alts)}"
