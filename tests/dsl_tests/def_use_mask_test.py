@@ -6,6 +6,7 @@ import neurosym as ns
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.def_use_mask import NAME_REGEX, DefUseChainPreorderMask
 from tests.dsl_tests.dsl_test import fit_to
+from tests.utils import expand_with_slow_tests, small_set_runnable_code_examples
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
@@ -52,6 +53,48 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
+    def test_subscript_on_lhs(self):
+        code = self.annotate_program("x = [2, 3, 4]; x[2] = x[0]; y = 2")
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            dedent(
+                """
+                x?y = [2, 3, 4]
+                x[2] = x[0]
+                y?x = 2
+                """
+            ).strip(),
+        )
+
+    def test_attribute_on_lhs(self):
+        code = self.annotate_program("x = 2; y.z = 3; x = x")
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            dedent(
+                """
+                x = 2
+                y.z = 3
+                x = x
+                """
+            ).strip(),
+        )
+
+    def test_tuple_list_on_lhs(self):
+        code = self.annotate_program("[x, y] = 2, 3; x, y = x, y; z = x")
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            dedent(
+                """
+                [x?y,z, y?x,z] = (2, 3)
+                x?y,z, y?x,z = (x?y, y?x)
+                z?x,y = x?y
+                """
+            ).strip(),
+        )
+
     def test_basic_import(self):
         # the 2 in front is necessary to force the import to not be pulled
         code = self.annotate_program("2; import os; import sys as y; x = os; x = os")
@@ -92,3 +135,10 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
             ).strip(),
         )
+
+    # @expand_with_slow_tests(1000)
+    # def test_semantics(self, i):
+    #     example = small_set_runnable_code_examples()[i]["solution"]
+    #     print(example)
+    #     code = self.annotate_program(example)
+    #     print(code)
