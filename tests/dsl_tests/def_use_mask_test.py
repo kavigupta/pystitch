@@ -1,3 +1,4 @@
+import sys
 import unittest
 from textwrap import dedent
 
@@ -83,15 +84,19 @@ class EnumerateFittedDslTest(unittest.TestCase):
     def test_tuple_list_on_lhs(self):
         code = self.annotate_program("[x, y] = 2, 3; x, y = x, y; z = x")
         print(code)
+        past_310 = """
+        [x?y,z, y?x,z] = (2, 3)
+        x?y,z, y?x,z = (x?y, y?x)
+        z?x,y = x?y
+        """
+        up_to_310 = """
+        [x?y,z, y?x,z] = 2, 3
+        (x?y,z, y?x,z) = (x?y, y?x)
+        z?x,y = x?y
+        """
         self.assertEqual(
             code.strip(),
-            dedent(
-                """
-                [x?y,z, y?x,z] = (2, 3)
-                x?y,z, y?x,z = (x?y, y?x)
-                z?x,y = x?y
-                """
-            ).strip(),
+            dedent(up_to_310 if sys.version_info < (3, 11) else past_310).strip(),
         )
 
     def test_basic_import(self):
