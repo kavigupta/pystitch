@@ -184,6 +184,9 @@ class AbstractionCallsTest(unittest.TestCase):
     def test_starred_content_with_abstraction(self):
         self.assertParseUnparseSExp("(_starred_content (fn_23))")
 
+    def test_slice_content_with_abstraction(self):
+        self.assertParseUnparseSExp("(_slice_content (fn_23))")
+
     def test_starred_content_with_abstraction_medium(self):
         self.assertParseUnparseSExp(
             """
