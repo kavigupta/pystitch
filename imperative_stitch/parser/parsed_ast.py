@@ -497,19 +497,20 @@ class SliceElementAST(ParsedAST):
             # safe because it is not actually legal to have a starred element
             # in a slice
             content = content.content
-        assert isinstance(content, NodeAST), content
-        if content.typ is ast.Slice:
-            return ns.SExpression("_slice_slice", [content.to_ns_s_exp(config)])
-        if content.typ is ast.Tuple:
-            assert isinstance(content.children, list)
-            assert len(content.children) == 2
-            content_children = list(content.children)
-            content_children[0] = ListAST(
-                [SliceElementAST(x) for x in content_children[0].children]
-            )
-            content = NodeAST(typ=ast.Tuple, children=content_children)
+        assert isinstance(content, (NodeAST, AbstractionCallAST)), content
+        if isinstance(content, NodeAST):
+            if content.typ is ast.Slice:
+                return ns.SExpression("_slice_slice", [content.to_ns_s_exp(config)])
+            if content.typ is ast.Tuple:
+                assert isinstance(content.children, list)
+                assert len(content.children) == 2
+                content_children = list(content.children)
+                content_children[0] = ListAST(
+                    [SliceElementAST(x) for x in content_children[0].children]
+                )
+                content = NodeAST(typ=ast.Tuple, children=content_children)
 
-            return ns.SExpression("_slice_tuple", [content.to_ns_s_exp(config)])
+                return ns.SExpression("_slice_tuple", [content.to_ns_s_exp(config)])
         return ns.SExpression("_slice_content", [content.to_ns_s_exp(config)])
 
     def to_python_ast(self):
