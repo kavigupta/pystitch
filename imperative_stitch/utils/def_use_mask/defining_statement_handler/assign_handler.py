@@ -25,8 +25,5 @@ class AssignHandler(Handler):
         if position == self.children["target"]:
             self.defined_symbols |= child.defined_symbols
 
-    def currently_defined_symbols(self) -> set[int]:
-        return self.valid_symbols
-
     def is_defining(self, position: int) -> bool:
         return position == self.children["target"]

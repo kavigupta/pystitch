@@ -31,8 +31,5 @@ class FuncDefHandler(Handler):
             for handler in child.handlers.values():
                 self.valid_symbols |= handler.defined_symbols
 
-    def currently_defined_symbols(self) -> set[int]:
-        return self.valid_symbols
-
     def is_defining(self, position: int) -> bool:
         return position in {self.fields["name"], self.fields["args"]}

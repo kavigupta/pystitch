@@ -23,8 +23,5 @@ class NameTargetHandler(Handler):
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         pass
 
-    def currently_defined_symbols(self) -> set[int]:
-        return self.valid_symbols
-
     def is_defining(self, position: int) -> bool:
         return position == self.fields["id"]

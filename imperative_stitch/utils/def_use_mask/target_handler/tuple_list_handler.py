@@ -32,8 +32,5 @@ class TupleListLHSHandler(Handler):
             for handler in target_handlers:
                 self.defined_symbols |= handler.defined_symbols
 
-    def currently_defined_symbols(self) -> set[int]:
-        return self.valid_symbols
-
     def is_defining(self, position: int) -> bool:
         return position == self.fields["elts"]

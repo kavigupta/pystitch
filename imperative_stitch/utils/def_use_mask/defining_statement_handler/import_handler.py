@@ -25,8 +25,5 @@ class ImportHandler(Handler):
         if position == self.children["names"]:
             self.defined_symbols |= child.defined_symbols
 
-    def currently_defined_symbols(self) -> set[int]:
-        return self.valid_symbols
-
     def is_defining(self, position: int) -> bool:
         return position == self.children["names"]

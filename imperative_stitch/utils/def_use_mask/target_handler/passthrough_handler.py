@@ -23,8 +23,5 @@ class PassthroughLHSHandler(Handler):
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         self.defined_symbols |= child.defined_symbols
 
-    def currently_defined_symbols(self) -> set[int]:
-        return self.valid_symbols
-
     def is_defining(self, position: int) -> bool:
         return True
