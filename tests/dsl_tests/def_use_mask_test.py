@@ -90,7 +90,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         z?x,y = x?y
         """
         up_to_310 = """
-        [x?y,z, y?x,z] = 2, 3
+        [x?y,z, y?x,z] = (2, 3)
         (x?y,z, y?x,z) = (x?y, y?x)
         z?x,y = x?y
         """
