@@ -7,8 +7,8 @@ import numpy as np
 from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
+from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 from ..utils import assertDSL
 
