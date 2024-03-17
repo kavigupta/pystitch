@@ -4,7 +4,7 @@ from textwrap import dedent
 import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.utils.preorder_mask import NAME_REGEX, DefUseChainPreorderMask
+from imperative_stitch.utils.def_use_mask import NAME_REGEX, DefUseChainPreorderMask
 from tests.dsl_tests.dsl_test import fit_to
 
 
