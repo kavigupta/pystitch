@@ -68,3 +68,27 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
             ).strip(),
         )
+
+    def test_function_call(self):
+        code = self.annotate_program(
+            dedent(
+                """
+                def f(x):
+                    z = x
+                    return x
+                y = f(2)
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            dedent(
+                """
+                def f?x,y,z(x?f,y,z):
+                    z?f,x,y = x?f
+                    return x?f,z
+                y?f,x,z = f(2)
+                """
+            ).strip(),
+        )

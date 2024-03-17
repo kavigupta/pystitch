@@ -90,10 +90,19 @@ class Handler(ABC):
 def targets_handler(mask, valid_symbols):
     targets_map = {
         "Name~L": NameTargetHandler,
+        "arg~A": NameTargetHandler,
         "alias~alias": AliasTargetHandler,
+        "const-None~A": NonCollectingTargetHandler,
     }
+
+    def symbol_to_handler(symbol):
+        symbol, _ = mask.tree_dist.symbols[symbol]
+        if symbol.startswith("list"):
+            return targets_handler
+        return targets_map[symbol]
+
     return ListHandler(
-        lambda symbol: targets_map[mask.tree_dist.symbols[symbol][0]],
+        symbol_to_handler,
         mask,
         valid_symbols,
     )
@@ -120,9 +129,7 @@ class AssignmentHandler(Handler):
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if position == self.children["target"]:
-            target_handlers = child.handlers.values()
-            for handler in target_handlers:
-                self.defined_symbols |= handler.defined_symbols
+            self.defined_symbols |= child.defined_symbols
 
     def currently_defined_symbols(self) -> set[int]:
         return self.valid_symbols
@@ -152,9 +159,7 @@ class ImportHandler(Handler):
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if position == self.children["names"]:
-            target_handlers = child.handlers.values()
-            for handler in target_handlers:
-                self.defined_symbols |= handler.defined_symbols
+            self.defined_symbols |= child.defined_symbols
 
     def currently_defined_symbols(self) -> set[int]:
         return self.valid_symbols
@@ -169,6 +174,14 @@ class ListHandler(Handler):
         self.handlers = {}
         self.handler_type = handler_type
         self.args = args
+
+    @property
+    def defined_symbols(self):
+        return {
+            symbol
+            for handler in self.handlers.values()
+            for symbol in handler.defined_symbols
+        }
 
     def on_enter(self):
         pass
@@ -192,8 +205,46 @@ class ListHandler(Handler):
         return True
 
 
+class FuncDefHandler(Handler):
+    name = "FunctionDef~S"
+    fields = {"name": 0, "args": 1, "body": 2}
+
+    def __init__(self, mask, valid_symbols):
+        self.original_valid_symbols = valid_symbols
+        super().__init__(mask, set(valid_symbols))
+        self.name = None
+
+    def on_enter(self):
+        pass
+
+    def on_exit(self):
+        assert self.name is not None
+        self.original_valid_symbols.add(self.name)
+
+    def on_child_enter(self, position: int, symbol: int) -> Handler:
+        if position == self.fields["name"]:
+            self.name = symbol
+            self.valid_symbols.add(symbol)
+        if position == self.fields["args"]:
+            return targets_handler(self.mask, self.valid_symbols)
+        return DefaultHandler(self.mask, self.valid_symbols)
+
+    def on_child_exit(self, position: int, symbol: int, child: Handler):
+        if position == self.fields["args"]:
+            for handler in child.handlers.values():
+                self.valid_symbols |= handler.defined_symbols
+
+    def currently_defined_symbols(self) -> set[int]:
+        return self.valid_symbols
+
+    def is_defining(self, position: int) -> bool:
+        return position in {self.fields["name"], self.fields["args"]}
+
+
 class DefaultHandler(Handler):
-    statement_handlers = {x.name: x for x in [AssignmentHandler, ImportHandler]}
+    statement_handlers = {
+        x.name: x for x in [AssignmentHandler, ImportHandler, FuncDefHandler]
+    }
 
     def on_enter(self):
         pass
@@ -218,7 +269,8 @@ class DefaultHandler(Handler):
 
 
 class NameTargetHandler(Handler):
-    fields = {"id": 0}
+    # this works for both Name and arg
+    fields = {"id": 0, "arg": 0}
 
     def __init__(self, mask, valid_symbols):
         super().__init__(mask, valid_symbols)
@@ -275,3 +327,27 @@ class AliasTargetHandler(Handler):
     def is_defining(self, position: int) -> bool:
         # both name and asname are defining
         return True
+
+
+class NonCollectingTargetHandler(Handler):
+    @property
+    def defined_symbols(self):
+        return set()
+
+    def on_enter(self):
+        pass
+
+    def on_exit(self):
+        pass
+
+    def on_child_enter(self, position: int, symbol: int) -> Handler:
+        return DefaultHandler(self.mask, self.valid_symbols)
+
+    def on_child_exit(self, position: int, symbol: int, child: Handler):
+        pass
+
+    def currently_defined_symbols(self) -> set[int]:
+        return self.valid_symbols
+
+    def is_defining(self, position: int) -> bool:
+        return False
