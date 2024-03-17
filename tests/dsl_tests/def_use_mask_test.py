@@ -140,6 +140,28 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
+    def test_lambda(self):
+        code = self.annotate_program(
+            dedent(
+                """
+                x = 2
+                f = lambda y: x
+                z = f(3)
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            dedent(
+                """
+                x?f,y,z = 2
+                f?x,y,z = lambda y?f,x,z: x?y
+                z?f,x,y = f?x(3)
+                """
+            ).strip(),
+        )
+
     # @expand_with_slow_tests(1000)
     # def test_semantics(self, i):
     #     example = small_set_runnable_code_examples()[i]["solution"]

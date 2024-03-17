@@ -24,7 +24,7 @@ class TupleListLHSHandler(Handler):
 
         if position == self.fields["elts"]:
             return targets_handler(self.mask, self.valid_symbols)
-        return DefaultHandler(self.mask, self.valid_symbols)
+        return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if position == self.fields["elts"]:

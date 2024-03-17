@@ -18,7 +18,7 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
-        pass
+        return DefaultHandler.of(self.mask, self.valid_symbols, symbol)
 
     @abstractmethod
     def on_child_exit(self, position: int, symbol: int, child: "Handler"):
@@ -39,6 +39,18 @@ class Handler(ABC):
 
 
 class DefaultHandler(Handler):
+    @classmethod
+    def of(cls, mask, valid_symbols, symbol: int):
+        # pylint: disable=cyclic-import
+        from imperative_stitch.utils.def_use_mask.defining_statement_handler import (
+            defining_statement_handlers,
+        )
+
+        symbol, _ = mask.tree_dist.symbols[symbol]
+        return defining_statement_handlers().get(symbol, DefaultHandler)(
+            mask, valid_symbols
+        )
+
     def on_enter(self):
         pass
 
@@ -46,15 +58,7 @@ class DefaultHandler(Handler):
         pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        # pylint: disable=cyclic-import
-        from imperative_stitch.utils.def_use_mask.defining_statement_handler import (
-            defining_statement_handlers,
-        )
-
-        symbol, _ = self.mask.tree_dist.symbols[symbol]
-        return defining_statement_handlers().get(symbol, DefaultHandler)(
-            self.mask, self.valid_symbols
-        )
+        return self.of(self.mask, self.valid_symbols, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         pass

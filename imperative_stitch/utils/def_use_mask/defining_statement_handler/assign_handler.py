@@ -19,7 +19,8 @@ class AssignHandler(Handler):
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position == self.children["target"]:
             return targets_handler(self.mask, self.valid_symbols)
-        return DefaultHandler(self.mask, self.valid_symbols)
+        print("assign, symbol", symbol, "position", position)
+        return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if position == self.children["target"]:
