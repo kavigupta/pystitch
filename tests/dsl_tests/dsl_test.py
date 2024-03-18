@@ -149,14 +149,14 @@ class ProduceDslTest(unittest.TestCase):
         )
 
 
-def fit_to(programs):
+def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
     dfa = export_dfa()
-    programs = [ParsedAST.parse_python_module(p) for p in programs]
-    subset = DSLSubset.from_program(dfa, *programs, root="M")
-    dsl = create_dsl(export_dfa(), subset, "M")
+    programs = [parser(p) for p in programs]
+    subset = DSLSubset.from_program(dfa, *programs, root=root)
+    dsl = create_dsl(export_dfa(), subset, root)
     fam = ns.BigramProgramDistributionFamily(dsl)
     counts = fam.count_programs(
-        [[program.to_type_annotated_ns_s_exp(dfa, "M") for program in programs]]
+        [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
     return dfa, dsl, fam, dist
@@ -220,11 +220,31 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ],
         )
 
-    def test_likelihood(self):
-        p = ["x = 2", "y = 3", "y = 4"]
-        dfa, _, fam, dist = fit_to(p)
-        like = fam.compute_likelihood(
-            dist,
-            ParsedAST.parse_python_module("y = 4").to_type_annotated_ns_s_exp(dfa, "M"),
+    def compute_likelihood(self, corpus, program):
+        dfa, _, fam, dist = fit_to(corpus)
+        program = ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
+            dfa, "M"
         )
-        self.assertAlmostEqual(like, np.log(2 / 3 * 1 / 3))
+        like = fam.compute_likelihood(dist, program)
+        like = Fraction.from_float(float(np.exp(like))).limit_denominator()
+        results = fam.compute_likelihood_per_node(dist, program)
+        results = [
+            (
+                ns.render_s_expression(x),
+                Fraction.from_float(float(np.exp(y))).limit_denominator(),
+            )
+            for x, y in results
+            if y != 0  # remove zero log-likelihoods
+        ]
+        return like, results
+
+    def test_likelihood(self):
+        like, results = self.compute_likelihood(["x = 2", "y = 3", "y = 4"], "y = 4")
+        self.assertAlmostEqual(like, Fraction(2, 9))
+        self.assertEqual(
+            results,
+            [
+                ("(const-&y:0~Name)", Fraction(2, 3)),
+                ("(const-i4~Const)", Fraction(1, 3)),
+            ],
+        )
