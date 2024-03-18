@@ -273,6 +273,8 @@ class EnumerateFittedDslTest(unittest.TestCase):
         )
 
     def test_likelihood_with_abstractions(self):
+        # test from annie
+        # I don't think it actually makes sense since (fn_3) shouldn't be possible
         test_programs = ["(fn_1 (fn_2) (fn_2))", "(fn_1 (fn_3 (fn_3)) (fn_3))"]
         test_programs_ast = [ParsedAST.parse_s_expression(p) for p in test_programs]
         test_dfa = {"E": {"fn_1": ["E", "E"], "fn_2": [], "fn_3": ["E"]}}
