@@ -159,12 +159,12 @@ def fit_to(programs):
         [[program.to_type_annotated_ns_s_exp(dfa, "M") for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
-    return fam, dist
+    return dfa, dsl, fam, dist
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
     def enumerate(self, *programs):
-        fam, dist = fit_to(programs)
+        _, _, fam, dist = fit_to(programs)
         out = [
             (
                 Fraction.from_float(np.exp(y)).limit_denominator(),
@@ -178,33 +178,33 @@ class EnumerateFittedDslTest(unittest.TestCase):
 
     def test_enumerate_fitted_dsl_basic(self):
         self.assertEqual(
-            self.enumerate("x = x + 2 + 2"),
+            self.enumerate("x = y + 2 + 2"),
             [
-                (Fraction(1, 2), "x = x + 2"),
-                (Fraction(1, 4), "x = x + 2 + 2"),
-                (Fraction(1, 8), "x = x + 2 + 2 + 2"),
-                (Fraction(1, 16), "x = x + 2 + 2 + 2 + 2"),
-                (Fraction(1, 32), "x = x + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 64), "x = x + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 128), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 256), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 512), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
-                (Fraction(1, 1024), "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 2), "x = y + 2"),
+                (Fraction(1, 4), "x = y + 2 + 2"),
+                (Fraction(1, 8), "x = y + 2 + 2 + 2"),
+                (Fraction(1, 16), "x = y + 2 + 2 + 2 + 2"),
+                (Fraction(1, 32), "x = y + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 64), "x = y + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 128), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 256), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 512), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
+                (Fraction(1, 1024), "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2"),
                 (
                     Fraction(1, 2048),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
                 (
                     Fraction(1, 4096),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
                 (
                     Fraction(1, 8192),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
                 (
                     Fraction(1, 16384),
-                    "x = x + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
+                    "x = y + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2 + 2",
                 ),
             ],
         )
@@ -219,3 +219,12 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 (Fraction(1, 4), "y = 3"),
             ],
         )
+
+    def test_likelihood(self):
+        p = ["x = 2", "y = 3", "y = 4"]
+        dfa, _, fam, dist = fit_to(p)
+        like = fam.compute_likelihood(
+            dist,
+            ParsedAST.parse_python_module("y = 4").to_type_annotated_ns_s_exp(dfa, "M"),
+        )
+        self.assertAlmostEqual(like, np.log(2 / 3 * 1 / 3))
