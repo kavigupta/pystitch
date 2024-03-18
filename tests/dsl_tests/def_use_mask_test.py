@@ -8,6 +8,7 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from tests.dsl_tests.dsl_test import fit_to
+from tests.utils import expand_with_slow_tests, small_set_runnable_code_examples
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
@@ -163,9 +164,9 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
-    # @expand_with_slow_tests(1000)
-    # def test_semantics(self, i):
-    #     example = small_set_runnable_code_examples()[i]["solution"]
-    #     print(example)
-    #     code = self.annotate_program(example)
-    #     print(code)
+    @expand_with_slow_tests(1000, -1)
+    def test_semantics(self, i):
+        example = small_set_runnable_code_examples()[i]["solution"]
+        print(example)
+        code = self.annotate_program(example)
+        print(code)
