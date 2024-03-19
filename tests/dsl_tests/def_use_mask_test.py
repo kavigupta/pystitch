@@ -296,6 +296,33 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
+    def test_function_default(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                y = 2
+                z = 3
+                def f(x=y):
+                    return x
+                z = z
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                y?f$x$z = 2
+                z?f$x$y = 3
+
+                def f?x$y$z(x?f$y$z=y?f$z):
+                    return x?f$y$z
+                z?f$x$y = z?f$y
+                """
+            ).strip(),
+        )
+
     @expand_with_slow_tests(1000, -1)
     def test_realistic(self, i):
         if i == 22 or i == 31 or i == 41:

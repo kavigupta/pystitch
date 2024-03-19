@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from imperative_stitch.utils.def_use_mask.names import NAME_REGEX, match_either
+from imperative_stitch.utils.def_use_mask.names import match_either
 
 
 class Handler(ABC):

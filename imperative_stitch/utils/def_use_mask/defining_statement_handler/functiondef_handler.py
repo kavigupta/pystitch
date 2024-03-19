@@ -36,8 +36,7 @@ class ChildFrameCreatorHandler(Handler):
             self.field_for_child_frame is not None
             and position == self.fields[self.field_for_child_frame]
         ):
-            for handler in child.handlers.values():
-                self.valid_symbols |= handler.defined_symbols
+            self.valid_symbols |= child.defined_symbols
 
     def is_defining(self, position: int) -> bool:
         if self.field_name is not None:

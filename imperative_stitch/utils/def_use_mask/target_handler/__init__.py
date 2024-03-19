@@ -1,3 +1,7 @@
+from imperative_stitch.utils.def_use_mask.target_handler.arguments_handler import (
+    ArgumentsHandler,
+)
+
 from .alias_handler import AliasTargetHandler
 from .just_expression_handler import JustAnExpressionHandler
 from .list_handler import ListHandler
@@ -21,7 +25,7 @@ targets_map = {
     "Tuple~L": TupleListLHSHandler,
     "List~L": TupleListLHSHandler,
     "_starred_content~L": PassthroughLHSHandler,
-    "arguments~As": targets_handler,
+    "arguments~As": ArgumentsHandler,
 }
 
 
