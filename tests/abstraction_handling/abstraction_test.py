@@ -117,7 +117,6 @@ def assertSameCode(test, actual, expected):
 
 
 class AbstractionRenderingTest(unittest.TestCase):
-
     def test_stub_rendering_simple(self):
         stub = fn_1.create_stub(fn_1_args)
         assertSameCode(
