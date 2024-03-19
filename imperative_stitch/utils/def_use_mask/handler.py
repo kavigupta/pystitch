@@ -32,10 +32,15 @@ class Handler(ABC):
         pass
 
     def currently_defined_names(self):
-        return [
-            match_either(self.mask.tree_dist.symbols[symbol][0]).group("name")
-            for symbol in self.currently_defined_symbols()
-        ]
+        names = []
+        for symbol in self.currently_defined_symbols():
+            mat = match_either(self.mask.tree_dist.symbols[symbol][0])
+            if not mat:
+                raise ValueError(
+                    f"Could not match {self.mask.tree_dist.symbols[symbol][0]}"
+                )
+            names.append(mat.group("name"))
+        return names
 
     def target_child(self, symbol: int) -> "Handler":
         # pylint: disable=cyclic-import
