@@ -5,8 +5,8 @@ class NameTargetHandler(Handler):
     # this works for both Name and arg
     fields = {"id": 0, "arg": 0}
 
-    def __init__(self, mask, valid_symbols):
-        super().__init__(mask, valid_symbols)
+    def __init__(self, mask, valid_symbols, config):
+        super().__init__(mask, valid_symbols, config)
         self.defined_symbols = set()
 
     def on_enter(self):

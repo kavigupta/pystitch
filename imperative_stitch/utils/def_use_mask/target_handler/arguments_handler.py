@@ -23,8 +23,8 @@ class ArgumentsHandler(Handler):
         "defaults": 6,
     }
 
-    def __init__(self, mask, valid_symbols):
-        super().__init__(mask, valid_symbols)
+    def __init__(self, mask, valid_symbols, config):
+        super().__init__(mask, valid_symbols, config)
         self.defined_symbols = set()
 
     def on_enter(self):

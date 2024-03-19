@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List
 
 import neurosym as ns
@@ -5,6 +6,11 @@ import neurosym as ns
 from imperative_stitch.utils.def_use_mask.handler import DefaultHandler
 from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+
+
+@dataclass
+class DefUseMaskConfiguration:
+    pass
 
 
 class DefUseChainPreorderMask(ns.PreorderMask):
@@ -16,6 +22,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             GLOBAL_REGEX.match(x) for x, _ in self.tree_dist.symbols
         )
         self.handlers = []
+        self.config = DefUseMaskConfiguration()
 
     def _matches(self, names, symbol_id):
         symbol, _ = self.tree_dist.symbols[symbol_id]
@@ -36,7 +43,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     def on_entry(self, position: int, symbol: int):
         if not self.handlers:
             assert position == symbol == 0
-            self.handlers.append(DefaultHandler(self, set()))
+            self.handlers.append(DefaultHandler(self, set(), self.config))
         else:
             self.handlers.append(self.handlers[-1].on_child_enter(position, symbol))
 

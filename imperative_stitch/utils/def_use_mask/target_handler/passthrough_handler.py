@@ -2,8 +2,8 @@ from ..handler import Handler
 
 
 class PassthroughLHSHandler(Handler):
-    def __init__(self, mask, valid_symbols):
-        super().__init__(mask, valid_symbols)
+    def __init__(self, mask, valid_symbols, config):
+        super().__init__(mask, valid_symbols, config)
         self.defined_symbols = set()
 
     def on_enter(self):
@@ -13,12 +13,7 @@ class PassthroughLHSHandler(Handler):
         pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        # pylint: disable=cyclic-import
-        from . import targets_map
-
-        return targets_map[self.mask.tree_dist.symbols[symbol][0]](
-            self.mask, self.valid_symbols
-        )
+        return self.target_child(symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         self.defined_symbols |= child.defined_symbols
