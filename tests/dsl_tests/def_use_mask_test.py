@@ -5,7 +5,6 @@ from textwrap import dedent
 import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import expand_with_slow_tests, small_set_runnable_code_examples
@@ -27,7 +26,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         return f"const-&{name}:{scope}~Name"
 
     def annotate_program(self, program):
-        dfa, dsl, fam, _ = fit_to([program])
+        dfa, _, fam, _ = fit_to([program])
         return ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
@@ -35,7 +34,6 @@ class EnumerateFittedDslTest(unittest.TestCase):
                         dfa, "M"
                     ),
                     fam.tree_distribution_skeleton,
-                    lambda tree_dist: DefUseChainPreorderMask(tree_dist, dsl),
                     self.annotate_alternates,
                 )
             )

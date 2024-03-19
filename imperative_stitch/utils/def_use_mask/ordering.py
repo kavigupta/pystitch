@@ -15,10 +15,12 @@ def python_node_dictionary():
     return result
 
 
-class PythonNodeOrdering(ns.DictionaryNodeOrdering):
-    """
-    Orders the subnodes of a node according to a dictionary.
-    """
+# class PythonNodeOrdering(ns.DictionaryNodeOrdering):
+#     """
+#     Orders the subnodes of a node according to a dictionary.
+#     """
 
-    def __init__(self, dist):
-        super().__init__(dist, python_node_dictionary())
+#     def __init__(self, dist):
+#         super().__init__(dist, python_node_dictionary(), tolerate_missing=True)
+
+PythonNodeOrdering = None
