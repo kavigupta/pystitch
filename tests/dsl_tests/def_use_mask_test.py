@@ -7,6 +7,7 @@ import neurosym as ns
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.def_use_mask import NAME_REGEX
 from tests.dsl_tests.dsl_test import fit_to
+from tests.utils import expand_with_slow_tests, small_set_runnable_code_examples
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
