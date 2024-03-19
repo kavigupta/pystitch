@@ -2,8 +2,8 @@ from ..handler import Handler
 
 
 class ListHandler(Handler):
-    def __init__(self, handler_type, mask, valid_symbols, *args):
-        super().__init__(mask, valid_symbols)
+    def __init__(self, handler_type, mask, valid_symbols, config, *args):
+        super().__init__(mask, valid_symbols, config)
         self.handlers = {}
         self.handler_type = handler_type
         self.args = args

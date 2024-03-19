@@ -3,10 +3,10 @@ from ..handler import Handler
 
 class ChildFrameCreatorHandler(Handler):
     def __init__(
-        self, mask, valid_symbols, *, fields, field_name, field_for_child_frame
+        self, mask, valid_symbols, config, *, fields, field_name, field_for_child_frame
     ):
         self.original_valid_symbols = valid_symbols
-        super().__init__(mask, set(valid_symbols))
+        super().__init__(mask, set(valid_symbols), config)
         self.name = None
         self.fields = fields
         self.field_name = field_name
@@ -51,10 +51,11 @@ class ChildFrameCreatorHandler(Handler):
 class FuncDefHandler(ChildFrameCreatorHandler):
     name = "FunctionDef~S"
 
-    def __init__(self, mask, valid_symbols):
+    def __init__(self, mask, valid_symbols, config):
         super().__init__(
             mask,
             valid_symbols,
+            config,
             fields={"name": 0, "args": 1, "body": 2},
             field_name="name",
             field_for_child_frame="args",
@@ -64,10 +65,11 @@ class FuncDefHandler(ChildFrameCreatorHandler):
 class LambdaHandler(ChildFrameCreatorHandler):
     name = "Lambda~E"
 
-    def __init__(self, mask, valid_symbols):
+    def __init__(self, mask, valid_symbols, config):
         super().__init__(
             mask,
             valid_symbols,
+            config,
             fields={"args": 0, "body": 1},
             field_name=None,
             field_for_child_frame="args",
@@ -77,10 +79,11 @@ class LambdaHandler(ChildFrameCreatorHandler):
 class ClassDefHandler(ChildFrameCreatorHandler):
     name = "ClassDef~S"
 
-    def __init__(self, mask, valid_symbols):
+    def __init__(self, mask, valid_symbols, config):
         super().__init__(
             mask,
             valid_symbols,
+            config,
             fields={"name": 0},
             field_name="name",
             field_for_child_frame=None,

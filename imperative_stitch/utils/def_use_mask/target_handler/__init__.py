@@ -11,8 +11,8 @@ from .passthrough_handler import PassthroughLHSHandler
 from .tuple_list_handler import TupleListLHSHandler
 
 
-def targets_handler(mask, valid_symbols):
-    return ListHandler(handle_target, mask, valid_symbols)
+def targets_handler(mask, valid_symbols, config):
+    return ListHandler(handle_target, mask, valid_symbols, config)
 
 
 targets_map = {
@@ -30,11 +30,11 @@ targets_map = {
 
 
 def handle_target(root_symbol: int):
-    def dispatch(mask, valid_symbols):
+    def dispatch(mask, valid_symbols, config):
         symbol = root_symbol
         symbol, _ = mask.tree_dist.symbols[symbol]
         if symbol.startswith("list"):
-            return targets_handler(mask, valid_symbols)
-        return targets_map[symbol](mask, valid_symbols)
+            return targets_handler(mask, valid_symbols, config)
+        return targets_map[symbol](mask, valid_symbols, config)
 
     return dispatch
