@@ -1,5 +1,4 @@
-from ..handler import DefaultHandler, Handler
-from ..target_handler import targets_handler
+from ..handler import Handler
 
 
 class ImportHandler(Handler):
@@ -18,7 +17,7 @@ class ImportHandler(Handler):
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position == self.children["names"]:
-            return targets_handler(self.mask, self.valid_symbols)
+            return self.target_child(symbol)
         return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):

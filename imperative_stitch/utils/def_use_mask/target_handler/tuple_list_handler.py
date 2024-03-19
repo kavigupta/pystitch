@@ -1,4 +1,4 @@
-from ..handler import DefaultHandler, Handler
+from ..handler import Handler
 
 
 class TupleListLHSHandler(Handler):
@@ -19,11 +19,8 @@ class TupleListLHSHandler(Handler):
         pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        # pylint: disable=cyclic-import
-        from . import targets_handler
-
         if position == self.fields["elts"]:
-            return targets_handler(self.mask, self.valid_symbols)
+            return self.target_child(symbol)
         return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):

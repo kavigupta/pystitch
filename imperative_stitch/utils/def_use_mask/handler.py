@@ -37,6 +37,12 @@ class Handler(ABC):
             for symbol in self.currently_defined_symbols()
         ]
 
+    def target_child(self, symbol: int) -> "Handler":
+        # pylint: disable=cyclic-import
+        from .target_handler import handle_target
+
+        return handle_target(symbol)(self.mask, self.valid_symbols)
+
 
 class DefaultHandler(Handler):
     @classmethod

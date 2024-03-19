@@ -1,13 +1,12 @@
 import sys
 import unittest
-from textwrap import dedent
 
 import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.def_use_mask import NAME_REGEX
 from tests.dsl_tests.dsl_test import fit_to
-from tests.utils import expand_with_slow_tests, small_set_runnable_code_examples
+from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
@@ -22,7 +21,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         alts.remove(name)
         alts = sorted(alts)
         if alts:
-            name = f"{name}?{','.join(alts)}"
+            name = f"{name}?{'$'.join(alts)}"
         return f"const-&{name}:{scope}~Name"
 
     def annotate_program(self, program):
@@ -44,11 +43,11 @@ class EnumerateFittedDslTest(unittest.TestCase):
         print(code)
         self.assertEqual(
             code.strip(),
-            dedent(
+            cwq(
                 """
-                x?y,z = 2
-                y?x,z = x
-                z?x,y = y?x
+                x?y$z = 2
+                y?x$z = x
+                z?x$y = y?x
                 """
             ).strip(),
         )
@@ -58,7 +57,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         print(code)
         self.assertEqual(
             code.strip(),
-            dedent(
+            cwq(
                 """
                 x?y = [2, 3, 4]
                 x[2] = x[0]
@@ -72,7 +71,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         print(code)
         self.assertEqual(
             code.strip(),
-            dedent(
+            cwq(
                 """
                 x = 2
                 y.z = 3
@@ -85,18 +84,18 @@ class EnumerateFittedDslTest(unittest.TestCase):
         code = self.annotate_program("[x, y] = 2, 3; x, y = x, y; z = x")
         print(code)
         past_310 = """
-        [x?y,z, y?x,z] = (2, 3)
-        x?y,z, y?x,z = (x?y, y?x)
-        z?x,y = x?y
+        [x?y$z, y?x$z] = (2, 3)
+        x?y$z, y?x$z = (x?y, y?x)
+        z?x$y = x?y
         """
         up_to_310 = """
-        [x?y,z, y?x,z] = (2, 3)
-        (x?y,z, y?x,z) = (x?y, y?x)
-        z?x,y = x?y
+        [x?y$z, y?x$z] = (2, 3)
+        (x?y$z, y?x$z) = (x?y, y?x)
+        z?x$y = x?y
         """
         self.assertEqual(
             code.strip(),
-            dedent(up_to_310 if sys.version_info < (3, 11) else past_310).strip(),
+            cwq(up_to_310 if sys.version_info < (3, 11) else past_310).strip(),
         )
 
     def test_basic_import(self):
@@ -105,20 +104,20 @@ class EnumerateFittedDslTest(unittest.TestCase):
         print(code)
         self.assertEqual(
             code.strip(),
-            dedent(
+            cwq(
                 """
                 2
-                import os?x,y
-                import sys as y?os,x
-                x?os,y = os?y
-                x?os,y = os?x,y
+                import os?x$y
+                import sys as y?os$x
+                x?os$y = os?y
+                x?os$y = os?x$y
                 """
             ).strip(),
         )
 
     def test_function_call(self):
         code = self.annotate_program(
-            dedent(
+            cwq(
                 """
                 def f(x):
                     z = x
@@ -130,12 +129,66 @@ class EnumerateFittedDslTest(unittest.TestCase):
         print(code)
         self.assertEqual(
             code.strip(),
-            dedent(
+            cwq(
                 """
-                def f?x,y,z(x?f,y,z):
-                    z?f,x,y = x?f
-                    return x?f,z
-                y?f,x,z = f(2)
+                def f?x$y$z(x?f$y$z):
+                    z?f$x$y = x?f
+                    return x?f$z
+                y?f$x$z = f(2)
+                """
+            ).strip(),
+        )
+
+    def test_single_comprehension(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                a = 2
+                [b for b in range(a) if b == a]
+                print(a)
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                a?b = 2
+                [b?a for b?a in range(a) if b?a == a?b]
+                print(a)
+                """
+            ).strip(),
+        )
+
+    def test_bunch_of_comprehensions(self):
+        self.maxDiff = None
+        code = self.annotate_program(
+            cwq(
+                """
+                a = 2
+                [b for b in range(a)]
+                (c for c in range(a))
+                {c for c in range(a)}
+                {d: a for d in range(a)}
+                [e + f + g for e in range(a) for f in range(e) for g in range(f)]
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                a?b$c$d$e$f$g = 2
+                [b?a for b?a$c$d$e$f$g in range(a)]
+                (c?a for c?a$b$d$e$f$g in range(a))
+                {c?a for c?a$b$d$e$f$g in range(a)}
+                {d?a: a?d for d?a$b$c$e$f$g in range(a)}
+                [e?a$f$g + f?a$e$g + g?a$e$f
+                    for e?a$b$c$d$f$g in range(a)
+                    for f?a$b$c$d$e$g in range(e?a)
+                    for g?a$b$c$d$e$f in range(f?a$e)]
                 """
             ).strip(),
         )

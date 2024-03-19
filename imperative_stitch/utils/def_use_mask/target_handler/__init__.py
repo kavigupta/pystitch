@@ -6,6 +6,11 @@ from .non_collecting_handler import NonCollectingTargetHandler
 from .passthrough_handler import PassthroughLHSHandler
 from .tuple_list_handler import TupleListLHSHandler
 
+
+def targets_handler(mask, valid_symbols):
+    return ListHandler(handle_target, mask, valid_symbols)
+
+
 targets_map = {
     "Name~L": NameTargetHandler,
     "arg~A": NameTargetHandler,
@@ -16,18 +21,16 @@ targets_map = {
     "Tuple~L": TupleListLHSHandler,
     "List~L": TupleListLHSHandler,
     "_starred_content~L": PassthroughLHSHandler,
+    "arguments~As": targets_handler,
 }
 
 
-def targets_handler(mask, valid_symbols):
-    def symbol_to_handler(symbol):
+def handle_target(root_symbol: int):
+    def dispatch(mask, valid_symbols):
+        symbol = root_symbol
         symbol, _ = mask.tree_dist.symbols[symbol]
         if symbol.startswith("list"):
-            return targets_handler
-        return targets_map[symbol]
+            return targets_handler(mask, valid_symbols)
+        return targets_map[symbol](mask, valid_symbols)
 
-    return ListHandler(
-        symbol_to_handler,
-        mask,
-        valid_symbols,
-    )
+    return dispatch
