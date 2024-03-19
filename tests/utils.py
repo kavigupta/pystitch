@@ -54,6 +54,7 @@ def assertDSL(test_obj, dsl, expected):
     test_obj.maxDiff = None
     test_obj.assertEqual(dsl, expected)
 
+
 def cwq(s):
     """
     Canonicalize with question marks and dollars

@@ -1,4 +1,4 @@
-from ..handler import DefaultHandler, Handler
+from ..handler import Handler
 
 
 class NonCollectingTargetHandler(Handler):
