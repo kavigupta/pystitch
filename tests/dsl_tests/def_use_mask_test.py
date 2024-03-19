@@ -164,6 +164,26 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
+    def test_comprehension(self):
+        code = self.annotate_program(
+            dedent(
+                """
+                x = 2
+                [t for t in range(x)]
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            dedent(
+                """
+                x?t = 2
+                [t?x for t?x in range(x)]
+                """
+            ).strip(),
+        )
+
     @expand_with_slow_tests(1000, -1)
     def test_semantics(self, i):
         example = small_set_runnable_code_examples()[i]["solution"]
