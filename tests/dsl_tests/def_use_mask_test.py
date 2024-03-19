@@ -104,17 +104,31 @@ class EnumerateFittedDslTest(unittest.TestCase):
 
     def test_basic_import(self):
         # the 2 in front is necessary to force the import to not be pulled
-        code = self.annotate_program("2; import os; import sys as y; x = os; x = os")
+        code = self.annotate_program(
+            cwq(
+                """
+                2
+                import os
+                import sys as y
+                from collections import defaultdict
+                from collections import defaultdict as z
+                x = os
+                x = os
+                """
+            )
+        )
         print(code)
         self.assertEqual(
             code.strip(),
             cwq(
                 """
                 2
-                import os?x$y
-                import sys as y?os$x
-                x?os$y = os?y
-                x?os$y = os?x$y
+                import os?defaultdict$x$y$z
+                import sys as y?defaultdict$os$x$z
+                from collections import defaultdict?os$x$y$z
+                from collections import defaultdict as z?defaultdict$os$x$y
+                x?defaultdict$os$y$z = os?defaultdict$y$z
+                x?defaultdict$os$y$z = os?defaultdict$x$y$z
                 """
             ).strip(),
         )
@@ -245,6 +259,28 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 class A:
                     x = A
                 y = A
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                class A?x$y:
+                    x?A$y = A
+                y?A$x = A
+                """
+            ).strip(),
+        )
+
+    def test_import_inside_fn(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                def f?defaultdict():
+                    from collections import defaultdict?f
+                    return defaultdict?f
                 """
             )
         )

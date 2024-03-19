@@ -26,3 +26,8 @@ class ImportHandler(Handler):
 
     def is_defining(self, position: int) -> bool:
         return position == self.children["names"]
+
+
+class ImportFromHandler(ImportHandler):
+    name = "ImportFrom~S"
+    children = {"module": 0, "names": 1}
