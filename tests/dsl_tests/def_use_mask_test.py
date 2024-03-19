@@ -3,6 +3,7 @@ import unittest
 
 import neurosym as ns
 
+from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
@@ -28,14 +29,12 @@ class EnumerateFittedDslTest(unittest.TestCase):
             name = f"{name}?{'$'.join(alts)}"
         return f"const-&{name}:{scope}~Name"
 
-    def annotate_program(self, program):
-        dfa, _, fam, _ = fit_to([program])
+    def annotate_program(self, program, parser=ParsedAST.parse_python_module, **kwargs):
+        dfa, _, fam, _ = fit_to([program], parser=parser, **kwargs)
         return ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
-                    ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
-                        dfa, "M"
-                    ),
+                    parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
                     fam.tree_distribution_skeleton,
                     self.annotate_alternates,
                 )
@@ -332,3 +331,45 @@ class EnumerateFittedDslTest(unittest.TestCase):
         print(example)
         code = self.annotate_program(example)
         print(code)
+
+    def test_with_abstraction(self):
+        fn_1_body = """
+        (/seq
+            (Assign (list (Name &a:0 Store)) (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil) None)
+            (Assign (list (Name &z:0 Store)) (Call (Name g_input Load) nil nil) None))
+        """
+
+        fn_1 = Abstraction(
+            name="fn_1",
+            body=ParsedAST.parse_s_expression(fn_1_body),
+            arity=0,
+            sym_arity=0,
+            choice_arity=0,
+            dfa_root="seqS",
+            dfa_symvars=[],
+            dfa_metavars=[],
+            dfa_choicevars=[],
+        )
+
+        print(
+            ParsedAST.parse_python_statement(
+                ParsedAST.parse_s_expression(
+                    "(Assign (list (Name &k:0 Store)) (Call (Attribute (Name &a:0 Load) s_count Load) (list) nil) None)"
+                ).to_python()
+            ).to_s_exp()
+        )
+
+        ctx_in_seq = """
+        (Module
+            (/seq
+                (Assign (list (Name &k:0 Store)) (Constant i2 None) None)
+                (/splice
+                    (fn_1))
+                (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &a:0 Load) s_count Load) (list) nil) None))
+            nil)
+        """
+        annotated = self.annotate_program(
+            ctx_in_seq, parser=ParsedAST.parse_s_expression, abstrs=[fn_1]
+        )
+        # self.assertEqual()
+        1 / 0
