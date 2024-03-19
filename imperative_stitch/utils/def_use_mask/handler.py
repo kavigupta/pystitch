@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
+from imperative_stitch.utils.def_use_mask.names import NAME_REGEX, match_either
 
 
 class Handler(ABC):
@@ -33,7 +33,7 @@ class Handler(ABC):
 
     def currently_defined_names(self):
         return [
-            NAME_REGEX.match(self.mask.tree_dist.symbols[symbol][0]).group(1)
+            match_either(self.mask.tree_dist.symbols[symbol][0]).group("name")
             for symbol in self.currently_defined_symbols()
         ]
 

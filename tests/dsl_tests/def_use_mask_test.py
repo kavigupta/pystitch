@@ -4,20 +4,24 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
+from imperative_stitch.utils.def_use_mask.names import NAME_REGEX, match_either
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
     def annotate_alternates(self, chosen, alts):
-        mat = NAME_REGEX.match(chosen)
+        self.assertIn(chosen, alts)
+        mat = match_either(chosen)
         if not mat:
             return chosen
-        name, scope, _ = mat.groups()
-        alts = [NAME_REGEX.match(alt) for alt in alts]
-        alts = {x.group(1) for x in alts if x}
-        self.assertIn(name, alts)
+        name, scope = mat.group("name"), (
+            mat.group("scope") if mat.group("typ") == "&" else "0"
+        )
+        # print(alts)
+        alts = [match_either(alt) for alt in alts]
+        # print([x for x in alts if x])
+        alts = {x.group("name") for x in alts if x}
         alts.remove(name)
         alts = sorted(alts)
         if alts:
@@ -73,9 +77,9 @@ class EnumerateFittedDslTest(unittest.TestCase):
             code.strip(),
             cwq(
                 """
-                x = 2
-                y.z = 3
-                x = x
+                x?y = 2
+                y?x.z = 3
+                x?y = x?y
                 """
             ).strip(),
         )
@@ -145,7 +149,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
                 a = 2
                 [b for b in range(a) if b == a]
-                print(a)
+                a = a
                 """
             )
         )
@@ -154,9 +158,9 @@ class EnumerateFittedDslTest(unittest.TestCase):
             code.strip(),
             cwq(
                 """
-                a?b = 2
-                [b?a for b?a in range(a) if b?a == a?b]
-                print(a)
+                a?b$range = 2
+                [b?a$range for b?a$range in range?a(a?range) if b?a$range == a?b$range]
+                a?b$range = a?range
                 """
             ).strip(),
         )
@@ -180,15 +184,15 @@ class EnumerateFittedDslTest(unittest.TestCase):
             code.strip(),
             cwq(
                 """
-                a?b$c$d$e$f$g = 2
-                [b?a for b?a$c$d$e$f$g in range(a)]
-                (c?a for c?a$b$d$e$f$g in range(a))
-                {c?a for c?a$b$d$e$f$g in range(a)}
-                {d?a: a?d for d?a$b$c$e$f$g in range(a)}
-                [e?a$f$g + f?a$e$g + g?a$e$f
-                    for e?a$b$c$d$f$g in range(a)
-                    for f?a$b$c$d$e$g in range(e?a)
-                    for g?a$b$c$d$e$f in range(f?a$e)]
+                a?b$c$d$e$f$g$range = 2
+                [b?a$range for b?a$c$d$e$f$g$range in range?a(a?range)]
+                (c?a$range for c?a$b$d$e$f$g$range in range?a(a?range))
+                {c?a$range for c?a$b$d$e$f$g$range in range?a(a?range)}
+                {d?a$range: a?d$range for d?a$b$c$e$f$g$range in range?a(a?range)}
+                [e?a$f$g$range + f?a$e$g$range + g?a$e$f$range
+                    for e?a$b$c$d$f$g$range in range?a(a?range)
+                    for f?a$b$c$d$e$g$range in range?a$e(e?a$range)
+                    for g?a$b$c$d$e$f$range in range?a$e$f(f?a$e$range)]
                 """
             ).strip(),
         )
@@ -200,7 +204,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
                 x = [2]
                 for y in x:
-                    print(y)
+                    y
                 z = x
                 """
             )
@@ -212,7 +216,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
                 x?y$z = [2]
                 for y?x$z in x:
-                    print(y?x)
+                    y?x
                 z?x$y = x?y
                 """
             ).strip(),
@@ -226,10 +230,10 @@ class EnumerateFittedDslTest(unittest.TestCase):
             code.strip(),
             cwq(
                 """
-                import os
-                import sys as y
-                x = os?y
-                x = os?x$y
+                import os?x$y
+                import sys as y?os$x
+                x?os$y = os?y
+                x?os$y = os?x$y
                 """
             ).strip(),
         )

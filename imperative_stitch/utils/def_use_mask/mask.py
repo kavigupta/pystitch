@@ -25,7 +25,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         mat = NAME_REGEX.match(symbol)
         if not mat:
             return True
-        return mat.group(1) in names
+        return mat.group("name") in names
 
     def compute_mask(self, position: int, symbols: List[int]) -> List[bool]:
         handler = self.handlers[-1]
