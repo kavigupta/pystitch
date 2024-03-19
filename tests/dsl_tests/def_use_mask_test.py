@@ -4,7 +4,7 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.utils.def_use_mask import NAME_REGEX
+from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
 
@@ -193,8 +193,33 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
+    def test_for(self):
+        self.maxDiff = None
+        code = self.annotate_program(
+            cwq(
+                """
+                x = [2]
+                for y in x:
+                    print(y)
+                z = x
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                x?y$z = [2]
+                for y?x$z in x:
+                    print(y?x)
+                z?x$y = x?y
+                """
+            ).strip(),
+        )
+
     @expand_with_slow_tests(1000, -1)
-    def test_semantics(self, i):
+    def test_realistic(self, i):
         example = small_set_runnable_code_examples()[i]["solution"]
         print(example)
         code = self.annotate_program(example)
