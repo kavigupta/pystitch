@@ -17,9 +17,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         )
         self.handlers = []
 
-    def _matches(self, handler, symbol_id):
+    def _matches(self, names, symbol_id):
         symbol, _ = self.tree_dist.symbols[symbol_id]
-        names = handler.currently_defined_names()
         if symbol == "Name~E":
             return self.has_global_available or len(names) > 0
         mat = NAME_REGEX.match(symbol)
@@ -31,7 +30,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         handler = self.handlers[-1]
         if handler.is_defining(position):
             return [True] * len(symbols)
-        return [self._matches(handler, symbol) for symbol in symbols]
+        names = handler.currently_defined_names()
+        return [self._matches(names, symbol) for symbol in symbols]
 
     def on_entry(self, position: int, symbol: int):
         if not self.handlers:

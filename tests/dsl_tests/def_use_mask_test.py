@@ -298,8 +298,8 @@ class EnumerateFittedDslTest(unittest.TestCase):
 
     @expand_with_slow_tests(1000, -1)
     def test_realistic(self, i):
-        if i == 22:
-            # forward declaration of input
+        if i == 22 or i == 31 or i == 41:
+            # forward declaration of input for 22/41, n for 31
             return
         example = small_set_runnable_code_examples()[i]["solution"]
         print(example)
