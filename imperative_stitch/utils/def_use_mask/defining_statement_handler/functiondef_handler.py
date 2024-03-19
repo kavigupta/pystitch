@@ -73,3 +73,19 @@ class LambdaHandler(ChildFrameCreatorHandler):
             field_name=None,
             field_for_child_frame="args",
         )
+
+
+class ClassDefHandler(ChildFrameCreatorHandler):
+    name = "ClassDef~S"
+
+    def __init__(self, mask, valid_symbols):
+        super().__init__(
+            mask,
+            valid_symbols,
+            fields={"name": 0},
+            field_name="name",
+            field_for_child_frame=None,
+        )
+
+
+child_frame_creators = [FuncDefHandler, LambdaHandler, ClassDefHandler]

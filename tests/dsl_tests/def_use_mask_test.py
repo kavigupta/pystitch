@@ -238,6 +238,28 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
+    def test_class(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                class A:
+                    x = A
+                y = A
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                class A?x$y:
+                    x?A$y = A
+                y?A$x = A
+                """
+            ).strip(),
+        )
+
     @expand_with_slow_tests(1000, -1)
     def test_realistic(self, i):
         example = small_set_runnable_code_examples()[i]["solution"]
