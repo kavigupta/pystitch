@@ -10,7 +10,7 @@ from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 class DefUseChainPreorderMask(ns.PreorderMask):
     def __init__(self, tree_dist, dsl):
         super().__init__(tree_dist)
-        # assert isinstance(tree_dist.ordering, PythonNodeOrdering)
+        assert isinstance(tree_dist.ordering, PythonNodeOrdering)
         self.dsl = dsl
         self.has_global_available = any(
             GLOBAL_REGEX.match(x) for x, _ in self.tree_dist.symbols

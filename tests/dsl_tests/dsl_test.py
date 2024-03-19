@@ -157,8 +157,10 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
     subset = DSLSubset.from_program(dfa, *programs, root=root)
     dsl = create_dsl(export_dfa(), subset, root)
     fam = ns.BigramProgramDistributionFamily(
-        dsl, additional_preorder_masks=[DefUseChainPreorderMask],
-        # node_ordering=PythonNodeOrdering,
+        dsl,
+        additional_preorder_masks=[DefUseChainPreorderMask],
+        include_type_preorder_mask=False,
+        node_ordering=PythonNodeOrdering,
     )
     counts = fam.count_programs(
         [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]

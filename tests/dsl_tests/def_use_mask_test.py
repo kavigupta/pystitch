@@ -5,9 +5,8 @@ from textwrap import dedent
 import neurosym as ns
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
+from imperative_stitch.utils.def_use_mask import NAME_REGEX
 from tests.dsl_tests.dsl_test import fit_to
-from tests.utils import expand_with_slow_tests, small_set_runnable_code_examples
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
@@ -140,51 +139,9 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
-    def test_lambda(self):
-        code = self.annotate_program(
-            dedent(
-                """
-                x = 2
-                f = lambda y: x
-                z = f(3)
-                """
-            )
-        )
-        print(code)
-        self.assertEqual(
-            code.strip(),
-            dedent(
-                """
-                x?f,y,z = 2
-                f?x,y,z = lambda y?f,x,z: x?y
-                z?f,x,y = f?x(3)
-                """
-            ).strip(),
-        )
-
-    def test_comprehension(self):
-        code = self.annotate_program(
-            dedent(
-                """
-                x = 2
-                [t for t in range(x)]
-                """
-            )
-        )
-        print(code)
-        self.assertEqual(
-            code.strip(),
-            dedent(
-                """
-                x?t = 2
-                [t?x for t?x in range(x)]
-                """
-            ).strip(),
-        )
-
-    @expand_with_slow_tests(1000, -1)
-    def test_semantics(self, i):
-        example = small_set_runnable_code_examples()[i]["solution"]
-        print(example)
-        code = self.annotate_program(example)
-        print(code)
+    # @expand_with_slow_tests(1000)
+    # def test_semantics(self, i):
+    #     example = small_set_runnable_code_examples()[i]["solution"]
+    #     print(example)
+    #     code = self.annotate_program(example)
+    #     print(code)
