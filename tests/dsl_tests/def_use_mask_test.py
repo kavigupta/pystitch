@@ -218,6 +218,22 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
+    def test_import_at_top_level(self):
+        # imports at top are global so not alternated
+        code = self.annotate_program("import os; import sys as y; x = os; x = os")
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                import os
+                import sys as y
+                x = os?y
+                x = os?x$y
+                """
+            ).strip(),
+        )
+
     @expand_with_slow_tests(1000, -1)
     def test_realistic(self, i):
         example = small_set_runnable_code_examples()[i]["solution"]
