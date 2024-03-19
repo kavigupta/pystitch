@@ -24,7 +24,7 @@ class ListHandler(Handler):
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         self.handlers[position] = self.handler_type(symbol)(
-            self.mask, self.valid_symbols, *self.args
+            self.mask, self.valid_symbols, self.config, *self.args
         )
         return self.handlers[position]
 
