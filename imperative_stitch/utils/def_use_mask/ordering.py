@@ -1,4 +1,5 @@
 import ast
+
 import neurosym as ns
 
 
@@ -22,5 +23,6 @@ class PythonNodeOrdering(ns.DictionaryNodeOrdering):
 
     def __init__(self, dist):
         super().__init__(dist, python_node_dictionary(), tolerate_missing=True)
+
 
 # PythonNodeOrdering = None

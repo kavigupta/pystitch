@@ -139,9 +139,9 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
-    # @expand_with_slow_tests(1000)
-    # def test_semantics(self, i):
-    #     example = small_set_runnable_code_examples()[i]["solution"]
-    #     print(example)
-    #     code = self.annotate_program(example)
-    #     print(code)
+    @expand_with_slow_tests(1000, -1)
+    def test_semantics(self, i):
+        example = small_set_runnable_code_examples()[i]["solution"]
+        print(example)
+        code = self.annotate_program(example)
+        print(code)
