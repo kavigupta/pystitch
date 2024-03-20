@@ -1,7 +1,13 @@
 from dataclasses import dataclass
+from typing import List
 
 from imperative_stitch.parser import ParsedAST
-from imperative_stitch.parser.parsed_ast import LeafAST, SequenceAST, SpliceAST
+from imperative_stitch.parser.parsed_ast import (
+    LeafAST,
+    SequenceAST,
+    SpliceAST,
+    Variable,
+)
 from imperative_stitch.parser.symbol import Symbol
 
 
@@ -151,6 +157,37 @@ class Abstraction:
             ],
         )
         return self.substitute_body(arguments, pragmas=pragmas)
+
+    def variables_in_order(self) -> List[str]:
+        """
+        Return a list of all the metavariables, symbol variables, and choice variables in
+            the order they appear in the body.
+        """
+        result = []
+        seen = set()
+
+        def collect_variable(node):
+            if isinstance(node, Variable):
+                if node.sym not in seen:
+                    result.append(node.sym)
+                    seen.add(node.sym)
+            return node
+
+        self.body.map(collect_variable)
+        return result
+
+    def arguments_traversal_order(self):
+        """
+        Return a list of indices that can be used to traverse the arguments in the order
+            they appear in the body.
+        """
+        arguments = []
+        arguments += [f"#{i}" for i in range(self.arity)]
+        arguments += [f"%{i + 1}" for i in range(self.sym_arity)]
+        arguments += [f"?{i}" for i in range(self.choice_arity)]
+        arguments = {x: i for i, x in enumerate(arguments)}
+        vars_in_order = self.variables_in_order()
+        return [arguments[x] for x in vars_in_order]
 
 
 def handle_abstractions(name_to_abstr):

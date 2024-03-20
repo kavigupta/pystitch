@@ -313,3 +313,15 @@ class AbstractionRenderingTest(unittest.TestCase):
             root="M",
         )
         create_dsl(dfa, subset, "M")
+
+    def test_in_order_simple(self):
+        self.assertEqual(fn_1.variables_in_order(), ["%1", "%2"])
+        self.assertEqual(fn_1.arguments_traversal_order(), [0, 1])
+
+    def test_in_order_multi(self):
+        self.assertEqual(
+            fn_2.variables_in_order(),
+            ["%2", "%3", "%1", "?0", "%4", "#0"],
+        )
+        # order is #0 %1 %2 %3 %4 ?0
+        self.assertEqual(fn_2.arguments_traversal_order(), [2, 3, 1, 5, 4, 0])
