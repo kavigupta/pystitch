@@ -114,6 +114,7 @@ def add_disambiguating_type_tags(dfa, prog, start_state):
     prog = copy.deepcopy(prog)
     node_id_to_new_symbol = {}
     for node, tag in classify_nodes_in_program(dfa, prog, start_state):
+        assert isinstance(node, ns.SExpression), node
         new_symbol = node.symbol + SEPARATOR + clean_type(tag)
         if is_sequence(tag, node.symbol):
             new_symbol += SEPARATOR + str(len(node.children))

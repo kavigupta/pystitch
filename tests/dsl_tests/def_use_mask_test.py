@@ -428,3 +428,50 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
             ).strip(),
         )
+
+    def test_with_symvars(self):
+        code = cwq(
+            """
+            a = 2
+            "~(fn_1 &a:0 &b:0)"
+            a
+            """
+        )
+        print(
+            ParsedAST.parse_s_expression(
+                "(Assign (list (Name %1 Store)) (Name %2 Load) None)"
+            )
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                Abstraction(
+                    name="fn_1",
+                    body=ParsedAST.parse_s_expression(
+                        "(Assign (list (Name %1 Store)) (Name %2 Load) None)"
+                    ),
+                    arity=0,
+                    sym_arity=2,
+                    choice_arity=0,
+                    dfa_root="S",
+                    dfa_symvars=["Name"] * 2,
+                    dfa_metavars=[],
+                    dfa_choicevars=[],
+                )
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                u?a$input$int$k$x$z = 2
+                k?a$input$int$u$x$z = u?input$int.count()
+                fn_1()
+                k?a$input$int$u$x$z = u?a$input$int$k$z.count()
+                fn_2()
+                k?a$input$int$u$x$z = u?a$input$int$k$x$z.count()
+                """
+            ).strip(),
+        )
