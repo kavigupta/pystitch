@@ -33,9 +33,6 @@ def handle_target(root_symbol: int):
     def dispatch(mask, valid_symbols, config):
         symbol = root_symbol
         symbol, _ = mask.tree_dist.symbols[symbol]
-        if symbol.startswith("fn_"):
-            return AbstractionHandler(mask, valid_symbols, config)
-
         if symbol.startswith("list"):
             return targets_handler(mask, valid_symbols, config)
         return targets_map[symbol](mask, valid_symbols, config)

@@ -151,14 +151,19 @@ class ProduceDslTest(unittest.TestCase):
         )
 
 
-def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", **kwargs):
-    dfa = export_dfa(**kwargs)
+def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
+    abstrs_dict = {abstr.name: abstr for abstr in abstrs}
+    dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
+    # print(p.abstraction_calls())
+    programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
     subset = DSLSubset.from_program(dfa, *programs, root=root)
     dsl = create_dsl(dfa, subset, root)
     fam = ns.BigramProgramDistributionFamily(
         dsl,
-        additional_preorder_masks=[DefUseChainPreorderMask],
+        additional_preorder_masks=[
+            lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
+        ],
         include_type_preorder_mask=False,
         node_ordering=PythonNodeOrdering,
     )

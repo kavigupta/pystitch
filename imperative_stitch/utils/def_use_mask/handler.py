@@ -54,11 +54,13 @@ class DefaultHandler(Handler):
     @classmethod
     def of(cls, mask, valid_symbols, config, symbol: int):
         # pylint: disable=cyclic-import
-        from imperative_stitch.utils.def_use_mask.defining_statement_handler import (
-            defining_statement_handlers,
-        )
+        from .abstraction_handler import AbstractionHandler
+        from .defining_statement_handler import defining_statement_handlers
 
         symbol, _ = mask.tree_dist.symbols[symbol]
+        if symbol.startswith("fn_"):
+            return AbstractionHandler(mask, valid_symbols, config, symbol)
+
         return defining_statement_handlers().get(symbol, DefaultHandler)(
             mask, valid_symbols, config
         )

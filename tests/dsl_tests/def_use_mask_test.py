@@ -29,9 +29,11 @@ class EnumerateFittedDslTest(unittest.TestCase):
             name = f"{name}?{'$'.join(alts)}"
         return f"const-&{name}:{scope}~Name"
 
-    def annotate_program(self, program, parser=ParsedAST.parse_python_module, **kwargs):
-        dfa, _, fam, _ = fit_to([program], parser=parser, **kwargs)
-        return ParsedAST.parse_s_expression(
+    def annotate_program(
+        self, program, parser=ParsedAST.parse_python_module, abstrs=()
+    ):
+        dfa, _, fam, _ = fit_to([program], parser=parser, abstrs=abstrs)
+        annotated = ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
                     parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
@@ -39,7 +41,9 @@ class EnumerateFittedDslTest(unittest.TestCase):
                     self.annotate_alternates,
                 )
             )
-        ).to_python()
+        )
+        annotated = annotated.abstraction_calls_to_stubs({x.name: x for x in abstrs})
+        return annotated.to_python()
 
     def test_annotate_alternate_symbols(self):
         code = self.annotate_program("x = 2; y = x; z = y")
@@ -350,26 +354,27 @@ class EnumerateFittedDslTest(unittest.TestCase):
             dfa_metavars=[],
             dfa_choicevars=[],
         )
-
-        print(
-            ParsedAST.parse_python_statement(
-                ParsedAST.parse_s_expression(
-                    "(Assign (list (Name &k:0 Store)) (Call (Attribute (Name &a:0 Load) s_count Load) (list) nil) None)"
-                ).to_python()
-            ).to_s_exp()
-        )
-
         ctx_in_seq = """
         (Module
             (/seq
-                (Assign (list (Name &k:0 Store)) (Constant i2 None) None)
-                (/splice
-                    (fn_1))
-                (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &a:0 Load) s_count Load) (list) nil) None))
+                (Assign (list (Name &u:0 Store)) (Constant i2 None) None)
+                (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &u:0 Load) s_count Load) (list) nil) None)
+                (/splice (fn_1))
+                (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &u:0 Load) s_count Load) (list) nil) None))
             nil)
         """
         annotated = self.annotate_program(
             ctx_in_seq, parser=ParsedAST.parse_s_expression, abstrs=[fn_1]
         )
-        # self.assertEqual()
-        1 / 0
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                u?a$input$int$k$z = 2
+                k?a$input$int$u$z = u?input$int.count()
+                fn_1()
+                k?a$input$int$u$z = u?a$input$int$k$z.count()
+                """
+            ).strip(),
+        )

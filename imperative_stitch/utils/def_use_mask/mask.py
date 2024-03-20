@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List
 
 import neurosym as ns
 
+from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.utils.def_use_mask.handler import DefaultHandler
 from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -10,11 +11,12 @@ from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 
 @dataclass
 class DefUseMaskConfiguration:
-    pass
+    dfa: Dict
+    abstractions: Dict[str, Abstraction]
 
 
 class DefUseChainPreorderMask(ns.PreorderMask):
-    def __init__(self, tree_dist, dsl):
+    def __init__(self, tree_dist, dsl, dfa, abstrs):
         super().__init__(tree_dist)
         assert isinstance(tree_dist.ordering, PythonNodeOrdering)
         self.dsl = dsl
@@ -22,7 +24,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             GLOBAL_REGEX.match(x) for x, _ in self.tree_dist.symbols
         )
         self.handlers = []
-        self.config = DefUseMaskConfiguration()
+        self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
 
     def _matches(self, names, symbol_id):
         symbol, _ = self.tree_dist.symbols[symbol_id]
