@@ -1,10 +1,11 @@
+import ast
 import sys
 import unittest
 
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
@@ -336,16 +337,28 @@ class EnumerateFittedDslTest(unittest.TestCase):
         code = self.annotate_program(example)
         print(code)
 
-    def test_with_abstraction(self):
-        fn_1_body = """
-        (/seq
-            (Assign (list (Name &a:0 Store)) (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil) None)
-            (Assign (list (Name &z:0 Store)) (Call (Name g_input Load) nil nil) None))
-        """
+    def replace_s_expr(self, s_expr):
+        if not isinstance(s_expr, NodeAST):
+            return s_expr
+        if s_expr.typ != ast.Expr:
+            return s_expr
+        [const] = s_expr.children
+        if const.typ != ast.Constant:
+            return s_expr
+        leaf, _ = const.children
+        leaf = leaf.leaf
+        if not leaf.startswith("~"):
+            return s_expr
+        leaf = leaf[1:]
+        return ParsedAST.parse_s_expression(leaf)
 
-        fn_1 = Abstraction(
-            name="fn_1",
-            body=ParsedAST.parse_s_expression(fn_1_body),
+    def parse_with_hijacking(self, code):
+        return ParsedAST.parse_python_module(code).map(self.replace_s_expr)
+
+    def blank_abstraction(self, name, content):
+        return Abstraction(
+            name=name,
+            body=ParsedAST.parse_python_statements(content),
             arity=0,
             sym_arity=0,
             choice_arity=0,
@@ -354,17 +367,20 @@ class EnumerateFittedDslTest(unittest.TestCase):
             dfa_metavars=[],
             dfa_choicevars=[],
         )
-        ctx_in_seq = """
-        (Module
-            (/seq
-                (Assign (list (Name &u:0 Store)) (Constant i2 None) None)
-                (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &u:0 Load) s_count Load) (list) nil) None)
-                (/splice (fn_1))
-                (Assign (list (Name &k:0 Store)) (Call (Attribute (Name &u:0 Load) s_count Load) (list) nil) None))
-            nil)
-        """
+
+    def test_with_empty_abstraction(self):
+        code = cwq(
+            """
+            u = 2
+            k = u.count()
+            "~(/splice (fn_1))"
+            k = u.count()
+            """
+        )
         annotated = self.annotate_program(
-            ctx_in_seq, parser=ParsedAST.parse_s_expression, abstrs=[fn_1]
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[self.blank_abstraction("fn_1", "a = int(input()); z = input()")],
         )
         print(annotated)
         self.assertEqual(
