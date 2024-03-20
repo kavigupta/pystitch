@@ -4,6 +4,7 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
+from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.recursion import no_recursionlimit
 from tests.abstraction_handling.abstraction_test import assertSameCode
 from tests.utils import expand_with_slow_tests, small_set_examples
@@ -110,6 +111,111 @@ class ParseUnparseInverseTest(unittest.TestCase):
         except Exception as e:
             self.assertFalse(f"Error: {e}")
             raise e
+
+
+class AbstractionBodyRenderTest(unittest.TestCase):
+    basic_symvars = "(Assign (list (Name %1 Store)) (Constant i2 None) None)"
+    all_kinds = """
+    (/seq
+        (Assign
+            (list (Name %1 Store))
+            (BinOp (Constant i2 None) Add #0))
+        ?0
+        (While
+            (Constant True None)
+            (/seq (Expr
+                (Compare
+                    (Name %1 Load)
+                    (list Eq)
+                    (list #1))))
+            (/seq))
+        ?1
+    )
+    """
+
+    def test_basic_symvars_variables_python(self):
+        body = ParsedAST.parse_s_expression(self.basic_symvars)
+        assertSameCode(
+            self,
+            "%1 = 2",
+            body.to_python(),
+        )
+
+    def test_basic_symvars_variables_s_exp(self):
+        self.maxDiff = None
+        body = ParsedAST.parse_s_expression(self.basic_symvars)
+        self.assertEqual(
+            self.basic_symvars,
+            body.to_s_exp(),
+        )
+        self.assertEqual(
+            "(Assign (list (Name (var-%1) (Store))) (Constant (const-i2) (const-None)) (const-None))",
+            body.to_s_exp(no_leaves=True),
+        )
+
+    def test_basic_symvars_variables_type_annotated_s_exp(self):
+        body = ParsedAST.parse_s_expression(self.basic_symvars)
+        self.assertEqual(
+            ns.parse_s_expression(
+                """
+                (Assign~S
+                    (list~_L_~1 (Name~L (var-%1~Name) (Store~Ctx)))
+                    (Constant~E (const-i2~Const) (const-None~ConstKind)) (const-None~TC))
+                """
+            ),
+            body.to_type_annotated_ns_s_exp(export_dfa(), "S"),
+        )
+
+    def test_all_kinds_python(self):
+        body = ParsedAST.parse_s_expression(self.all_kinds)
+        # not amazing rendering but it's fine
+        assertSameCode(
+            self,
+            """
+            %1 = 2 + #0?0
+            while True:
+                %1 == #1?1
+            """,
+            body.to_python(),
+        )
+
+    def test_all_kinds_s_exp(self):
+        body = ParsedAST.parse_s_expression(self.all_kinds)
+        self.assertEqual(
+            ParsedAST.parse_s_expression(self.all_kinds).to_s_exp(),
+            body.to_s_exp(),
+        )
+
+    def test_all_kinds_type_annotated_s_exp(self):
+        self.maxDiff = None
+        body = ParsedAST.parse_s_expression(self.all_kinds)
+        self.assertEqual(
+            ns.parse_s_expression(
+                """
+                (/seq~S
+                    (Assign~S
+                        (list~_L_~1 (Name~L (var-%1~Name) (Store~Ctx)))
+                        (BinOp~E (Constant~E (const-i2~Const) (const-None~ConstKind)) (Add~Op) #0?0~E) (const-?0~TC))
+                    (const-?0~TC)
+                    (While~S
+                        (Constant~E (const-True~Const) (const-None~ConstKind))
+                        (/seq~S
+                            (Expr~S
+                                (Compare~E
+                                    (Name~E (var-%1~Name) (Load~Ctx))
+                                    (list~_L_~1 Eq~Op)
+                                    (list~_L_~1 #1?1~E)
+                                )
+                            )
+                        )
+                        (/seq~S)
+                    )
+                    (const-?1~TC)
+                )
+                """
+            ),
+            body.to_type_annotated_ns_s_exp(export_dfa(), "seqS"),
+        )
 
 
 class AbstractionCallsTest(unittest.TestCase):
