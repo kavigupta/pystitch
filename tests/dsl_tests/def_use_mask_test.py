@@ -508,3 +508,43 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
             ).strip(),
         )
+
+    def test_symvar_reuse(self):
+        code = cwq(
+            """
+            b = 2
+            "~(/splice (fn_1 &b:0 &a:0))"
+            a = a
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                Abstraction(
+                    name="fn_1",
+                    body=ParsedAST.parse_s_expression(
+                        "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) (Name %1 Load) None))"
+                    ),
+                    arity=0,
+                    sym_arity=2,
+                    choice_arity=0,
+                    dfa_root="seqS",
+                    dfa_symvars=["Name"] * 2,
+                    dfa_metavars=[],
+                    dfa_choicevars=[],
+                )
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                b?a = 2
+                # a?b = b
+                fn_1(__ref__(b), __ref__(a?b))
+                a?b = a?b
+                """
+            ).strip(),
+        )

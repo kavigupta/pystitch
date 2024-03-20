@@ -27,6 +27,7 @@ class AbstractionHandler(Handler):
         self._argument_handlers = {}  # map from argument to handler
         self._is_defining = None
         self._done_with_handler = False
+        self._variables_to_reuse = {}
 
     def on_enter(self):
         try:
@@ -75,9 +76,15 @@ class AbstractionHandler(Handler):
     def body_traversal_coroutine(self, node, position):
         if VARIABLE_REGEX.match(node.symbol):
             name = node.symbol
-            is_defining = self.mask_copy.handlers[-1].is_defining(position)
-            node = yield is_defining
-            print("filling variable", name, "with", node, "is_defining", is_defining)
+            if name in self._variables_to_reuse:
+                node = self._variables_to_reuse[name]
+            else:
+                is_defining = self.mask_copy.handlers[-1].is_defining(position)
+                node = yield is_defining
+                self._variables_to_reuse[name] = node
+                print(
+                    "filling variable", name, "with", node, "is_defining", is_defining
+                )
             print(
                 "current valid symbols",
                 self.mask_copy.handlers[-1].valid_symbols,
