@@ -429,18 +429,13 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ).strip(),
         )
 
-    def test_with_symvars(self):
+    def test_with_symvars_ordered(self):
         code = cwq(
             """
-            a = 2
+            b = 2
             "~(fn_1 &a:0 &b:0)"
-            a
+            a = a
             """
-        )
-        print(
-            ParsedAST.parse_s_expression(
-                "(Assign (list (Name %1 Store)) (Name %2 Load) None)"
-            )
         )
         annotated = self.annotate_program(
             code,
@@ -466,12 +461,50 @@ class EnumerateFittedDslTest(unittest.TestCase):
             cwq(annotated).strip(),
             cwq(
                 """
-                u?a$input$int$k$x$z = 2
-                k?a$input$int$u$x$z = u?input$int.count()
-                fn_1()
-                k?a$input$int$u$x$z = u?a$input$int$k$z.count()
-                fn_2()
-                k?a$input$int$u$x$z = u?a$input$int$k$x$z.count()
+                b?a = 2
+                # a?b = b
+                fn_1(__ref__(a?b), __ref__(b))
+                a?b = a?b
+                """
+            ).strip(),
+        )
+
+    def test_with_symvars_backwards(self):
+        code = cwq(
+            """
+            b = 2
+            "~(fn_1 &b:0 &a:0)"
+            a = a
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                Abstraction(
+                    name="fn_1",
+                    body=ParsedAST.parse_s_expression(
+                        "(Assign (list (Name %2 Store)) (Name %1 Load) None)"
+                    ),
+                    arity=0,
+                    sym_arity=2,
+                    choice_arity=0,
+                    dfa_root="S",
+                    dfa_symvars=["Name"] * 2,
+                    dfa_metavars=[],
+                    dfa_choicevars=[],
+                )
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                b?a = 2
+                # a?b = b
+                fn_1(__ref__(b), __ref__(a?b))
+                a?b = a?b
                 """
             ).strip(),
         )

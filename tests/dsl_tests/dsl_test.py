@@ -165,7 +165,7 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
             lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
         ],
         include_type_preorder_mask=False,
-        node_ordering=PythonNodeOrdering,
+        node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
     )
     counts = fam.count_programs(
         [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
