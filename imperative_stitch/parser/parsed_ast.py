@@ -419,13 +419,14 @@ class Variable(ParsedAST):
     def map(self, fn):
         return fn(self)
 
+    def to_ns_s_exp(self, config):
+        if config.get("no_leaves", False):
+            return ns.SExpression("var-" + self.sym, [])
+        return self.sym
+
 
 @dataclass
 class SymvarAST(Variable):
-    def to_ns_s_exp(self, config):
-        del config
-        return self.sym
-
     def to_python_ast(self):
         return self.sym
 
@@ -435,10 +436,6 @@ class SymvarAST(Variable):
 
 @dataclass
 class MetavarAST(Variable):
-    def to_ns_s_exp(self, config):
-        del config
-        return self.sym
-
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
@@ -448,10 +445,6 @@ class MetavarAST(Variable):
 
 @dataclass
 class ChoicevarAST(Variable):
-    def to_ns_s_exp(self, config):
-        del config
-        return self.sym
-
     def to_python_ast(self):
         return ast.Name(id=self.sym)
 
