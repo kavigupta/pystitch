@@ -394,3 +394,37 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
             ).strip(),
         )
+
+    def test_with_empty_abstraction_multi(self):
+        code = cwq(
+            """
+            u = 2
+            k = u.count()
+            "~(/splice (fn_1))"
+            k = u.count()
+            "~(/splice (fn_2))"
+            k = u.count()
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                self.blank_abstraction("fn_1", "a = int(input()); z = input()"),
+                self.blank_abstraction("fn_2", "x = 3"),
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                u?a$input$int$k$x$z = 2
+                k?a$input$int$u$x$z = u?input$int.count()
+                fn_1()
+                k?a$input$int$u$x$z = u?a$input$int$k$z.count()
+                fn_2()
+                k?a$input$int$u$x$z = u?a$input$int$k$x$z.count()
+                """
+            ).strip(),
+        )
