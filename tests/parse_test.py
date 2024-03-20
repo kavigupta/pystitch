@@ -115,23 +115,6 @@ class ParseUnparseInverseTest(unittest.TestCase):
 
 class AbstractionBodyRenderTest(unittest.TestCase):
     basic_symvars = "(Assign (list (Name %1 Store)) (Constant i2 None) None)"
-    all_kinds = """
-    (/seq
-        (Assign
-            (list (Name %1 Store))
-            (BinOp (Constant i2 None) Add #0))
-        ?0
-        (While
-            (Constant True None)
-            (/seq (Expr
-                (Compare
-                    (Name %1 Load)
-                    (list Eq)
-                    (list #1))))
-            (/seq))
-        ?1
-    )
-    """
 
     def test_basic_symvars_variables_python(self):
         body = ParsedAST.parse_s_expression(self.basic_symvars)
@@ -166,6 +149,24 @@ class AbstractionBodyRenderTest(unittest.TestCase):
             body.to_type_annotated_ns_s_exp(export_dfa(), "S"),
         )
 
+    all_kinds = """
+    (/seq
+        (Assign
+            (list (Name %1 Store))
+            (BinOp (Constant i2 None) Add #0))
+        ?0
+        (While
+            (Constant True None)
+            (/seq (Expr
+                (Compare
+                    (Name %1 Load)
+                    (list Eq)
+                    (list #1))))
+            (/seq))
+        ?1
+    )
+    """
+
     def test_all_kinds_python(self):
         body = ParsedAST.parse_s_expression(self.all_kinds)
         # not amazing rendering but it's fine
@@ -190,31 +191,38 @@ class AbstractionBodyRenderTest(unittest.TestCase):
         self.maxDiff = None
         body = ParsedAST.parse_s_expression(self.all_kinds)
         self.assertEqual(
-            ns.parse_s_expression(
-                """
-                (/seq~S
-                    (Assign~S
-                        (list~_L_~1 (Name~L (var-%1~Name) (Store~Ctx)))
-                        (BinOp~E (Constant~E (const-i2~Const) (const-None~ConstKind)) (Add~Op) #0?0~E) (const-?0~TC))
-                    (const-?0~TC)
-                    (While~S
-                        (Constant~E (const-True~Const) (const-None~ConstKind))
-                        (/seq~S
-                            (Expr~S
-                                (Compare~E
-                                    (Name~E (var-%1~Name) (Load~Ctx))
-                                    (list~_L_~1 Eq~Op)
-                                    (list~_L_~1 #1?1~E)
+            ns.render_s_expression(
+                ns.parse_s_expression(
+                    """
+                    (/seq~seqS~4
+                        (Assign~S
+                            (list~_L_~1 (Name~L (var-%1~Name) (Store~Ctx)))
+                            (BinOp~E
+                                (Constant~E (const-i2~Const) (const-None~ConstKind))
+                                (Add~O)
+                                (var-#0~E)))
+                        (var-?0~S)
+                        (While~S
+                            (Constant~E (const-True~Const) (const-None~ConstKind))
+                            (/seq~seqS~1
+                                (Expr~S
+                                    (Compare~E
+                                        (Name~E (var-%1~Name) (Load~Ctx))
+                                        (list~_O_~1 (Eq~O))
+                                        (list~_E_~1 (var-#1~E))
+                                    )
                                 )
                             )
+                            (/seq~seqS~0)
                         )
-                        (/seq~S)
+                        (var-?1~S)
                     )
-                    (const-?1~TC)
+                    """
                 )
-                """
             ),
-            body.to_type_annotated_ns_s_exp(export_dfa(), "seqS"),
+            ns.render_s_expression(
+                body.to_type_annotated_ns_s_exp(export_dfa(), "seqS")
+            ),
         )
 
 
