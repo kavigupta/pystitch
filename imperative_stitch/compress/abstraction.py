@@ -8,7 +8,9 @@ from imperative_stitch.parser.parsed_ast import (
     SpliceAST,
     Variable,
 )
+from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.symbol import Symbol
+from imperative_stitch.utils.classify_nodes import export_dfa
 
 
 @dataclass
@@ -158,7 +160,7 @@ class Abstraction:
         )
         return self.substitute_body(arguments, pragmas=pragmas)
 
-    def variables_in_order(self) -> List[str]:
+    def variables_in_order(self, node_ordering, previous_abstractions=()) -> List[str]:
         """
         Return a list of all the metavariables, symbol variables, and choice variables in
             the order they appear in the body.
@@ -166,17 +168,29 @@ class Abstraction:
         result = []
         seen = set()
 
-        def collect_variable(node):
-            if isinstance(node, Variable):
-                if node.sym not in seen:
-                    result.append(node.sym)
-                    seen.add(node.sym)
-            return node
+        def traverse(node):
+            sym = node.symbol
+            sym_mat = VARIABLE_PATTERN.match(sym)
+            if sym_mat:
+                var = sym_mat.group("name")
+                if var not in seen:
+                    seen.add(var)
+                    result.append(var)
+            ordering = (
+                node_ordering[node.symbol]
+                if sym in node_ordering
+                else range(len(node.children))
+            )
+            for i in ordering:
+                traverse(node.children[i])
 
-        self.body.map(collect_variable)
+        body = self.body.to_type_annotated_ns_s_exp(
+            export_dfa(abstrs=previous_abstractions), self.dfa_root
+        )
+        traverse(body)
         return result
 
-    def arguments_traversal_order(self):
+    def arguments_traversal_order(self, node_ordering, previous_abstractions=()):
         """
         Return a list of indices that can be used to traverse the arguments in the order
             they appear in the body.
@@ -186,7 +200,7 @@ class Abstraction:
         arguments += [f"%{i + 1}" for i in range(self.sym_arity)]
         arguments += [f"?{i}" for i in range(self.choice_arity)]
         arguments = {x: i for i, x in enumerate(arguments)}
-        vars_in_order = self.variables_in_order()
+        vars_in_order = self.variables_in_order(node_ordering, previous_abstractions)
         return [arguments[x] for x in vars_in_order]
 
 

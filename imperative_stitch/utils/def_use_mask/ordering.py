@@ -16,13 +16,23 @@ def python_node_dictionary():
     return result
 
 
+def python_node_ordering_with_abstractions(abstrs):
+    result = python_node_dictionary()
+    for abstr in abstrs:
+        result[abstr.name + "~" + abstr.dfa_root] = abstr.arguments_traversal_order(
+            result
+        )
+    return result
+
+
 class PythonNodeOrdering(ns.DictionaryNodeOrdering):
     """
     Orders the subnodes of a node according to a dictionary.
     """
 
     def __init__(self, dist):
-        super().__init__(dist, python_node_dictionary(), tolerate_missing=True)
-
-
-# PythonNodeOrdering = None
+        super().__init__(
+            dist,
+            python_node_ordering_with_abstractions([]),
+            tolerate_missing=True,
+        )

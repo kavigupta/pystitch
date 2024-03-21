@@ -305,6 +305,7 @@ def export_dfa(*, abstrs=frozendict({}), transitions=TRANSITIONS):
         if "list" in transitions[state]:
             result[state]["list"] = [transitions[state]["list"]]
     result["seqS"]["/seq"] = ["S"]
+    result["seqS"]["/subseq"] = ["S"]
     result["seqS"]["/choiceseq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
 
