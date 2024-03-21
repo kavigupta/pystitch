@@ -1,4 +1,5 @@
 import ast
+import copy
 import unittest
 
 import neurosym as ns
@@ -544,7 +545,7 @@ class AbstractionCallsTest(unittest.TestCase):
 class AbstractionBodiesTest(unittest.TestCase):
     @parameterized.expand(range(len(load_stitch_output_set())))
     def test_realistic_with_abstractions(self, i):
-        x = load_stitch_output_set()[i]
+        x = copy.deepcopy(load_stitch_output_set()[i])
         for abstr in x["abstractions"]:
             body = ParsedAST.parse_s_expression(abstr["body"])
             body_ns_s_exp = ns.render_s_expression(
