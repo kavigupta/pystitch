@@ -1,5 +1,8 @@
+import copy
 import unittest
 from textwrap import dedent
+
+from parameterized import parameterized
 
 from parameterized import parameterized
 
@@ -432,7 +435,7 @@ class AbstractionRenderingTest(unittest.TestCase):
 
     @parameterized.expand(range(len(load_stitch_output_set())))
     def test_abstraction_bodies_in_order_no_crash(self, i):
-        x = load_stitch_output_set()[i]
+        x = copy.deepcopy(load_stitch_output_set()[i])
         abstractions = []
         for idx, abstraction in enumerate(x["abstractions"], 1):
             abstraction["body"] = ParsedAST.parse_s_expression(abstraction["body"])
