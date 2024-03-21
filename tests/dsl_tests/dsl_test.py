@@ -106,8 +106,7 @@ class ProduceDslTest(unittest.TestCase):
             Return~S :: E -> S
             Slice~Slice :: (E, E, E) -> Slice
             Starred~E :: (E, Ctx) -> E
-            Starred~L :: (L, L) -> L
-            Starred~Starred :: (E, Ctx) -> Starred
+            Starred~L :: (L, Ctx) -> L
             Store~Ctx :: () -> Ctx
             Subscript~E :: (E, SliceRoot, Ctx) -> E
             Subscript~L :: (E, SliceRoot, Ctx) -> L
@@ -119,7 +118,7 @@ class ProduceDslTest(unittest.TestCase):
             _slice_content~SliceRoot :: E -> SliceRoot
             _slice_slice~SliceRoot :: Slice -> SliceRoot
             _starred_content~L :: L -> L
-            _starred_starred~L :: Starred -> L
+            _starred_starred~L :: L -> L
             const-&x:0~Name :: () -> Name
             const-&y:0~Name :: () -> Name
             const-None~ConstKind :: () -> ConstKind
