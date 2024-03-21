@@ -17,6 +17,7 @@ from imperative_stitch.parser.parsed_ast import (
     StarrableElementAST,
     SymvarAST,
 )
+from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.utils.export_as_dsl import SEPARATOR
 
 from .symbol import Symbol
@@ -83,6 +84,10 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
         is_leaf, leaf = s_exp_leaf_to_value(tag[len("const-") :])
         assert is_leaf
         return LeafAST(leaf)
+    var_mat = VARIABLE_PATTERN.match(tag)
+    if var_mat:
+        assert len(args) == 0
+        return s_exp_to_parsed_ast(var_mat.group("name"))
     assert isinstance(tag, str), str(tag)
     args = [s_exp_to_parsed_ast(x) for x in args]
     if tag in {"/seq", "/subseq", "/choiceseq"}:
