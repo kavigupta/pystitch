@@ -335,9 +335,11 @@ class AbstractionRenderingTest(unittest.TestCase):
 
         fn_5 = Abstraction(name="fn_5", **fn_5_init)
         tmp_abstraction_calls = {"fn_5": fn_5}
-        result = ParsedAST.parse_s_expression(
-            "(/splice (fn_5 %1 %4 %5 %2 #0))"
-        ).abstraction_calls_to_bodies(tmp_abstraction_calls).to_s_exp()
+        result = (
+            ParsedAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))")
+            .abstraction_calls_to_bodies(tmp_abstraction_calls)
+            .to_s_exp()
+        )
         expected = """
         (/splice
             (/subseq
