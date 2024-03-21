@@ -102,6 +102,22 @@ class EnumerateFittedDslTest(unittest.TestCase):
             cwq(up_to_310 if sys.version_info < (3, 11) else past_310).strip(),
         )
 
+    def test_star_tuple_on_lhs(self):
+        code = self.annotate_program("x, *y = [2, 3]; x = x")
+        print(code)
+        past_310 = """
+        x?y, *y?x = [2, 3]
+        x?y = x?y
+        """
+        up_to_310 = """
+        (x?y, *y?x) = [2, 3]
+        x?y = x?y
+        """
+        self.assertEqual(
+            code.strip(),
+            cwq(up_to_310 if sys.version_info < (3, 11) else past_310).strip(),
+        )
+
     def test_basic_import(self):
         # the 2 in front is necessary to force the import to not be pulled
         code = self.annotate_program(
@@ -153,6 +169,26 @@ class EnumerateFittedDslTest(unittest.TestCase):
                     z?f$x$y = x?f
                     return x?f$z
                 y?f$x$z = f(2)
+                """
+            ).strip(),
+        )
+
+    def test_function_call_arguments(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                def f(w, /, x, *y, **z):
+                    return x
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                def f?w$x$y$z(w?f$x$y$z, /, x?f$w$y$z, *y?f$w$x$z, **z?f$w$x$y):
+                    return x?f$w$y$z
                 """
             ).strip(),
         )

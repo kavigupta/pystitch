@@ -2,8 +2,8 @@ from ..handler import Handler
 
 
 class NameTargetHandler(Handler):
-    # this works for both Name and arg
-    fields = {"id": 0, "arg": 0}
+    # this works for Name, arg, and Starred
+    fields = {"id": 0, "arg": 0, "value": 0}
 
     def __init__(self, mask, valid_symbols, config):
         super().__init__(mask, valid_symbols, config)

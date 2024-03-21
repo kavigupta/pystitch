@@ -7,7 +7,7 @@ from .just_expression_handler import JustAnExpressionHandler
 from .list_handler import ListHandler
 from .name_handler import NameTargetHandler
 from .non_collecting_handler import NonCollectingTargetHandler
-from .passthrough_handler import PassthroughLHSHandler
+from .passthrough_handler import PassthroughLHSHandler, StarredHandler
 from .tuple_list_handler import TupleListLHSHandler
 
 
@@ -25,6 +25,8 @@ targets_map = {
     "Tuple~L": TupleListLHSHandler,
     "List~L": TupleListLHSHandler,
     "_starred_content~L": PassthroughLHSHandler,
+    "_starred_starred~L": PassthroughLHSHandler,
+    "Starred~L": StarredHandler,
     "arguments~As": ArgumentsHandler,
 }
 
