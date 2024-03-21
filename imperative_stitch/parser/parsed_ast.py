@@ -546,7 +546,9 @@ class SpliceAST(ParsedAST):
     content: Union[SequenceAST, AbstractionCallAST]
 
     def __post_init__(self):
-        assert isinstance(self.content, (SequenceAST, AbstractionCallAST)), self.content
+        assert isinstance(
+            self.content, (SequenceAST, AbstractionCallAST, Variable)
+        ), self.content
 
     def to_ns_s_exp(self, config):
         return ns.SExpression("/splice", [self.content.to_ns_s_exp(config)])
