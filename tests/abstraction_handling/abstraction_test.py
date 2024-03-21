@@ -1,5 +1,6 @@
 import unittest
 from textwrap import dedent
+
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction

@@ -1,7 +1,5 @@
 import ast
 
-import neurosym as ns
-
 
 def python_node_dictionary():
     result = {}
