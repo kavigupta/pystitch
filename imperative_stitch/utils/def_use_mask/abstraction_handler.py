@@ -55,9 +55,8 @@ class AbstractionHandler(Handler):
         assert self.valid_symbols is self.injected_handler.valid_symbols
 
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
-        sym, _ = self.mask.tree_dist.symbols[symbol]
         return CollectingHandler(
-            sym,
+            symbol,
             super().on_child_enter(position, symbol),
         )
 
@@ -106,17 +105,15 @@ class CollectingHandler(Handler):
             underlying_handler.config,
         )
         self.underlying_handler = underlying_handler
-        self.sym = sym
+        self.sym: int = sym
         self.children = {}
 
     @property
     def node(self):
-        _, arity = self.mask.tree_dist.symbols[
-            self.mask.tree_dist.symbol_to_index[self.sym]
-        ]
+        sym, arity = self.mask.tree_dist.symbols[self.sym]
         assert len(self.children) == arity
         return ns.SExpression(
-            self.sym, [self.children[i].node for i in range(len(self.children))]
+            sym, [self.children[i].node for i in range(len(self.children))]
         )
 
     def on_enter(self):
