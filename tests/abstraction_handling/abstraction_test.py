@@ -8,7 +8,9 @@ from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 fn_1_body = """
 (/subseq
-    (Assign (list (Name %1 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None)
+    (Assign
+        (list (Name %1 Store))
+        (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil) None)
     (Assign (list (Name %2 Store)) (Call (Name g_input Load) nil nil) None))
 """
 
@@ -35,13 +37,13 @@ fn_2_body = """
         (/seq
             (If
             (Compare (Name %1 Load) (list Eq) (list (Constant i0 None)))
-            (/seq (Expr (Call (Name g_print Load) (list (UnaryOp USub (Constant i1 None))) nil)))
-            (/seq (Expr (Call (Name g_print Load) (list (Constant i0 None)) nil)))
+            (/seq (Expr (Call (Name g_print Load) (list (_starred_content (UnaryOp USub (Constant i1 None)))) nil)))
+            (/seq (Expr (Call (Name g_print Load) (list (_starred_content (Constant i0 None))) nil)))
             )
         )
         (/seq
-            (Expr (Call (Name g_print Load) (list (Constant i1 None)) nil))
-            (Expr (Call (Name g_print Load) (list (BinOp (UnaryOp USub (Name %1 Load)) Div (Name %3 Load))) nil))
+            (Expr (Call (Name g_print Load) (list (_starred_content (Constant i1 None))) nil))
+            (Expr (Call (Name g_print Load) (list (_starred_content (BinOp (UnaryOp USub (Name %1 Load)) Div (Name %3 Load)))) nil))
         )
         )
     )
@@ -58,21 +60,21 @@ fn_2_body = """
         )
         (If
         (Compare (Name %4 Load) (list Gt) (list (Constant i0 None)))
-        (Expr #0)
+        (/seq (Expr #0))
         (/seq
             (If
             (Compare (Name %4 Load) (list Eq) (list (Constant i0 None)))
             (/seq
-                (Expr (Call (Name g_print Load) (list (Constant i1 None)) nil))
+                (Expr (Call (Name g_print Load) (list (_starred_content (Constant i1 None))) nil))
                 (Expr
                 (Call
                     (Name g_print Load)
-                    (list (BinOp (UnaryOp USub (Name %3 Load)) Div (BinOp (Constant i2 None) Mult (Name %2 Load))))
+                    (list (_starred_content (BinOp (UnaryOp USub (Name %3 Load)) Div (BinOp (Constant i2 None) Mult (Name %2 Load)))))
                     nil
                 )
                 )
             )
-            (/seq (Expr (Call (Name g_print Load) (list (Constant i0 None)) nil)))
+            (/seq (Expr (Call (Name g_print Load) (list (_starred_content (Constant i0 None))) nil)))
             )
         )
         )
