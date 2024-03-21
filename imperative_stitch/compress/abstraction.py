@@ -8,6 +8,7 @@ from imperative_stitch.parser.parsed_ast import (
     SpliceAST,
     Variable,
 )
+from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.symbol import Symbol
 from imperative_stitch.utils.classify_nodes import export_dfa
 
@@ -169,14 +170,14 @@ class Abstraction:
 
         def traverse(node):
             sym = node.symbol
-            if sym.startswith("var-"):
-                var = sym[len("var-") :]
+            sym_mat = VARIABLE_PATTERN.match(sym)
+            if sym_mat:
+                var = sym_mat.group("name")
                 if var not in seen:
                     seen.add(var)
                     result.append(var)
-            print(node_ordering, node)
             ordering = (
-                node_ordering[node]
+                node_ordering[node.symbol]
                 if sym in node_ordering
                 else range(len(node.children))
             )

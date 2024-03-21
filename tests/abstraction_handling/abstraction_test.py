@@ -362,7 +362,7 @@ class AbstractionRenderingTest(unittest.TestCase):
             arity=2,
             sym_arity=1,
             choice_arity=0,
-            dfa_root="seqS",
+            dfa_root="S",
             dfa_symvars=["Name"],
             dfa_metavars=["E", "E"],
             dfa_choicevars=[],
@@ -371,12 +371,12 @@ class AbstractionRenderingTest(unittest.TestCase):
             fn_3.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
         )
 
-    # @parameterized.expand(range(len(load_stitch_output_set())))
-    # def test_abstraction_bodies_in_order_no_crash(self, i):
-    #     x = load_stitch_output_set()[i]
-    #     abstractions = []
-    #     for idx, abstraction in enumerate(x["abstractions"], 1):
-    #         abstraction["body"] = ParsedAST.parse_s_expression(abstraction["body"])
-    #         abstraction = Abstraction(**abstraction, name=f"fn_{idx}")
-    #         abstractions.append(abstraction)
-    #     python_node_ordering_with_abstractions(abstractions)
+    @parameterized.expand(range(len(load_stitch_output_set())))
+    def test_abstraction_bodies_in_order_no_crash(self, i):
+        x = load_stitch_output_set()[i]
+        abstractions = []
+        for idx, abstraction in enumerate(x["abstractions"], 1):
+            abstraction["body"] = ParsedAST.parse_s_expression(abstraction["body"])
+            abstraction = Abstraction(**abstraction, name=f"fn_{idx}")
+            abstractions.append(abstraction)
+        python_node_ordering_with_abstractions(abstractions)
