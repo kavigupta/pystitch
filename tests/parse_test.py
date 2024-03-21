@@ -3,6 +3,7 @@ import unittest
 
 import neurosym as ns
 
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.recursion import no_recursionlimit
@@ -537,3 +538,16 @@ class AbstractionCallsTest(unittest.TestCase):
             )
             """
         )
+
+
+class AbstractionBodiesTest(unittest.TestCase):
+    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
+    def test_realistic_with_abstractions(self, i):
+        x = load_stitch_output_set()[i]
+        for abstr in x["abstractions"]:
+            body = ParsedAST.parse_s_expression(abstr["body"])
+            body_ns_s_exp = body.to_type_annotated_ns_s_exp(
+                export_dfa(), abstr["dfa_root"]
+            )
+            body_from_ns_s_exp = ParsedAST.parse_s_expression(body_ns_s_exp).to_s_exp()
+            self.assertEqual(abstr["body"], body_from_ns_s_exp)
