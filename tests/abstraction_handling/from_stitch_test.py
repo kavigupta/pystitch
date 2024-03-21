@@ -1,3 +1,4 @@
+import copy
 import unittest
 from textwrap import dedent
 
@@ -561,7 +562,7 @@ class MultiKindTest(unittest.TestCase):
 class RealDataTest(unittest.TestCase):
     @expand_with_slow_tests(len(load_stitch_output_set()))
     def test_realistic_parseable(self, i):
-        eg = load_stitch_output_set()[i]
+        eg = copy.deepcopy(load_stitch_output_set()[i])
         abstr_dict = eg["abstractions"][0].copy()
         print(abstr_dict)
         abstr_dict["body"] = ParsedAST.parse_s_expression(abstr_dict["body"])
@@ -597,7 +598,7 @@ class RealDataTest(unittest.TestCase):
 
     @expand_with_slow_tests(len(load_stitch_output_set()))
     def test_realistic_same_behavior(self, i):
-        eg = load_stitch_output_set()[i]
+        eg = copy.deepcopy(load_stitch_output_set()[i])
         if self.currently_invalid(eg["abstractions"]):
             return
         try:
