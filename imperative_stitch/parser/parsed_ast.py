@@ -490,7 +490,7 @@ class SliceElementAST(ParsedAST):
             # safe because it is not actually legal to have a starred element
             # in a slice
             content = content.content
-        assert isinstance(content, (NodeAST, AbstractionCallAST)), content
+        assert isinstance(content, (NodeAST, AbstractionCallAST, Variable)), content
         if isinstance(content, NodeAST):
             if content.typ is ast.Slice:
                 return ns.SExpression("_slice_slice", [content.to_ns_s_exp(config)])
@@ -522,7 +522,9 @@ class StarrableElementAST(ParsedAST):
 
     def to_ns_s_exp(self, config):
         # pylint: disable=no-member
-        assert isinstance(self.content, (NodeAST, AbstractionCallAST)), self.content
+        assert isinstance(
+            self.content, (NodeAST, AbstractionCallAST, Variable)
+        ), self.content
         if isinstance(self.content, NodeAST) and self.content.typ is ast.Starred:
             return ns.SExpression(
                 "_starred_starred", [self.content.to_ns_s_exp(config)]
@@ -544,7 +546,9 @@ class SpliceAST(ParsedAST):
     content: Union[SequenceAST, AbstractionCallAST]
 
     def __post_init__(self):
-        assert isinstance(self.content, (SequenceAST, AbstractionCallAST)), self.content
+        assert isinstance(
+            self.content, (SequenceAST, AbstractionCallAST, Variable)
+        ), self.content
 
     def to_ns_s_exp(self, config):
         return ns.SExpression("/splice", [self.content.to_ns_s_exp(config)])
