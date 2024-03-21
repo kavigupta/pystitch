@@ -1,8 +1,8 @@
 import ast
 import unittest
-from parameterized import parameterized
 
 import neurosym as ns
+from parameterized import parameterized
 
 from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
@@ -542,7 +542,6 @@ class AbstractionCallsTest(unittest.TestCase):
 
 
 class AbstractionBodiesTest(unittest.TestCase):
-
     @parameterized.expand(range(len(load_stitch_output_set())))
     def test_realistic_with_abstractions(self, i):
         x = load_stitch_output_set()[i]
