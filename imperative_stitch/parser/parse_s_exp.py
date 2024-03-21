@@ -83,6 +83,10 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
         is_leaf, leaf = s_exp_leaf_to_value(tag[len("const-") :])
         assert is_leaf
         return LeafAST(leaf)
+    if tag.startswith("var-"):
+        assert len(args) == 0
+        tag = tag[len("var-") :]
+        return s_exp_to_parsed_ast(tag)
     assert isinstance(tag, str), str(tag)
     args = [s_exp_to_parsed_ast(x) for x in args]
     if tag in {"/seq", "/subseq", "/choiceseq"}:
