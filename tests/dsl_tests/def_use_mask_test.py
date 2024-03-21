@@ -722,12 +722,22 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             abstr["body"] = ParsedAST.parse_s_expression(abstr["body"])
             abstractions.append(Abstraction(name=f"fn_{it + 1}", **abstr))
         for code, rewritten in zip(x["code"], x["rewritten"]):
-            print(code)
+            print("*" * 80)
+            for abstr in x["abstractions"]:
+                print(abstr["body"].to_s_exp())
+            print("*" * 80)
             print(
                 ParsedAST.parse_s_expression(code)
                 .abstraction_calls_to_stubs({x.name: x for x in abstractions})
                 .to_python()
             )
+            print("*" * 80)
+            print(
+                ParsedAST.parse_s_expression(rewritten)
+                .abstraction_calls_to_stubs({x.name: x for x in abstractions})
+                .to_python()
+            )
+            print("*" * 80)
             try:
                 self.annotate_program(
                     code,
