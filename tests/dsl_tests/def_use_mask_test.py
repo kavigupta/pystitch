@@ -714,6 +714,55 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
+    def test_out_of_order_within_abstraction(self):
+        fn_3 = Abstraction(
+            name="fn_3",
+            body=ParsedAST.parse_s_expression(
+                """
+                (Expr
+                    (ListComp
+                        #0
+                        (list
+                            (comprehension
+                                (Name %1 Store)
+                                (Call
+                                    #1
+                                    (list (_starred_content (Constant i10 None)))
+                                    nil)
+                                nil
+                                i0))))
+                """
+            ),
+            arity=2,
+            sym_arity=1,
+            choice_arity=0,
+            dfa_root="S",
+            dfa_symvars=["Name"],
+            dfa_metavars=["E", "E"],
+            dfa_choicevars=[],
+        )
+        code = cwq(
+            """
+            "~(fn_3 (Name &x:0 Load) (Constant i2 None) &x:0)"
+            x = 2
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[fn_3],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                fn_3(__code__('x'), __code__('2'), __ref__(x))
+                x = 2
+                """
+            ).strip(),
+        )
+
     @expand_with_slow_tests(len(load_stitch_output_set()), 10)
     def test_realistic_with_abstractions(self, i):
         x = load_stitch_output_set()[i]

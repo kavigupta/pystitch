@@ -40,6 +40,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         if handler.is_defining(position):
             return [True] * len(symbols)
         names = handler.currently_defined_names()
+        print("names available", names)
         return [self._matches(names, symbol) for symbol in symbols]
 
     def on_entry(self, position: int, symbol: int):

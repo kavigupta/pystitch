@@ -55,6 +55,9 @@ class AbstractionHandler(Handler):
         assert self.valid_symbols is self.injected_handler.valid_symbols
 
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
+        print("entering child", position)
+        print("currently valid symbols", self.currently_defined_symbols())
+        print("currently valid names", self.currently_defined_names())
         return CollectingHandler(
             symbol,
             super().on_child_enter(position, symbol),
@@ -95,6 +98,14 @@ class AbstractionHandler(Handler):
         for i in order:
             yield from self.body_traversal_coroutine(node.children[i], i)
         self.mask_copy.on_exit(position, sym)
+        print(
+            "current valid symbols",
+            self.mask_copy.handlers[-1].valid_symbols,
+            self.valid_symbols,
+        )
+
+    def currently_defined_symbols(self) -> set[int]:
+        return self.mask_copy.handlers[-1].valid_symbols
 
 
 class CollectingHandler(Handler):

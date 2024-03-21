@@ -19,7 +19,7 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
-        return DefaultHandler.of(self.mask, self.valid_symbols, self.config, symbol)
+        return DefaultHandler.of(self.mask, self.currently_defined_symbols(), self.config, symbol)
 
     @abstractmethod
     def on_child_exit(self, position: int, symbol: int, child: "Handler"):
@@ -47,7 +47,9 @@ class Handler(ABC):
         # pylint: disable=cyclic-import
         from .target_handler import handle_target
 
-        return handle_target(symbol)(self.mask, self.valid_symbols, self.config)
+        return handle_target(symbol)(
+            self.mask, self.currently_defined_symbols(), self.config
+        )
 
 
 class DefaultHandler(Handler):

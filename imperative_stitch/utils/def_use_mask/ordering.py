@@ -22,6 +22,7 @@ def python_node_ordering_with_abstractions(abstrs):
         result[abstr.name + "~" + abstr.dfa_root] = abstr.arguments_traversal_order(
             result
         )
+    print("orderings", result)
     return result
 
 
