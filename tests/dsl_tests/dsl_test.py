@@ -82,6 +82,7 @@ class ProduceDslTest(unittest.TestCase):
             /choiceseq~seqS~2 :: (S, S) -> seqS
             /seq~seqS~2 :: (S, S) -> seqS
             /splice~S :: seqS -> S
+            /subseq~seqS~2 :: (S, S) -> seqS
             Add~O :: () -> O
             Assert~S :: (E, E) -> S
             Assign~S :: ([L], E, TC) -> S

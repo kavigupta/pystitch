@@ -1,14 +1,22 @@
 import unittest
 from textwrap import dedent
+from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
+from imperative_stitch.utils.def_use_mask.ordering import (
+    python_node_dictionary,
+    python_node_ordering_with_abstractions,
+)
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 fn_1_body = """
 (/subseq
-    (Assign (list (Name %1 Store)) (Call (Name g_int Load) (list (Call (Name g_input Load) nil nil)) nil) None)
+    (Assign
+        (list (Name %1 Store))
+        (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil) None)
     (Assign (list (Name %2 Store)) (Call (Name g_input Load) nil nil) None))
 """
 
@@ -35,13 +43,13 @@ fn_2_body = """
         (/seq
             (If
             (Compare (Name %1 Load) (list Eq) (list (Constant i0 None)))
-            (/seq (Expr (Call (Name g_print Load) (list (UnaryOp USub (Constant i1 None))) nil)))
-            (/seq (Expr (Call (Name g_print Load) (list (Constant i0 None)) nil)))
+            (/seq (Expr (Call (Name g_print Load) (list (_starred_content (UnaryOp USub (Constant i1 None)))) nil)))
+            (/seq (Expr (Call (Name g_print Load) (list (_starred_content (Constant i0 None))) nil)))
             )
         )
         (/seq
-            (Expr (Call (Name g_print Load) (list (Constant i1 None)) nil))
-            (Expr (Call (Name g_print Load) (list (BinOp (UnaryOp USub (Name %1 Load)) Div (Name %3 Load))) nil))
+            (Expr (Call (Name g_print Load) (list (_starred_content (Constant i1 None))) nil))
+            (Expr (Call (Name g_print Load) (list (_starred_content (BinOp (UnaryOp USub (Name %1 Load)) Div (Name %3 Load)))) nil))
         )
         )
     )
@@ -58,21 +66,21 @@ fn_2_body = """
         )
         (If
         (Compare (Name %4 Load) (list Gt) (list (Constant i0 None)))
-        (Expr #0)
+        (/seq (Expr #0))
         (/seq
             (If
             (Compare (Name %4 Load) (list Eq) (list (Constant i0 None)))
             (/seq
-                (Expr (Call (Name g_print Load) (list (Constant i1 None)) nil))
+                (Expr (Call (Name g_print Load) (list (_starred_content (Constant i1 None))) nil))
                 (Expr
                 (Call
                     (Name g_print Load)
-                    (list (BinOp (UnaryOp USub (Name %3 Load)) Div (BinOp (Constant i2 None) Mult (Name %2 Load))))
+                    (list (_starred_content (BinOp (UnaryOp USub (Name %3 Load)) Div (BinOp (Constant i2 None) Mult (Name %2 Load)))))
                     nil
                 )
                 )
             )
-            (/seq (Expr (Call (Name g_print Load) (list (Constant i0 None)) nil)))
+            (/seq (Expr (Call (Name g_print Load) (list (_starred_content (Constant i0 None))) nil)))
             )
         )
         )
@@ -315,13 +323,60 @@ class AbstractionRenderingTest(unittest.TestCase):
         create_dsl(dfa, subset, "M")
 
     def test_in_order_simple(self):
-        self.assertEqual(fn_1.variables_in_order(), ["%1", "%2"])
-        self.assertEqual(fn_1.arguments_traversal_order(), [0, 1])
+        self.assertEqual(
+            fn_1.variables_in_order(python_node_dictionary()), ["%1", "%2"]
+        )
+        self.assertEqual(
+            fn_1.arguments_traversal_order(python_node_dictionary()), [0, 1]
+        )
 
     def test_in_order_multi(self):
         self.assertEqual(
-            fn_2.variables_in_order(),
+            fn_2.variables_in_order(python_node_dictionary()),
             ["%2", "%3", "%1", "?0", "%4", "#0"],
         )
         # order is #0 %1 %2 %3 %4 ?0
-        self.assertEqual(fn_2.arguments_traversal_order(), [2, 3, 1, 5, 4, 0])
+        self.assertEqual(
+            fn_2.arguments_traversal_order(python_node_dictionary()), [2, 3, 1, 5, 4, 0]
+        )
+
+    def test_in_order_comprehension(self):
+        fn_3 = Abstraction(
+            name="fn_3",
+            body=ParsedAST.parse_s_expression(
+                """
+                (Expr
+                    (ListComp
+                        #0
+                        (list
+                            (comprehension
+                                (Name %1 Store)
+                                (Call 
+                                    #1
+                                    (list (_starred_content (Constant i10 None))) 
+                                    nil)
+                                nil
+                                i0))))
+                """
+            ),
+            arity=2,
+            sym_arity=1,
+            choice_arity=0,
+            dfa_root="S",
+            dfa_symvars=["Name"],
+            dfa_metavars=["E", "E"],
+            dfa_choicevars=[],
+        )
+        self.assertEqual(
+            fn_3.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
+        )
+
+    @parameterized.expand(range(len(load_stitch_output_set())))
+    def test_abstraction_bodies_in_order_no_crash(self, i):
+        x = load_stitch_output_set()[i]
+        abstractions = []
+        for idx, abstraction in enumerate(x["abstractions"], 1):
+            abstraction["body"] = ParsedAST.parse_s_expression(abstraction["body"])
+            abstraction = Abstraction(**abstraction, name=f"fn_{idx}")
+            abstractions.append(abstraction)
+        python_node_ordering_with_abstractions(abstractions)
