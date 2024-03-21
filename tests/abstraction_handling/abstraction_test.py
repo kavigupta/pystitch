@@ -1,5 +1,6 @@
 import unittest
 from textwrap import dedent
+
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
@@ -309,6 +310,64 @@ class AbstractionRenderingTest(unittest.TestCase):
                     print(0)
             """,
         )
+
+    def test_nested_abstraction_render(self):
+        fn_5_init = {
+            "body": ParsedAST.parse_s_expression(
+                """
+                (/subseq
+                    (While
+                        (Name %2 Load)
+                        (/seq
+                            (AugAssign
+                                (Name %3 Store)
+                                Add
+                                (BinOp (Name %2 Load) Mod (Name %1 Load)))
+                            (AugAssign (Name %2 Store) FloorDiv (Name %1 Load))
+                            ?0)
+                        (/seq))
+                    (If
+                        (Compare
+                            (Name %3 Load) (list Eq) (list (Name %4 Load)))
+                        (/seq (Return (Name %1 Load)))
+                        (/seq)))
+                """
+            ),
+            "sym_arity": 4,
+            "dfa_symvars": ["Name", "Name", "Name", "Name"],
+            "dfa_metavars": [],
+            "dfa_choicevars": ["seqS"],
+            "choice_arity": 1,
+            "arity": 0,
+            "dfa_root": "seqS",
+        }
+
+        fn_5 = Abstraction(name="fn_5", **fn_5_init)
+        tmp_abstraction_calls = {"fn_5": fn_5}
+        result = (
+            ParsedAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))")
+            .abstraction_calls_to_bodies(tmp_abstraction_calls)
+            .to_s_exp()
+        )
+        expected = """
+        (/splice
+            (/subseq
+                (While
+                    (Name %4 Load)
+                    (/seq
+                        (AugAssign
+                            (Name %5 Store)
+                            Add
+                            (BinOp (Name %4 Load) Mod (Name %1 Load)))
+                        (AugAssign (Name %4 Store) FloorDiv (Name %1 Load))
+                        (/splice #0))
+                        (/seq))
+                    (If
+                        (Compare (Name %5 Load) (list Eq) (list (Name %2 Load)))
+                        (/seq (Return (Name %1 Load))) (/seq))))
+        """
+        expected = ParsedAST.parse_s_expression(expected).to_s_exp()
+        self.assertEqual(result, expected)
 
     def test_dfa_with_abstractions_works(self):
         export_dfa(abstrs={"fn_1": fn_1, "fn_2": fn_2})
