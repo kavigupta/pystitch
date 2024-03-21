@@ -25,9 +25,7 @@ class TupleListLHSHandler(Handler):
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if position == self.fields["elts"]:
-            target_handlers = child.handlers.values()
-            for handler in target_handlers:
-                self.defined_symbols |= handler.defined_symbols
+            self.defined_symbols |= child.defined_symbols
 
     def is_defining(self, position: int) -> bool:
         return position == self.fields["elts"]
