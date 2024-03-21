@@ -133,3 +133,7 @@ class CollectingHandler(Handler):
 
     def is_defining(self, position: int) -> bool:
         return self.underlying_handler.is_defining(position)
+
+    @property
+    def defined_symbols(self):
+        return self.underlying_handler.defined_symbols

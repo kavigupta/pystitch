@@ -5,6 +5,7 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
@@ -588,3 +589,113 @@ class EnumerateFittedDslTest(unittest.TestCase):
                 """
             ).strip(),
         )
+
+    def test_symvar_used_in_metavariable(self):
+        code = cwq(
+            """
+            b = 2
+            "~(/splice (fn_1 (Name &a:0 Load) &b:0 &a:0))"
+            a = a
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                Abstraction(
+                    name="fn_1",
+                    body=ParsedAST.parse_s_expression(
+                        "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) #0 None))"
+                    ),
+                    arity=1,
+                    sym_arity=2,
+                    choice_arity=0,
+                    dfa_root="seqS",
+                    dfa_symvars=["Name"] * 2,
+                    dfa_metavars=["E"],
+                    dfa_choicevars=[],
+                )
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                b?a = 2
+                # a?b = b
+                # a?b = a?b
+                fn_1(__code__('a?b'), __ref__(b), __ref__(a?b))
+                a?b = a?b
+                """
+            ).strip(),
+        )
+
+    def test_definition_in_metavar(self):
+        code = cwq(
+            """
+            b = 2
+            "~(/splice (fn_1 (Assign (list (Name &c:0 Store)) (Name &b:0 Load) None) &c:0 &a:0))"
+            a = a
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                Abstraction(
+                    name="fn_1",
+                    body=ParsedAST.parse_s_expression(
+                        "(/seq #0 (Assign (list (Name %2 Store)) (Name %1 Load) None))"
+                    ),
+                    arity=1,
+                    sym_arity=2,
+                    choice_arity=0,
+                    dfa_root="seqS",
+                    dfa_symvars=["Name"] * 2,
+                    dfa_metavars=["S"],
+                    dfa_choicevars=[],
+                )
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                b?a$c = 2
+                # c?a$b = b
+                # a?b$c = c?b
+                fn_1(__code__('c?a$b = b'), __ref__(c?b), __ref__(a?b$c))
+                a?b$c = a?b$c
+                """
+            ).strip(),
+        )
+
+    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
+    def test_realistic_with_abstractions(self, i):
+        x = load_stitch_output_set()[i]
+        abstractions = []
+        for it, abstr in enumerate(x["abstractions"]):
+            abstr["body"] = ParsedAST.parse_s_expression(abstr["body"])
+            abstractions.append(Abstraction(name=f"fn_{it + 1}", **abstr))
+        for code, rewritten in zip(x["code"], x["rewritten"]):
+            print(code)
+            print(
+                ParsedAST.parse_s_expression(code)
+                .abstraction_calls_to_stubs({x.name: x for x in abstractions})
+                .to_python()
+            )
+            try:
+                self.annotate_program(
+                    code,
+                    parser=ParsedAST.parse_s_expression,
+                    abstrs=abstractions,
+                )
+            except AssertionError:
+                continue
+            self.annotate_program(
+                rewritten,
+                parser=ParsedAST.parse_s_expression,
+                abstrs=abstractions,
+            )
