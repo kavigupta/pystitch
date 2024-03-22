@@ -9,7 +9,6 @@ from .non_collecting_handler import NonCollectingTargetHandler
 from .passthrough_handler import PassthroughLHSHandler, StarredHandler
 from .tuple_list_handler import TupleListLHSHandler
 
-
 targets_map = {
     "Name~L": NameTargetHandler,
     "arg~A": NameTargetHandler,

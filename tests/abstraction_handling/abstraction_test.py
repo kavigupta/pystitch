@@ -1,7 +1,6 @@
 import copy
 import unittest
 from textwrap import dedent
-from parameterized import parameterized
 
 from parameterized import parameterized
 
