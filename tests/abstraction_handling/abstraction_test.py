@@ -4,8 +4,6 @@ from textwrap import dedent
 
 from parameterized import parameterized
 
-from parameterized import parameterized
-
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.parsed_ast import ParsedAST
