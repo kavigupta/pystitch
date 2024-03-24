@@ -44,3 +44,36 @@ class ChildFrameCreatorHandler(DefiningStatementHandler):
     def __init__(self, mask, valid_symbols, config):
         self.original_valid_symbols = valid_symbols
         super().__init__(mask, set(valid_symbols), config)
+
+
+class AssignHandler(DefiningStatementHandler):
+    name = "Assign~S"
+    children = {"target": 0, "value": 1, "type_comment": 2}
+    targeted = ["target"]
+    define_symbols_on_exit = "type_comment"
+
+
+class ForHandler(DefiningStatementHandler):
+    name = "For~S"
+    children = {"target": 0, "iter": 1, "body": 2, "orelse": 3}
+    targeted = ["target"]
+    define_symbols_on_exit = "iter"
+
+
+class ImportHandler(DefiningStatementHandler):
+    name = "Import~S"
+    children = {"names": 0}
+    targeted = ["names"]
+    define_symbols_on_exit = "names"
+
+
+class ImportFromHandler(ImportHandler):
+    name = "ImportFrom~S"
+    children = {"module": 0, "names": 1}
+
+
+class LambdaHandler(ChildFrameCreatorHandler):
+    name = "Lambda~E"
+    children = {"args": 0, "body": 1}
+    targeted = ["args"]
+    define_symbols_on_exit = "args"

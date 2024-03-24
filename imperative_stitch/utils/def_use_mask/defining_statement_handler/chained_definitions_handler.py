@@ -5,7 +5,7 @@ from imperative_stitch.utils.def_use_mask.defining_statement_handler.defining_st
 from ..handler import Handler
 
 
-class ChainedDefinitionsHandler(Handler):
+class ComprehensionExpressionHandler(Handler):
     # handled out of order. generators first
 
     def __init__(self, mask, valid_symbols, config, children):
@@ -33,7 +33,7 @@ class ChainedDefinitionsHandler(Handler):
         return False
 
 
-class ListComprehensionHandler(ChainedDefinitionsHandler):
+class ListComprehensionHandler(ComprehensionExpressionHandler):
     name = "ListComp~E"
 
     def __init__(self, mask, valid_symbols, config):
@@ -48,7 +48,7 @@ class GeneratorExprHandler(ListComprehensionHandler):
     name = "GeneratorExp~E"
 
 
-class DictComprehensionHandler(ChainedDefinitionsHandler):
+class DictComprehensionHandler(ComprehensionExpressionHandler):
     name = "DictComp~E"
 
     def __init__(self, mask, valid_symbols, config):

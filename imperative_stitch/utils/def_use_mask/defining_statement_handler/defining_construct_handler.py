@@ -5,6 +5,7 @@ from .defining_statement_handler import ChildFrameCreatorHandler
 class DefiningConstructHandler(ChildFrameCreatorHandler):
     # these fields must be defined in the subclass
     construct_name_field: str = None
+
     def __init__(self, mask, valid_symbols, config):
         super().__init__(mask, valid_symbols, config)
         self._item_name = None
@@ -40,13 +41,6 @@ class FuncDefHandler(DefiningConstructHandler):
     construct_name_field = "name"
 
 
-class LambdaHandler(ChildFrameCreatorHandler):
-    name = "Lambda~E"
-    children = {"args": 0, "body": 1}
-    targeted = ["args"]
-    define_symbols_on_exit = "args"
-
-
 class ClassDefHandler(DefiningConstructHandler):
     name = "ClassDef~S"
     children = {"name": 0, "bases": 1, "keywords": 2, "body": 3, "decorator_list": 4}
@@ -55,4 +49,4 @@ class ClassDefHandler(DefiningConstructHandler):
     construct_name_field = "name"
 
 
-child_frame_creators = [FuncDefHandler, LambdaHandler, ClassDefHandler]
+defining_construct_handler = [FuncDefHandler, ClassDefHandler]
