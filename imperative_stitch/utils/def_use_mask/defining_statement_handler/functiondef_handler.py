@@ -3,6 +3,8 @@ from .defining_statement_handler import ChildFrameCreatorHandler
 
 
 class DefiningConstructHandler(ChildFrameCreatorHandler):
+    # these fields must be defined in the subclass
+    construct_name_field: str = None
     def __init__(self, mask, valid_symbols, config):
         super().__init__(mask, valid_symbols, config)
         self._item_name = None

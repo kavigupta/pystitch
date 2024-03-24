@@ -1,4 +1,4 @@
-from .defining_statement_handler import DefiningStatementHandler, Handler
+from .defining_statement_handler import DefiningStatementHandler
 
 
 class AssignHandler(DefiningStatementHandler):
