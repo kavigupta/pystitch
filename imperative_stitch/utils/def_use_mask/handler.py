@@ -19,8 +19,11 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
-        return DefaultHandler.of(
-            self.mask, self.currently_defined_symbols(), self.config, symbol
+        from .defining_statement_handler import defining_statement_handlers
+
+        symbol, _ = self.mask.tree_dist.symbols[symbol]
+        return defining_statement_handlers().get(symbol, DefaultHandler)(
+            self.mask, self.currently_defined_symbols(), self.config
         )
 
     @abstractmethod
@@ -55,16 +58,6 @@ class Handler(ABC):
 
 
 class DefaultHandler(Handler):
-    @classmethod
-    def of(cls, mask, valid_symbols, config, symbol: int):
-        # pylint: disable=cyclic-import
-        from .defining_statement_handler import defining_statement_handlers
-
-        symbol, _ = mask.tree_dist.symbols[symbol]
-        return defining_statement_handlers().get(symbol, DefaultHandler)(
-            mask, valid_symbols, config
-        )
-
     def on_enter(self):
         pass
 
