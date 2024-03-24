@@ -1,93 +1,56 @@
 from ..handler import Handler
+from .defining_statement_handler import ChildFrameCreatorHandler
 
 
-class ChildFrameCreatorHandler(Handler):
-    def __init__(
-        self, mask, valid_symbols, config, *, fields, field_name, field_for_child_frame
-    ):
-        self.original_valid_symbols = valid_symbols
-        super().__init__(mask, set(valid_symbols), config)
-        self.name = None
-        self.fields = fields
-        self.field_name = field_name
-        self.field_for_child_frame = field_for_child_frame
+class DefiningConstructHandler(ChildFrameCreatorHandler):
+    def __init__(self, mask, valid_symbols, config):
+        super().__init__(mask, valid_symbols, config)
+        self._item_name = None
+        assert isinstance(self.construct_name_field, str)
 
     def on_enter(self):
         pass
 
     def on_exit(self):
-        if self.name is not None:
-            assert self.name is not None
-            self.original_valid_symbols.add(self.name)
+        assert self._item_name is not None
+        self.original_valid_symbols.add(self._item_name)
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        if self.field_name is not None and position == self.fields[self.field_name]:
-            self.name = symbol
-            self.valid_symbols.add(symbol)
         if (
-            self.field_for_child_frame is not None
-            and position == self.fields[self.field_for_child_frame]
+            self.construct_name_field is not None
+            and position == self.children[self.construct_name_field]
         ):
-            return self.target_child(symbol)
+            self._item_name = symbol
+            self.valid_symbols.add(symbol)
         return super().on_child_enter(position, symbol)
 
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
-        if (
-            self.field_for_child_frame is not None
-            and position == self.fields[self.field_for_child_frame]
-        ):
-            self.valid_symbols |= child.defined_symbols
-
     def is_defining(self, position: int) -> bool:
-        if self.field_name is not None:
-            if position == self.fields[self.field_name]:
-                return True
-        if self.field_for_child_frame is not None:
-            if position == self.fields[self.field_for_child_frame]:
-                return True
-        return False
+        if position == self.children[self.construct_name_field]:
+            return True
+        return super().is_defining(position)
 
 
-class FuncDefHandler(ChildFrameCreatorHandler):
+class FuncDefHandler(DefiningConstructHandler):
     name = "FunctionDef~S"
-
-    def __init__(self, mask, valid_symbols, config):
-        super().__init__(
-            mask,
-            valid_symbols,
-            config,
-            fields={"name": 0, "args": 1, "body": 2},
-            field_name="name",
-            field_for_child_frame="args",
-        )
+    children = {"name": 0, "args": 1, "body": 2}
+    targeted = ["args"]
+    define_symbols_on_exit = "args"
+    construct_name_field = "name"
 
 
 class LambdaHandler(ChildFrameCreatorHandler):
     name = "Lambda~E"
-
-    def __init__(self, mask, valid_symbols, config):
-        super().__init__(
-            mask,
-            valid_symbols,
-            config,
-            fields={"args": 0, "body": 1},
-            field_name=None,
-            field_for_child_frame="args",
-        )
+    children = {"args": 0, "body": 1}
+    targeted = ["args"]
+    define_symbols_on_exit = "args"
 
 
-class ClassDefHandler(ChildFrameCreatorHandler):
+class ClassDefHandler(DefiningConstructHandler):
     name = "ClassDef~S"
-
-    def __init__(self, mask, valid_symbols, config):
-        super().__init__(
-            mask,
-            valid_symbols,
-            config,
-            fields={"name": 0},
-            field_name="name",
-            field_for_child_frame=None,
-        )
+    children = {"name": 0, "bases": 1, "keywords": 2, "body": 3, "decorator_list": 4}
+    targeted = []
+    define_symbols_on_exit = "decorator_list"
+    construct_name_field = "name"
 
 
 child_frame_creators = [FuncDefHandler, LambdaHandler, ClassDefHandler]

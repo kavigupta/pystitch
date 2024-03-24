@@ -175,6 +175,26 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
+    def test_lambda(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                x = 2
+                lambda y, z=x: lambda a=y: x
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                x?a$y$z = 2
+                lambda y?a$x$z, z?a$x$y=x: lambda a?x$y$z=y?x$z: x?a$y$z
+                """
+            ).strip(),
+        )
+
     def test_function_call_arguments(self):
         code = self.annotate_program(
             cwq(

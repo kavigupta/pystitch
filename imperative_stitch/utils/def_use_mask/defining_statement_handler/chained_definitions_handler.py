@@ -1,3 +1,7 @@
+from imperative_stitch.utils.def_use_mask.defining_statement_handler.defining_statement_handler import (
+    DefiningStatementHandler,
+)
+
 from ..handler import Handler
 
 
@@ -70,36 +74,11 @@ class GeneratorsHandler(Handler):
         return False
 
 
-class ComprehensionHandler(Handler):
-    fields = {"target": 0, "iter": 1, "ifs": 2}
-
-    def __init__(self, mask, valid_symbols, config):
-        super().__init__(mask, valid_symbols, config)
-        self.defined_symbols = None
-
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
-
-    def on_child_enter(self, position: int, symbol: int) -> Handler:
-        if position == self.fields["target"]:
-            return self.target_child(symbol)
-        return super().on_child_enter(position, symbol)
-
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
-        if position == self.fields["target"]:
-            assert self.defined_symbols is None
-            self.defined_symbols = child.defined_symbols
-        if position == self.fields["iter"]:
-            assert self.defined_symbols is not None
-            # now done with the iter field
-            # we should allow the defined symbols to be used
-            self.valid_symbols |= self.defined_symbols
-
-    def is_defining(self, position: int) -> bool:
-        return position == self.fields["target"]
+class ComprehensionHandler(DefiningStatementHandler):
+    name = "comprehension~C"
+    children = {"target": 0, "iter": 1, "ifs": 2}
+    targeted = ["target"]
+    define_symbols_on_exit = "iter"
 
 
 chained_definition_handlers = [
