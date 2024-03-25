@@ -13,7 +13,6 @@ from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_exa
 
 
 class DefUseMaskTestGeneric(unittest.TestCase):
-
     def annotate_alternates(self, chosen, alts):
         self.assertIn(chosen, alts)
         mat = match_either(chosen)
@@ -379,7 +378,6 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
-
     def replace_s_expr(self, s_expr):
         if not isinstance(s_expr, NodeAST):
             return s_expr
