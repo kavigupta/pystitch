@@ -19,6 +19,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     def __init__(self, tree_dist, dsl, dfa, abstrs):
         super().__init__(tree_dist)
         assert isinstance(tree_dist.ordering, PythonNodeOrdering)
+        assert isinstance(abstrs, (list, tuple))
         self.dsl = dsl
         self.has_global_available = any(
             GLOBAL_REGEX.match(x) for x, _ in self.tree_dist.symbols

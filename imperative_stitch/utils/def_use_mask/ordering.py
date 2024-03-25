@@ -18,9 +18,9 @@ def python_node_dictionary():
 
 def python_node_ordering_with_abstractions(abstrs):
     result = python_node_dictionary()
-    for abstr in abstrs:
+    for i, abstr in enumerate(abstrs):
         result[abstr.name + "~" + abstr.dfa_root] = abstr.arguments_traversal_order(
-            result
+            result, previous_abstractions=abstrs[:i]
         )
     print("orderings", result)
     return result
