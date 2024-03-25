@@ -78,7 +78,7 @@ def is_sequence_symbol(x):
 
 
 def is_sequence(type_name, head_symbol):
-    if head_symbol.startswith("fn_"):
+    if head_symbol.startswith("fn_") or head_symbol.startswith("var-"):
         return False
     seq_type = is_sequence_type(type_name)
     seq_symbol = is_sequence_symbol(head_symbol)
