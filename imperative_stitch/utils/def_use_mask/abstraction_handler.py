@@ -18,7 +18,7 @@ class AbstractionHandler(Handler):
         self.mask_copy = copy.deepcopy(self.mask)
         self.injected_handler = DefaultHandler.of(
             self.mask_copy,
-            self.valid_symbols,
+            valid_symbols,
             self.config,
             0,  # dosent' matter
         )
@@ -105,14 +105,14 @@ class AbstractionHandler(Handler):
         )
 
     def currently_defined_symbols(self) -> set[int]:
-        return self.mask_copy.handlers[-1].valid_symbols
+        return self.mask_copy.handlers[-1].currently_defined_symbols()
 
 
 class CollectingHandler(Handler):
     def __init__(self, sym, underlying_handler):
         super().__init__(
             underlying_handler.mask,
-            underlying_handler.valid_symbols,
+            underlying_handler.currently_defined_symbols(),
             underlying_handler.config,
         )
         self.underlying_handler = underlying_handler
