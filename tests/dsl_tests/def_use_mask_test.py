@@ -1,4 +1,5 @@
 import ast
+import copy
 import sys
 import unittest
 
@@ -7,7 +8,11 @@ import neurosym as ns
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
+from imperative_stitch.utils.classify_nodes import export_dfa
+from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import match_either
+from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
 
@@ -780,6 +785,425 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
                 """
             ).strip(),
         )
+
+    def test_metavar_containing_abstraction(self):
+        code = cwq(
+            """
+            b = 2
+            "~(fn_2 (fn_1) &a:0)"
+            a = a
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                Abstraction(
+                    name="fn_1",
+                    body=ParsedAST.parse_s_expression("(Name &b:0 Load)"),
+                    arity=0,
+                    sym_arity=0,
+                    choice_arity=0,
+                    dfa_root="E",
+                    dfa_symvars=[],
+                    dfa_metavars=[],
+                    dfa_choicevars=[],
+                ),
+                Abstraction(
+                    name="fn_2",
+                    body=ParsedAST.parse_s_expression(
+                        "(Assign (list (Name %1 Store)) #0 None)"
+                    ),
+                    arity=1,
+                    sym_arity=1,
+                    choice_arity=0,
+                    dfa_root="S",
+                    dfa_symvars=["Name"],
+                    dfa_metavars=["E"],
+                    dfa_choicevars=[],
+                ),
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                b?a = 2
+                # a?b = b
+                fn_1(__code__('(fn_1)'), __ref__(a?b))
+                a?b = a?b
+                """
+            ).strip(),
+        )
+
+    def test_nested_generator_from_annie(self):
+        stitch_abstrs = [
+            {
+                "body": "(/subseq (If (Compare (Name %1 Load) (list Eq) (list (Name %2 Load))) (/seq (Return (BinOp (Name %1 Load) Add (Constant i1 None)))) (/seq)) (For (Name %3 Store) (Call (Name g_range Load) (list (_starred_content (Constant i2 None)) (_starred_content (BinOp (Call (Name g_int Load) (list (_starred_content (BinOp (Name %1 Load) Pow (Constant f0.5 None)))) nil) Add (Constant i1 None)))) nil) #0 (/seq) None))",
+                "sym_arity": 3,
+                "dfa_symvars": ["Name", "Name", "Name"],
+                "dfa_metavars": ["seqS"],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 1,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/seq (If (Compare (BinOp (BinOp (Name %3 Load) Sub (Name %2 Load)) Mod (Name %1 Load)) (list Eq) (list (Constant i0 None))) (/seq (Assign (list (Name %4 Store)) (BinOp (BinOp (BinOp (Name %3 Load) Sub (Name %2 Load)) FloorDiv (Name %1 Load)) Add (Constant i1 None)) None) (If #0 (/seq (Return (Name %4 Load))) (/seq))) (/seq)))",
+                "sym_arity": 4,
+                "dfa_symvars": ["Name", "Name", "Name", "Name"],
+                "dfa_metavars": ["E"],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 1,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/subseq (FunctionDef %3 (arguments nil (list (arg %2 None None) (arg %1 None None)) None nil nil None nil) (/seq ?0 (Return (UnaryOp USub (Constant i1 None)))) nil None None) (Assign (list (Tuple (list (_starred_content (Name %5 Store)) (_starred_content (Name %4 Store))) Store)) (Call (Name g_map Load) (list (_starred_content (Name g_int Load)) (_starred_content (Call (Attribute (Call (Name g_input Load) nil nil) s_split Load) nil nil))) nil) None) (Expr (Call (Name g_print Load) (list (_starred_content (Call (Name %3 Load) (list (_starred_content (Name %5 Load)) (_starred_content (Name %4 Load))) nil))) nil)))",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": ["seqS"],
+                "choice_arity": 1,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(FunctionDef %3 (arguments nil (list (arg %1 None None) (arg %2 None None)) None nil nil None nil) (/seq (If (Compare (Name %2 Load) (list Lt) (list (Name %1 Load))) (/seq (Return (Name %2 Load))) (/seq (Return (BinOp (Call (Name %3 Load) (list (_starred_content (Name %1 Load)) (_starred_content (BinOp (Name %2 Load) FloorDiv (Name %1 Load)))) nil) Add (BinOp (Name %2 Load) Mod (Name %1 Load))))))) nil None None)",
+                "sym_arity": 3,
+                "dfa_symvars": ["Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "S",
+            },
+            {
+                "body": "(/subseq (While (Name %2 Load) (/seq (AugAssign (Name %3 Store) Add (BinOp (Name %2 Load) Mod (Name %1 Load))) (AugAssign (Name %2 Store) FloorDiv (Name %1 Load)) ?0) (/seq)) (If (Compare (Name %3 Load) (list Eq) (list (Name %4 Load))) (/seq (Return (Name %1 Load))) (/seq)))",
+                "sym_arity": 4,
+                "dfa_symvars": ["Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": ["seqS"],
+                "choice_arity": 1,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(BinOp (Call (Name g_int Load) (list (_starred_content (BinOp (Name %1 Load) Pow (Constant f0.5 None)))) nil) Add (Constant i1 None))",
+                "sym_arity": 1,
+                "dfa_symvars": ["Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(/seq (FunctionDef %3 (arguments nil (list (arg %2 None None) (arg %1 None None)) None nil nil None nil) (/seq ?0 (Return (UnaryOp USub (Constant i1 None)))) nil None None) (Assign (list (Tuple (list (_starred_content (Name %5 Store)) (_starred_content (Name %4 Store))) Store)) (Tuple (list (_starred_content (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil)) (_starred_content (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil))) Load) None) (Expr (Call (Name g_print Load) (list (_starred_content (Call (Name %3 Load) (list (_starred_content (Name %5 Load)) (_starred_content (Name %4 Load))) nil))) nil)))",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": ["seqS"],
+                "choice_arity": 1,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/subseq (/splice (fn_1 (/seq (If (Compare (Call (Name %4 Load) (list (_starred_content (Name %1 Load)) (_starred_content (Name %3 Load))) nil) (list Eq) (list (Name %2 Load))) (/seq (Return (Name %1 Load))) (/seq))) %3 %2 %1)) (For (Name %5 Store) #0 (/seq (Assign (list (Name %1 Store)) (BinOp (BinOp (BinOp (Name %3 Load) Sub (Name %2 Load)) FloorDiv (Name %5 Load)) Add (Constant i1 None)) None) (If (BoolOp And (list (Compare (Name %1 Load) (list Gt) (list (Constant i1 None))) (Compare (Call (Name %4 Load) (list (_starred_content (Name %1 Load)) (_starred_content (Name %3 Load))) nil) (list Eq) (list (Name %2 Load))))) (/seq (Return (Name %1 Load))) (/seq))) (/seq) None) (Return (UnaryOp USub (Constant i1 None))))",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": ["E"],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 1,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/subseq (FunctionDef %4 (arguments nil (list (arg %3 None None) (arg %2 None None)) None nil nil None nil) (/seq ?0 (Assign (list (Name %1 Store)) (Constant i0 None) None) (While (Name %3 Load) (/seq (AugAssign (Name %1 Store) Add (BinOp (Name %3 Load) Mod (Name %2 Load))) (AugAssign (Name %3 Store) FloorDiv (Name %2 Load))) (/seq)) (Return (Name %1 Load))) nil None None) (Assign (list (Tuple (list (_starred_content (Name %6 Store)) (_starred_content (Name %5 Store))) Store)) (Call (Name g_map Load) (list (_starred_content (Name g_int Load)) (_starred_content (Call (Attribute (Call (Name g_input Load) nil nil) s_split Load) nil nil))) nil) None) (Expr (Call (Name g_print Load) (list (_starred_content (Call (Name %7 Load) (list (_starred_content (Name %6 Load)) (_starred_content (Name %5 Load))) nil))) nil)))",
+                "sym_arity": 7,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": ["seqS"],
+                "choice_arity": 1,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(Call (Name g_range Load) (list (_starred_content (Call (Name g_int Load) (list (_starred_content (BinOp (Name %1 Load) Pow (Constant f0.5 None)))) nil)) (_starred_content (Constant i0 None)) (_starred_content (UnaryOp USub (Constant i1 None)))) nil)",
+                "sym_arity": 1,
+                "dfa_symvars": ["Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(Subscript (Call (Name g_range Load) (list (_starred_content (Constant i1 None)) (_starred_content (fn_6 %1))) nil) (_slice_slice (Slice None None (UnaryOp USub (Constant i1 None)))) Load)",
+                "sym_arity": 1,
+                "dfa_symvars": ["Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(BinOp (BinOp (BinOp (Name %3 Load) Sub (Name %2 Load)) FloorDiv (Name %1 Load)) Add (Constant i1 None))",
+                "sym_arity": 3,
+                "dfa_symvars": ["Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(/subseq (Assign (list (Name %1 Store)) (Call (Name g_int Load) (list (_starred_content (Call #0 nil nil))) nil) None) (Assign (list (Name %2 Store)) (Call (Name g_int Load) (list (_starred_content (Call #0 nil nil))) nil) None) (Expr (Call (Name g_print Load) (list (_starred_content (Call (Name %3 Load) (list (_starred_content (Name %1 Load)) (_starred_content (Name %2 Load))) nil))) nil)))",
+                "sym_arity": 3,
+                "dfa_symvars": ["Name", "Name", "Name"],
+                "dfa_metavars": ["E"],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 1,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %3 Store)) (Constant i0 None) None) (While (Compare (Name %2 Load) (list Gt) (list (Constant i0 None))) (/seq (AugAssign (Name %3 Store) Add (BinOp (Name %2 Load) Mod (Name %4 Load))) (AugAssign (Name %2 Store) FloorDiv (Name %4 Load)) (If (Compare (Name %3 Load) (list Gt) (list (Name %5 Load))) (/seq Break) (/seq))) (/seq)) (If (Compare (Name %3 Load) (list Eq) (list (Name %5 Load))) (/seq (Return (Name %4 Load))) (/seq)))",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(fn_1 (/seq (Assign (list (Name %4 Store)) (Name %3 Load) None) (Assign (list (Name %5 Store)) (Constant i0 None) None) (/splice (fn_5 %1 %4 %5 %2 (/choiceseq)))) %3 %2 %1)",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(Return (UnaryOp USub (Constant i1 None)))",
+                "sym_arity": 0,
+                "dfa_symvars": [],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "S",
+            },
+            {
+                "body": "(For (Name %4 Store) (Call (Name g_range Load) (list (_starred_content (fn_6 %2)) (_starred_content (Constant i0 None)) (_starred_content (UnaryOp USub (Constant i1 None)))) nil) (fn_2 (Compare (Name %1 Load) (list GtE) (list (Constant i2 None))) %4 %3 %2 %1) (/seq) None)",
+                "sym_arity": 4,
+                "dfa_symvars": ["Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "S",
+            },
+            {
+                "body": "(If (Compare (Name %2 Load) (list Eq) (list (Name %1 Load))) (/seq (Return (BinOp (Name %1 Load) Add (Constant i1 None)))) (/seq))",
+                "sym_arity": 2,
+                "dfa_symvars": ["Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "S",
+            },
+            {
+                "body": "(Compare (BinOp (BinOp (Name %3 Load) Sub (Name %2 Load)) Mod (Name %1 Load)) (list Eq) (list (Constant i0 None)))",
+                "sym_arity": 3,
+                "dfa_symvars": ["Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(For (Name %1 Store) (Call (Name g_range Load) (list (_starred_content (Constant i2 None)) (_starred_content (fn_6 %3))) nil) (/seq (If (Compare (Call (Name %4 Load) (list (_starred_content (Name %1 Load)) (_starred_content (Name %3 Load))) nil) (list Eq) (list (Name %2 Load))) (/seq (Return (Name %1 Load))) (/seq))) (/seq) None)",
+                "sym_arity": 4,
+                "dfa_symvars": ["Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "S",
+            },
+            {
+                "body": "(BinOp (Call (Name g_int Load) (list (_starred_content (BinOp (BinOp (Name %2 Load) Sub (Name %1 Load)) Pow (Constant f0.5 None)))) nil) Add (Constant i1 None))",
+                "sym_arity": 2,
+                "dfa_symvars": ["Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(Call (Name g_map Load) (list (_starred_content (Name g_int Load)) (_starred_content (Call (Attribute (Call (Name g_input Load) nil nil) s_split Load) nil nil))) nil)",
+                "sym_arity": 0,
+                "dfa_symvars": [],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(Tuple (list (_starred_content (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil)) (_starred_content (Call (Name g_int Load) (list (_starred_content (Call (Name g_input Load) nil nil))) nil))) Load)",
+                "sym_arity": 0,
+                "dfa_symvars": [],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "E",
+            },
+            {
+                "body": "(/splice (fn_1 (/seq (Assign (list (Name %4 Store)) (Name %3 Load) None) (Assign (list (Name %5 Store)) (Constant i0 None) None) (/splice (fn_5 %1 %4 %5 %2 (/choiceseq (If (Compare (Name %5 Load) (list Gt) (list (Name %2 Load))) (/seq Break) (/seq)))))) %3 %2 %1))",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "S",
+            },
+        ]
+
+        test_abstr_configs = {}
+        for i, entry in enumerate(stitch_abstrs):
+            config = copy.deepcopy(entry)
+            config["name"] = f"fn_{i+1}"
+            config["body"] = ParsedAST.parse_s_expression(config["body"])
+            test_abstr_configs[f"fn_{i+1}"] = config
+        test_abstrs = [Abstraction(**test_abstr_configs[x]) for x in test_abstr_configs]
+
+        test_program = "(Module (/seq (/splice (fn_3 &s:1 &n:1 &find_base:0 &s:0 &n:0 (/choiceseq (fn_24 &b:1 &s:1 &n:1 &m:1 &sum_digits:1) (For (Name &q:1 Store) (Call (Name g_range Load) (list (_starred_content (Constant i1 None)) (_starred_content (fn_6 &n:1))) nil) (/seq (Assign (list (Name &b:1 Store)) (fn_12 &q:1 &s:1 &n:1) None) (If (Compare (BinOp (BinOp (Name &b:1 Load) Mult (Name &q:1 Load)) Add (Name &s:1 Load)) (list Eq) (list (Name &n:1 Load))) (/seq (Return (Name &b:1 Load))) (/seq))) (/seq) None))))) nil)"
+        test_ast = ParsedAST.parse_s_expression(test_program)
+
+        dfa = export_dfa(abstrs=test_abstrs)
+        subset = DSLSubset.from_program(
+            dfa,
+            test_ast,
+            test_ast.abstraction_calls_to_bodies_recursively(
+                {x.name: x for x in test_abstrs}
+            ),
+            root="M",
+        )
+        print(subset)
+        dsl = create_dsl(dfa, subset, "M")
+        fam = ns.BigramProgramDistributionFamily(
+            dsl,
+            additional_preorder_masks=[
+                lambda dist, dsl: DefUseChainPreorderMask(
+                    dist, dsl, dfa=dfa, abstrs=test_abstrs
+                )
+            ],
+            include_type_preorder_mask=False,
+            node_ordering=lambda dist: PythonNodeOrdering(dist, test_abstrs),
+        )
+
+        annotated = test_ast.to_type_annotated_ns_s_exp(dfa, "M")
+        counts = fam.count_programs([[annotated]])
+
+    def test_nested_generator_from_annie_simple(self):
+        stitch_abstrs = [
+            {
+                "body": "(/subseq (If (Compare (Name %1 Load) (list Eq) (list (Name %2 Load))) (/seq (Return (BinOp (Name %1 Load) Add (Constant i1 None)))) (/seq)) (For (Name %3 Store) (Call (Name g_range Load) (list (_starred_content (Constant i2 None)) (_starred_content (BinOp (Call (Name g_int Load) (list (_starred_content (BinOp (Name %1 Load) Pow (Constant f0.5 None)))) nil) Add (Constant i1 None)))) nil) #0 (/seq) None))",
+                "sym_arity": 3,
+                "dfa_symvars": ["Name", "Name", "Name"],
+                "dfa_metavars": ["seqS"],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 1,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/subseq (FunctionDef %3 (arguments nil (list (arg %2 None None) (arg %1 None None)) None nil nil None nil) (/seq ?0 (Return (UnaryOp USub (Constant i1 None)))) nil None None) (Assign (list (Tuple (list (_starred_content (Name %5 Store)) (_starred_content (Name %4 Store))) Store)) (Call (Name g_map Load) (list (_starred_content (Name g_int Load)) (_starred_content (Call (Attribute (Call (Name g_input Load) nil nil) s_split Load) nil nil))) nil) None) (Expr (Call (Name g_print Load) (list (_starred_content (Call (Name %3 Load) (list (_starred_content (Name %5 Load)) (_starred_content (Name %4 Load))) nil))) nil)))",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": ["seqS"],
+                "choice_arity": 1,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/subseq (While (Name %2 Load) (/seq (AugAssign (Name %3 Store) Add (BinOp (Name %2 Load) Mod (Name %1 Load))) (AugAssign (Name %2 Store) FloorDiv (Name %1 Load)) ?0) (/seq)) (If (Compare (Name %3 Load) (list Eq) (list (Name %4 Load))) (/seq (Return (Name %1 Load))) (/seq)))",
+                "sym_arity": 4,
+                "dfa_symvars": ["Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": ["seqS"],
+                "choice_arity": 1,
+                "arity": 0,
+                "dfa_root": "seqS",
+            },
+            {
+                "body": "(/splice (fn_1 (/seq (Assign (list (Name %4 Store)) (Name %3 Load) None) (Assign (list (Name %5 Store)) (Constant i0 None) None) (/splice (fn_3 %1 %4 %5 %2 (/choiceseq (If (Compare (Name %5 Load) (list Gt) (list (Name %2 Load))) (/seq Break) (/seq)))))) %3 %2 %1))",
+                "sym_arity": 5,
+                "dfa_symvars": ["Name", "Name", "Name", "Name", "Name"],
+                "dfa_metavars": [],
+                "dfa_choicevars": [],
+                "choice_arity": 0,
+                "arity": 0,
+                "dfa_root": "S",
+            },
+        ]
+
+        test_abstr_configs = {}
+        for i, entry in enumerate(stitch_abstrs):
+            config = copy.deepcopy(entry)
+            config["name"] = f"fn_{i+1}"
+            config["body"] = ParsedAST.parse_s_expression(config["body"])
+            test_abstr_configs[f"fn_{i+1}"] = config
+        test_abstrs = [Abstraction(**test_abstr_configs[x]) for x in test_abstr_configs]
+        # 1 3 5 24
+
+        test_program = """
+(Module
+    (fn_2 &s:1 &n:1 &find_base:0 &s:0 &n:0
+        (/choiceseq
+            (fn_4 &b:1 &s:1 &n:1 &m:1 &sum_digits:1)
+            ))
+nil)
+"""
+        test_ast = ParsedAST.parse_s_expression(test_program)
+
+        dfa = export_dfa(abstrs=test_abstrs)
+        subset = DSLSubset.from_program(
+            dfa,
+            test_ast,
+            test_ast.abstraction_calls_to_bodies_recursively(
+                {x.name: x for x in test_abstrs}
+            ),
+            root="M",
+        )
+        print(subset)
+        dsl = create_dsl(dfa, subset, "M")
+        fam = ns.BigramProgramDistributionFamily(
+            dsl,
+            additional_preorder_masks=[
+                lambda dist, dsl: DefUseChainPreorderMask(
+                    dist, dsl, dfa=dfa, abstrs=test_abstrs
+                )
+            ],
+            include_type_preorder_mask=False,
+            node_ordering=lambda dist: PythonNodeOrdering(dist, test_abstrs),
+        )
+
+        annotated = test_ast.to_type_annotated_ns_s_exp(dfa, "M")
+        counts = fam.count_programs([[annotated]])
 
     @expand_with_slow_tests(len(load_stitch_output_set()), 10)
     def test_realistic_with_abstractions(self, i):

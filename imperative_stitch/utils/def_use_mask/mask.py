@@ -39,7 +39,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
     def compute_mask(self, position: int, symbols: List[int]) -> List[bool]:
         handler = self.handlers[-1]
+        print("computing mask using handler", handler)
         if handler.is_defining(position):
+            print("is defining")
             return [True] * len(symbols)
         names = handler.currently_defined_names()
         print("names available", names)

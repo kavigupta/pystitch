@@ -108,6 +108,8 @@ class AbstractionHandler(Handler):
 
 class CollectingHandler(Handler):
     def __init__(self, sym, underlying_handler):
+        print("creating a collecting handler with ", underlying_handler)
+        print("valid symbols", underlying_handler.valid_symbols)
         super().__init__(
             underlying_handler.mask,
             underlying_handler.currently_defined_symbols(),
