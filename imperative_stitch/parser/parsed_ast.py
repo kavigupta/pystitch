@@ -189,18 +189,11 @@ class ParsedAST(ABC):
             abstraction_calls = result.abstraction_calls()
             if not abstraction_calls:
                 return result
-            result = result.replace_abstraction_calls(
-                {
-                    handle: (
-                        abstractions[node.tag].create_stub(node.args)
-                        if (set(node.abstraction_calls()) - {handle})
-                        & set(abstraction_calls)
-                        == set()
-                        else node
-                    )
-                    for handle, node in abstraction_calls.items()
-                }
-            )
+            replacement = {}
+            for handle, node in abstraction_calls.items():
+                if (set(node.abstraction_calls()) - {handle}) == set():
+                    replacement[handle] = abstractions[node.tag].create_stub(node.args)
+            result = result.replace_abstraction_calls(replacement)
 
     def abstraction_calls_to_bodies(self, abstractions, *, pragmas=False):
         """
@@ -489,7 +482,16 @@ class AbstractionCallAST(ParsedAST):
         return super()._collect_abstraction_calls(result)
 
     def _replace_abstraction_calls(self, handle_to_replacement):
-        return handle_to_replacement[self.handle]
+        if self.handle in handle_to_replacement:
+            return handle_to_replacement[self.handle]
+        # pylint: disable=protected-access
+        return self.map(
+            lambda x: (
+                x
+                if isinstance(x, AbstractionCallAST) and x.tag == self.tag
+                else x._replace_abstraction_calls(handle_to_replacement)
+            )
+        )
 
 
 @dataclass
