@@ -155,7 +155,7 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
     dfa = export_dfa()
     programs = [parser(p) for p in programs]
     subset = DSLSubset.from_program(dfa, *programs, root=root)
-    dsl = create_dsl(export_dfa(), subset, root)
+    dsl = create_dsl(dfa, subset, root)
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=[DefUseChainPreorderMask],

@@ -9,7 +9,7 @@ from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
 
 
-class EnumerateFittedDslTest(unittest.TestCase):
+class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_alternates(self, chosen, alts):
         self.assertIn(chosen, alts)
         mat = match_either(chosen)
@@ -42,6 +42,8 @@ class EnumerateFittedDslTest(unittest.TestCase):
             )
         ).to_python()
 
+
+class DefUseMaskTest(DefUseMaskTestGeneric):
     def test_annotate_alternate_symbols(self):
         code = self.annotate_program("x = 2; y = x; z = y")
         print(code)
@@ -169,6 +171,26 @@ class EnumerateFittedDslTest(unittest.TestCase):
                     z?f$x$y = x?f
                     return x?f$z
                 y?f$x$z = f(2)
+                """
+            ).strip(),
+        )
+
+    def test_lambda(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                x = 2
+                lambda y, z=x: lambda a=y: x
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                x?a$y$z = 2
+                lambda y?a$x$z, z?a$x$y=x: lambda a?x$y$z=y?x$z: x?a$y$z
                 """
             ).strip(),
         )
