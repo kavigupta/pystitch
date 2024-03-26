@@ -66,6 +66,30 @@ class SubsetTest(unittest.TestCase):
             ),
         )
 
+    def test_subset_multi_root(self):
+        subset = DSLSubset.from_program(
+            self.dfa,
+            ParsedAST.parse_python_module("x = x + 2; y = y + x + 2"),
+            ParsedAST.parse_python_statement("while True: pass"),
+            root=("M", "S"),
+        )
+        print(subset)
+        self.assertEqual(
+            subset,
+            DSLSubset(
+                lengths_by_sequence_type={"seqS": [0, 1, 2], "[L]": [1], "[TI]": [0]},
+                leaves={
+                    "Name": ["const-&x:0", "const-&y:0"],
+                    "Ctx": ["Load", "Store"],
+                    "O": ["Add"],
+                    "Const": ["const-True", "const-i2"],
+                    "ConstKind": ["const-None"],
+                    "TC": ["const-None"],
+                    "S": ["Pass"],
+                },
+            ),
+        )
+
 
 class ProduceDslTest(unittest.TestCase):
     def setUp(self):
