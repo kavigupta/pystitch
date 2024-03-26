@@ -1,7 +1,7 @@
 import copy
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import neurosym as ns
 
@@ -24,12 +24,33 @@ class DSLSubset:
     leaves: Dict[str, List[str]]
 
     @classmethod
-    def from_program(cls, dfa, *programs: Tuple[ParsedAST, ...], root: str):
+    def from_program(
+        cls, dfa, *programs: Tuple[ParsedAST, ...], root: Union[str, Tuple[str, ...]]
+    ):
+        """
+        Construct a DSLSubset from a list of programs. The subset contains all the
+            sequence lengths and leaves that appear in the programs.
+
+        Args:
+            dfa: the dfa of the DSL
+            programs: the programs to extract the subset from
+            root: the root symbol of the DSL. If a tuple is passed, it must
+                be the same length as the programs, providing a root symbol for each program.
+        """
+        if isinstance(root, tuple):
+            if len(root) != len(programs):
+                raise ValueError(
+                    "The length of the root should be the same as the number of programs, but was"
+                    f" {len(root)} and {len(programs)} respectively."
+                )
+        else:
+            assert isinstance(root, str)
+            root = (root,) * len(programs)
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
-        for program in programs:
+        for program, root_sym in zip(programs, root):
             code = program.to_ns_s_exp(dict(no_leaves=True))
-            for node, state in list(classify_nodes_in_program(dfa, code, root)):
+            for node, state in list(classify_nodes_in_program(dfa, code, root_sym)):
                 assert isinstance(node, ns.SExpression)
                 if is_sequence(state, node.symbol):
                     lengths_by_list_type[state].add(len(node.children))
@@ -57,7 +78,7 @@ def is_sequence_symbol(x):
 
 
 def is_sequence(type_name, head_symbol):
-    if head_symbol.startswith("fn_"):
+    if head_symbol.startswith("fn_") or head_symbol.startswith("var-"):
         return False
     seq_type = is_sequence_type(type_name)
     seq_symbol = is_sequence_symbol(head_symbol)

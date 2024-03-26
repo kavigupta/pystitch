@@ -152,6 +152,36 @@ class AbstractionBodyRenderTest(unittest.TestCase):
             body.to_type_annotated_ns_s_exp(export_dfa(), "S"),
         )
 
+    def test_sequence_metavar_s_exp_export(self):
+        self.maxDiff = None
+        result = ParsedAST.parse_s_expression(
+            """
+            (FunctionDef
+                &f:0
+                (arguments nil
+                (list (arg &x:1 None None))
+                None nil nil None nil)
+                #0 nil None None)
+            """
+        ).to_type_annotated_ns_s_exp(export_dfa(), "S")
+        result = ns.render_s_expression(result)
+        expected = ns.render_s_expression(
+            ns.parse_s_expression(
+                """
+                (FunctionDef~S
+                    (const-&f:0~Name)
+                    (arguments~As
+                        (list~_A_~0)
+                        (list~_A_~1 (arg~A (const-&x:1~Name) (const-None~TA) (const-None~TC)))
+                        (const-None~A) (list~_A_~0) (list~_E_~0) (const-None~A) (list~_E_~0))
+                    (var-#0~seqS) (list~_E_~0) (const-None~TA) (const-None~TC))
+                """
+            )
+        )
+        print(result)
+        print(expected)
+        self.assertEqual(expected, result)
+
     all_kinds = """
     (/seq
         (Assign
