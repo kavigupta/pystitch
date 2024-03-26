@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -54,9 +55,16 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         self.handlers[-1].on_enter()
 
     def on_exit(self, position: int, symbol: int):
+        print("Exiting", position, symbol, self.handlers[-1])
         self.handlers[-1].on_exit()
         popped = self.handlers.pop()
         if not self.handlers:
             assert position == symbol == 0
             return
         self.handlers[-1].on_child_exit(position, symbol, popped)
+
+    def with_handler(self, handler_fn):
+        mask_copy = copy.copy(self)
+        handler = handler_fn(mask_copy)
+        mask_copy.handlers = [handler]
+        return mask_copy, handler
