@@ -831,7 +831,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
                 """
                 b?a = 2
                 # a?b = b
-                fn_1(__code__('(fn_1)'), __ref__(a?b))
+                fn_2(__code__('fn_1()'), __ref__(a?b))
                 a?b = a?b
                 """
             ).strip(),
