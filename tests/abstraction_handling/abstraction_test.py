@@ -116,6 +116,27 @@ fn_2_args_w_nothing = [
 fn_2_args = fn_2_args_w_nothing[:-1] + [
     ParsedAST.parse_python_statements("if x == 3: pass")
 ]
+fn_2_args_with_stub = fn_2_args_w_nothing[:-1] + [
+    ParsedAST.parse_s_expression("(fn_3)")
+]
+
+fn_3 = Abstraction(
+    name="fn_3",
+    body=ParsedAST.parse_s_expression(
+        """
+        (/seq
+            (Assign (list (Name &x:0 Store)) (Constant i30 None) None)
+            (Assign (list (Name &x:0 Store)) (Constant i10 None) None))
+        """
+    ),
+    arity=0,
+    sym_arity=0,
+    choice_arity=0,
+    dfa_root="seqS",
+    dfa_symvars=[],
+    dfa_metavars=[],
+    dfa_choicevars=[],
+)
 
 
 def assertSameCode(test, actual, expected):
@@ -200,6 +221,64 @@ class AbstractionRenderingTest(unittest.TestCase):
             else:
                 if x == 3:
                     pass
+                d = b ** 2 - 4 * a * c
+                if d > 0:
+                    print(2)
+                elif d == 0:
+                    print(1)
+                    print(-b / (2 * a))
+                else:
+                    print(0)
+            """,
+        )
+
+    def test_body_rendering_with_choiceseq_abstraction(self):
+        element = fn_2.substitute_body(fn_2_args_with_stub)
+        stub = element.replace_abstraction_calls(
+            {k: fn_3.create_stub([]) for k in element.abstraction_calls()}
+        )
+        assertSameCode(
+            self,
+            stub.to_python(),
+            """
+            if a == 0:
+                if b == 0:
+                    if c == 0:
+                        print(-1)
+                    else:
+                        print(0)
+                else:
+                    print(1)
+                    print(-c / b)
+            else:
+                fn_3()
+                d = b ** 2 - 4 * a * c
+                if d > 0:
+                    print(2)
+                elif d == 0:
+                    print(1)
+                    print(-b / (2 * a))
+                else:
+                    print(0)
+            """,
+        )
+        body = element.abstraction_calls_to_bodies({"fn_3": fn_3})
+        assertSameCode(
+            self,
+            body.to_python(),
+            """
+            if a == 0:
+                if b == 0:
+                    if c == 0:
+                        print(-1)
+                    else:
+                        print(0)
+                else:
+                    print(1)
+                    print(-c / b)
+            else:
+                x = 30
+                x = 10
                 d = b ** 2 - 4 * a * c
                 if d > 0:
                     print(2)
@@ -401,7 +480,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
 
     def test_in_order_comprehension(self):
-        fn_3 = Abstraction(
+        fn = Abstraction(
             name="fn_3",
             body=ParsedAST.parse_s_expression(
                 """
@@ -428,7 +507,7 @@ class AbstractionRenderingTest(unittest.TestCase):
             dfa_choicevars=[],
         )
         self.assertEqual(
-            fn_3.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
+            fn.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
         )
 
     @parameterized.expand(range(len(load_stitch_output_set())))
