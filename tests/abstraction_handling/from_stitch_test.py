@@ -195,6 +195,36 @@ class MultiKindTest(unittest.TestCase):
         nil)
     """
 
+    ctx_includes_metavariable_stub = """
+    (Module
+        (fn_1
+            (fn_5)
+            &x:0
+            &y:0
+            (/choiceseq (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None)))
+        nil)
+    """
+
+    ctx_includes_choicevar_stub = """
+    (Module
+        (fn_1
+            (BinOp (Constant i1 None) Mult (Constant i2 None))
+            &x:0
+            &y:0
+            (/choiceseq (fn_6)))
+        nil)
+    """
+
+    ctx_includes_choicevar_seq_stub = """
+    (Module
+        (fn_1
+            (BinOp (Constant i1 None) Mult (Constant i2 None))
+            &x:0
+            &y:0
+            (fn_6))
+        nil)
+    """
+
     ctx_includes_multi_choicevar = """
     (Module
         (fn_1
@@ -330,7 +360,42 @@ class MultiKindTest(unittest.TestCase):
         dfa_choicevars=["seqS"],
     )
 
-    abstractions = {"fn_1": fn_1, "fn_2": fn_2, "fn_3": fn_3, "fn_4": fn_4}
+    fn_5 = Abstraction(
+        name="fn_5",
+        body=ParsedAST.parse_s_expression(
+            "(Assign (list (Name &x:0 Store)) (Call (Name g_input Load) nil nil) None)"
+        ),
+        arity=0,
+        sym_arity=0,
+        choice_arity=0,
+        dfa_root="S",
+        dfa_symvars=[],
+        dfa_metavars=[],
+        dfa_choicevars=[],
+    )
+
+    fn_6 = Abstraction(
+        name="fn_6",
+        body=ParsedAST.parse_s_expression(
+            "(/seq (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None))"
+        ),
+        arity=0,
+        sym_arity=0,
+        choice_arity=0,
+        dfa_root="seqS",
+        dfa_symvars=[],
+        dfa_metavars=[],
+        dfa_choicevars=[],
+    )
+
+    abstractions = {
+        "fn_1": fn_1,
+        "fn_2": fn_2,
+        "fn_3": fn_3,
+        "fn_4": fn_4,
+        "fn_5": fn_5,
+        "fn_6": fn_6,
+    }
 
     def test_stub_includes_choicevar(self):
         assertSameCode(
@@ -362,6 +427,39 @@ class MultiKindTest(unittest.TestCase):
             .to_python(),
             """
             fn_1(__code__('4 * 3'), __ref__(x), __ref__(y), __code__(''))
+            """,
+        )
+
+    def test_stub_metavariable_stub(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_includes_metavariable_stub)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python(),
+            """
+            fn_1(__code__('fn_5()'), __ref__(x), __ref__(y), __code__('z = x'))
+            """,
+        )
+
+    def test_stub_choicevar_stub(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_includes_choicevar_stub)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python(),
+            """
+            fn_1(__code__('1 * 2'), __ref__(x), __ref__(y), __code__('fn_6()'))
+            """,
+        )
+
+    def test_stub_choicevar_seq_stub(self):
+        assertSameCode(
+            self,
+            ParsedAST.parse_s_expression(self.ctx_includes_choicevar_seq_stub)
+            .abstraction_calls_to_stubs(self.abstractions)
+            .to_python(),
+            """
+            fn_1(__code__('1 * 2'), __ref__(x), __ref__(y), __code__('fn_6()'))
             """,
         )
 
