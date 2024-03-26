@@ -480,7 +480,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
 
     def test_in_order_comprehension(self):
-        fn_3 = Abstraction(
+        fn = Abstraction(
             name="fn_3",
             body=ParsedAST.parse_s_expression(
                 """
@@ -507,7 +507,7 @@ class AbstractionRenderingTest(unittest.TestCase):
             dfa_choicevars=[],
         )
         self.assertEqual(
-            fn_3.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
+            fn.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
         )
 
     @parameterized.expand(range(len(load_stitch_output_set())))
