@@ -3,6 +3,7 @@ from typing import List
 
 from imperative_stitch.parser import ParsedAST
 from imperative_stitch.parser.parsed_ast import (
+    AbstractionCallAST,
     LeafAST,
     SequenceAST,
     SpliceAST,
@@ -28,7 +29,8 @@ class Arguments:
         assert all(isinstance(x, ParsedAST) for x in self.metavars), self.metavars
         assert all(isinstance(x, ParsedAST) for x in self.symvars), self.symvars
         assert all(
-            isinstance(x, (SequenceAST, Variable)) for x in self.choicevars
+            isinstance(x, (SequenceAST, Variable, AbstractionCallAST))
+            for x in self.choicevars
         ), self.choicevars
 
     @classmethod
