@@ -19,12 +19,7 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
-        from .defining_statement_handler import defining_statement_handlers
-
-        symbol, _ = self.mask.tree_dist.symbols[symbol]
-        return defining_statement_handlers().get(symbol, DefaultHandler)(
-            self.mask, self.currently_defined_symbols(), self.config
-        )
+        return DefaultHandler.of(self.mask, self.valid_symbols, self.config, symbol)
 
     @abstractmethod
     def on_child_exit(self, position: int, symbol: int, child: "Handler"):
