@@ -52,7 +52,7 @@ class AbstractionHandler(Handler):
     def on_exit(self):
         assert self._done_with_handler
         assert self.injected_handler is self.mask_copy.handlers[-1]
-        assert self.valid_symbols is self.injected_handler.valid_symbols
+        assert self.currently_defined_symbols() is self.injected_handler.currently_defined_symbols()
 
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
         print("entering child", position)
