@@ -181,11 +181,26 @@ class ParsedAST(ABC):
 
     def abstraction_calls_to_stubs(self, abstractions):
         """
-        Replace all abstraction calls with stubs.
+        Replace all abstraction calls with stubs. Does so via a double iteration.
+            Possibly faster to use a linearization of the set of stubs.
         """
-        return self.map_abstraction_calls(
-            lambda call: abstractions[call.tag].create_stub(call.args)
-        )
+        result = self
+        while True:
+            abstraction_calls = result.abstraction_calls()
+            if not abstraction_calls:
+                return result
+            result = result.replace_abstraction_calls(
+                {
+                    handle: (
+                        abstractions[node.tag].create_stub(node.args)
+                        if (set(node.abstraction_calls()) - {handle})
+                        & set(abstraction_calls)
+                        == set()
+                        else node
+                    )
+                    for handle, node in abstraction_calls.items()
+                }
+            )
 
     def abstraction_calls_to_bodies(self, abstractions, *, pragmas=False):
         """
