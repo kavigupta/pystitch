@@ -55,9 +55,6 @@ class AbstractionHandler(Handler):
         assert self.currently_defined_symbols() is self.injected_handler.currently_defined_symbols()
 
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
-        print("entering child", position)
-        print("currently valid symbols", self.currently_defined_symbols())
-        print("currently valid names", self.currently_defined_names())
         return CollectingHandler(
             symbol,
             super().on_child_enter(position, symbol),
@@ -70,8 +67,6 @@ class AbstractionHandler(Handler):
             self._done_with_handler = True
 
     def is_defining(self, position: int) -> bool:
-        print("is defining: ", self._is_defining, "position", position)
-        print("valid symbols", self.valid_symbols)
         assert self._is_defining is not None
         return self._is_defining
 
