@@ -1207,7 +1207,7 @@ nil)
 
     @expand_with_slow_tests(len(load_stitch_output_set()), 10)
     def test_realistic_with_abstractions(self, i):
-        x = load_stitch_output_set()[i]
+        x = copy.deepcopy(load_stitch_output_set()[i])
         abstractions = []
         for it, abstr in enumerate(x["abstractions"]):
             abstr["body"] = ParsedAST.parse_s_expression(abstr["body"])
