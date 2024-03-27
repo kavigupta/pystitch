@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from imperative_stitch.parser.parse_python import fields_for_node
 from imperative_stitch.utils.def_use_mask.names import match_either
 
 
@@ -55,6 +56,22 @@ class Handler(ABC):
         return handle_target(symbol)(
             self.mask, self.currently_defined_symbols(), self.config
         )
+
+
+class ConstructHandler(Handler):
+    """
+    Handler for a single construct.
+    """
+
+    # must be overridden in subclasses, represents the name of the construct
+    name: str = None
+
+    def __init__(self, mask, valid_symbols, config):
+        super().__init__(mask, valid_symbols, config)
+        assert isinstance(self.name, str)
+        self.child_fields = {
+            field: i for i, field in enumerate(fields_for_node(self.name))
+        }
 
 
 class DefaultHandler(Handler):
