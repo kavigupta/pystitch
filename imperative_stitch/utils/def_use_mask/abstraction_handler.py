@@ -27,7 +27,6 @@ class AbstractionHandler(Handler):
         self._done_with_handler = False
         self._variables_to_reuse = {}
 
-    def on_enter(self):
         try:
             print(
                 "Before",

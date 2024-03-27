@@ -1,24 +1,20 @@
-from imperative_stitch.utils.def_use_mask.defining_statement_handler.defining_statement_handler import (
-    DefiningStatementHandler,
-)
-
 from ..handler import ConstructHandler, Handler
+from .defining_statement_handler import DefiningStatementHandler
 
 
 class ComprehensionExpressionHandler(ConstructHandler):
+    """
+    Handles comprehensions. This isn't a DefiningStatementHandler because
+        each comprehensions' defined symbols can be used in the next
+        comprehension.
+    """
+
     # handled out of order. generators first
 
     def __init__(self, mask, valid_symbols, config):
         # copy the valid symbols so changes don't affect the parent
         super().__init__(mask, set(valid_symbols), config)
         self.defined_symbols = set()
-
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        # automatically resets
-        pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position == self.child_fields["generators"]:
@@ -49,11 +45,9 @@ class DictComprehensionHandler(ComprehensionExpressionHandler):
 
 
 class GeneratorsHandler(Handler):
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
+    """
+    Handles a list of generators, each treated as a defining statement.
+    """
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         return ComprehensionHandler(self.mask, self.valid_symbols, self.config)

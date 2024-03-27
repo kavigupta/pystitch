@@ -1,7 +1,10 @@
 from .handler import ConstructHandler, Handler
 
 
-def handle_target(root_symbol: int):
+def create_target_handler(root_symbol: int, mask, valid_symbols, config):
+    """
+    Create a target handler for the given root symbol.
+    """
     targets_map = {
         "Name~L": NameTargetHandler,
         "arg~A": ArgTargetHandler,
@@ -17,26 +20,21 @@ def handle_target(root_symbol: int):
         "arguments~As": ArgumentsHandler,
     }
 
-    def dispatch(mask, valid_symbols, config):
-        symbol = root_symbol
-        symbol, _ = mask.tree_dist.symbols[symbol]
-        if symbol.startswith("list"):
-            return PassthroughLHSHandler(mask, valid_symbols, config)
-        return targets_map[symbol](mask, valid_symbols, config)
-
-    return dispatch
+    symbol = root_symbol
+    symbol, _ = mask.tree_dist.symbols[symbol]
+    if symbol.startswith("list"):
+        return PassthroughLHSHandler(mask, valid_symbols, config)
+    return targets_map[symbol](mask, valid_symbols, config)
 
 
 class TargetHandler(Handler):
+    """
+    Handler that collects targets.
+    """
+
     def __init__(self, mask, valid_symbols, config):
         super().__init__(mask, valid_symbols, config)
         self.defined_symbols = set()
-
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if hasattr(child, "defined_symbols"):

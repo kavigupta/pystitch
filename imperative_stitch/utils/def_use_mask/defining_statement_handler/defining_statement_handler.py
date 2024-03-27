@@ -2,6 +2,10 @@ from ..handler import ConstructHandler, Handler
 
 
 class DefiningStatementHandler(ConstructHandler):
+    """
+    Represents a statement that defines symbols.
+    """
+
     # these fields must be defined in the subclass
     targeted: list[str] = None
     # the field after which the symbols are defined
@@ -14,12 +18,6 @@ class DefiningStatementHandler(ConstructHandler):
         assert isinstance(self.define_symbols_on_exit, str)
         self._targeted_positions = [self.child_fields[child] for child in self.targeted]
         self.defined_symbols = set()
-
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position in self._targeted_positions:
