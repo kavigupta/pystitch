@@ -24,35 +24,9 @@ class AbstractionHandler(Handler):
         self._body_handler = self.body_traversal_coroutine(self.body, 0)
         self._argument_handlers = {}  # map from argument to handler
         self._is_defining = None
-        self._done_with_handler = False
         self._variables_to_reuse = {}
 
-        try:
-            print(
-                "Before",
-                [
-                    self.mask_copy.tree_dist.symbols[x][0]
-                    for x in self.mask_copy.handlers[-1].valid_symbols
-                ],
-            )
-            self._is_defining = next(self._body_handler)
-        except StopIteration:
-            self._done_with_handler = True
-        print(
-            "After",
-            [
-                self.mask_copy.tree_dist.symbols[x][0]
-                for x in self.mask_copy.handlers[-1].valid_symbols
-            ],
-        )
-
-    def on_exit(self):
-        assert self._done_with_handler
-        assert self.injected_handler is self.mask_copy.handlers[-1]
-        assert (
-            self.currently_defined_symbols()
-            is self.injected_handler.currently_defined_symbols()
-        )
+        self._iterate_body(None)
 
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
         return CollectingHandler(
@@ -61,10 +35,7 @@ class AbstractionHandler(Handler):
         )
 
     def on_child_exit(self, position: int, symbol: int, child: "Handler"):
-        try:
-            self._is_defining = self._body_handler.send(child.node)
-        except StopIteration:
-            self._done_with_handler = True
+        self._iterate_body(child.node)
 
     def is_defining(self, position: int) -> bool:
         assert self._is_defining is not None
@@ -79,25 +50,29 @@ class AbstractionHandler(Handler):
                 is_defining = self.mask_copy.handlers[-1].is_defining(position)
                 node = yield is_defining
                 self._variables_to_reuse[name] = node
-                print(
-                    "filling variable", name, "with", node, "is_defining", is_defining
-                )
-            print(
-                "current valid symbols",
-                self.mask_copy.handlers[-1].valid_symbols,
-                self.valid_symbols,
-            )
         sym = self.mask.tree_dist.symbol_to_index[node.symbol]
         self.mask_copy.on_entry(position, sym)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
         for i in order:
             yield from self.body_traversal_coroutine(node.children[i], i)
         self.mask_copy.on_exit(position, sym)
-        print(
-            "current valid symbols",
-            self.mask_copy.handlers[-1].valid_symbols,
-            self.valid_symbols,
-        )
+
+    def _iterate_body(self, node):
+        """
+        Iterate through the body of the abstraction, and set the is_defining value.
+
+        Args:
+            node: The node to send to the coroutine. None if the coroutine is just starting,
+                otherwise the argument that was just processed.
+        """
+        try:
+            self._is_defining = self._body_handler.send(node)
+        except StopIteration:
+            assert self.injected_handler is self.mask_copy.handlers[-1]
+            assert (
+                self.currently_defined_symbols()
+                is self.injected_handler.currently_defined_symbols()
+            )
 
     def currently_defined_symbols(self) -> set[int]:
         return self.mask_copy.handlers[-1].currently_defined_symbols()
@@ -105,8 +80,6 @@ class AbstractionHandler(Handler):
 
 class CollectingHandler(Handler):
     def __init__(self, sym, underlying_handler):
-        print("creating a collecting handler with ", underlying_handler)
-        print("valid symbols", underlying_handler.valid_symbols)
         super().__init__(
             underlying_handler.mask,
             underlying_handler.currently_defined_symbols(),
