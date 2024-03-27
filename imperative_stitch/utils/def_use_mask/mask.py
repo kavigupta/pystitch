@@ -59,12 +59,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             match the handler's names are valid.
         """
         handler = self.handlers[-1]
-        print("computing mask using handler", handler)
         if handler.is_defining(position):
-            print("is defining")
             return [True] * len(symbols)
         names = handler.currently_defined_names()
-        print("names available", names)
         return [self._matches(names, symbol) for symbol in symbols]
 
     def on_entry(self, position: int, symbol: int):
