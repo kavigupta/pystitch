@@ -1,11 +1,7 @@
-import ast
-
 from imperative_stitch.parser.parse_python import fields_for_node
 
 
 def field_order(node, fields):
-    node = node.split("~")[0]
-    node = getattr(ast, node)
     node_fields = fields_for_node(node)
     assert set(fields) == set(node_fields)
     return [node_fields.index(f) for f in fields]
