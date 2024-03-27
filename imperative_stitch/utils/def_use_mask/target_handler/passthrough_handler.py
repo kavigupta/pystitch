@@ -24,10 +24,6 @@ class PassthroughLHSHandler(TargetHandler):
             return self.target_child(symbol)
         return super().on_child_enter(position, symbol)
 
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
-        if self.child_is_targeted(position):
-            self.defined_symbols |= child.defined_symbols
-
     def is_defining(self, position: int) -> bool:
         return True
 
