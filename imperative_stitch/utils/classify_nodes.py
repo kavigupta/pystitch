@@ -4,6 +4,8 @@ import json
 import neurosym as ns
 from frozendict import frozendict
 
+from imperative_stitch.parser.parse_python import fields_for_node
+
 # exclude these tags from the dfa. these are all python 3.10+ features,
 # and for consistency across python versions, we exclude them. We can
 # add them back in later if we want to support them.
@@ -286,7 +288,7 @@ def export_dfa(*, abstrs=frozendict({}), transitions=TRANSITIONS):
         result[state] = {}
         for tag in all_tags:
             t = getattr(ast, tag)
-            out = compute_transition(transitions, state, t, t._fields)
+            out = compute_transition(transitions, state, t, fields_for_node(t))
             if out is not None:
                 result[state][tag] = out
         for tag in extras:

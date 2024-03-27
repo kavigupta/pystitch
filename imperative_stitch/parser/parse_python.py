@@ -17,6 +17,10 @@ from imperative_stitch.utils.ast_utils import (
 from .symbol import Symbol
 
 
+def fields_for_node(node):
+    return node._fields
+
+
 def python_body_to_parsed_ast(x, descoper):
     assert isinstance(x, list), str(x)
     x = [python_ast_to_parsed_ast(x, descoper) for x in x]
@@ -29,7 +33,7 @@ def python_ast_to_parsed_ast(x, descoper):
     """
     if isinstance(x, ast.AST):
         result = []
-        for f in x._fields:
+        for f in fields_for_node(x):
             el = getattr(x, f)
             if x in descoper and f == name_field(x):
                 assert isinstance(el, str), (x, f, el)
