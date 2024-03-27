@@ -2,6 +2,10 @@ from ..handler import ConstructHandler, Handler
 
 
 class DefiningStatementHandler(ConstructHandler):
+    """
+    Represents a statement that defines symbols.
+    """
+
     # these fields must be defined in the subclass
     targeted: list[str] = None
     # the field after which the symbols are defined
