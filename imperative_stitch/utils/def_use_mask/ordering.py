@@ -1,18 +1,28 @@
 import ast
 
 import neurosym as ns
+from imperative_stitch.parser.parse_python import fields_for_node
+
+
+def field_order(node, fields):
+    node = node.split("~")[0]
+    node = getattr(ast, node)
+    node_fields = fields_for_node(node)
+    assert set(fields) == set(node_fields)
+    return [node_fields.index(f) for f in fields]
 
 
 def python_node_dictionary():
+    fields = [
+        ("ListComp~E", ["generators", "elt"]),
+        ("GeneratorExp~E", ["generators", "elt"]),
+        ("SetComp~E", ["generators", "elt"]),
+        ("DictComp~E", ["generators", "key", "value"]),
+    ]
+
     result = {}
-    assert ast.ListComp._fields == ("elt", "generators")
-    result["ListComp~E"] = [1, 0]  # reversed
-    assert ast.GeneratorExp._fields == ("elt", "generators")
-    result["GeneratorExp~E"] = [1, 0]  # reversed
-    assert ast.SetComp._fields == ("elt", "generators")
-    result["SetComp~E"] = [1, 0]  # reversed
-    assert ast.DictComp._fields == ("key", "value", "generators")
-    result["DictComp~E"] = [2, 0, 1]  # put generators first
+    for node, fields in fields:
+        result[node] = field_order(node, fields)
     return result
 
 
