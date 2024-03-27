@@ -3,13 +3,6 @@ from .defining_statement_handler import ChildFrameCreatorHandler
 
 
 class DefiningConstructHandler(ChildFrameCreatorHandler):
-    """
-    Handles defining constructs like function and class definitions.
-
-    These are constructs that have a child frame defined as the body of the construct,
-        as well as a name that is defined in the parent frame.
-    """
-
     # these fields must be defined in the subclass
     construct_name_field: str = None
 

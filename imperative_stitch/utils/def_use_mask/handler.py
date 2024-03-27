@@ -5,11 +5,6 @@ from imperative_stitch.utils.def_use_mask.names import match_either
 
 
 class Handler(ABC):
-    """
-    Represents a handler that updates the set of valid symbols for
-        a given position in the s-expression in the syntax tree.
-    """
-
     def __init__(self, mask, valid_symbols, config):
         self.mask = mask
         self.valid_symbols = valid_symbols

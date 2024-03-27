@@ -1,7 +1,4 @@
 def defining_statement_handlers():
-    """
-    Map from statement name to handler class for defining statements.
-    """
     # pylint: disable=cyclic-import
     from .chained_definitions_handler import chained_definition_handlers
     from .defining_construct_handler import defining_construct_handler
