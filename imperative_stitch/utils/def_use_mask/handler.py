@@ -17,6 +17,16 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
+        """
+        When a child is entered, this method is called to determine the handler.
+
+        Args:
+            position: The position in the s-expression.
+            symbol: The symbol of the child.
+
+        Returns:
+            The handler for the child.
+        """
         from .defining_statement_handler import defining_statement_handlers
 
         symbol, _ = self.mask.tree_dist.symbols[symbol]
@@ -26,32 +36,46 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_exit(self, position: int, symbol: int, child: "Handler"):
-        pass
+        """
+        When a child is exited, this method is called to perform tasks related
+            to the child.
+        """
 
     def currently_defined_symbols(self) -> set[int]:
+        """
+        Returns the set of currently defined symbols.
+        """
         return self.valid_symbols
 
     @abstractmethod
     def is_defining(self, position: int) -> bool:
-        pass
+        """
+        Returns whether the construct at the given position is defining.
+        """
 
     def currently_defined_names(self):
-        names = []
+        """
+        Return the set of currently defined names.
+        """
+        names = set()
         for symbol in self.currently_defined_symbols():
             mat = match_either(self.mask.tree_dist.symbols[symbol][0])
             if not mat:
                 raise ValueError(
                     f"Could not match {self.mask.tree_dist.symbols[symbol][0]}"
                 )
-            names.append(mat.group("name"))
+            names.add(mat.group("name"))
         return names
 
     def target_child(self, symbol: int) -> "Handler":
+        """
+        Return a handler collecting targets for the given child.
+        """
         # pylint: disable=cyclic-import
-        from .target_handler import handle_target
+        from .target_handler import create_target_handler
 
-        return handle_target(symbol)(
-            self.mask, self.currently_defined_symbols(), self.config
+        return create_target_handler(
+            symbol, self.mask, self.currently_defined_symbols(), self.config
         )
 
 
