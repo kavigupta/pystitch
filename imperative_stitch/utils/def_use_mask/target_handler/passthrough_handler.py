@@ -1,9 +1,10 @@
 import ast
 
 from ..handler import Handler
+from .target_handler import TargetHandler
 
 
-class PassthroughLHSHandler(Handler):
+class PassthroughLHSHandler(TargetHandler):
     """
     Pass through handler that does not collect any information,
         instead it just targets the children at the given indices.
@@ -13,17 +14,10 @@ class PassthroughLHSHandler(Handler):
 
     def __init__(self, mask, valid_symbols, config, indices=None):
         super().__init__(mask, valid_symbols, config)
-        self.defined_symbols = set()
         self.indices = indices
 
     def child_is_targeted(self, position: int) -> bool:
         return self.indices is None or position in self.indices
-
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if self.child_is_targeted(position):

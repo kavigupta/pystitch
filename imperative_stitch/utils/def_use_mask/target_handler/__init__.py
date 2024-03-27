@@ -3,7 +3,6 @@ from imperative_stitch.utils.def_use_mask.target_handler.arguments_handler impor
 )
 
 from .alias_handler import AliasTargetHandler
-from .just_expression_handler import JustAnExpressionHandler
 from .name_handler import NameTargetHandler
 from .non_collecting_handler import NonCollectingTargetHandler
 from .passthrough_handler import PassthroughLHSHandler, StarredHandler
@@ -14,8 +13,8 @@ targets_map = {
     "arg~A": NameTargetHandler,
     "alias~alias": AliasTargetHandler,
     "const-None~A": NonCollectingTargetHandler,
-    "Subscript~L": JustAnExpressionHandler,
-    "Attribute~L": JustAnExpressionHandler,
+    "Subscript~L": NonCollectingTargetHandler,
+    "Attribute~L": NonCollectingTargetHandler,
     "Tuple~L": TupleListLHSHandler,
     "List~L": TupleListLHSHandler,
     "_starred_content~L": PassthroughLHSHandler,
