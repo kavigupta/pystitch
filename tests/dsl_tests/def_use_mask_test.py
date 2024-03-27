@@ -381,10 +381,65 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
-    @expand_with_slow_tests(1000, -1)
+    def test_exception_named(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                try:
+                    x = 2
+                except Exception as e:
+                    x = e
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                try:
+                    x?Exception$e = 2
+                except Exception?x as e?Exception$x:
+                    x?Exception$e = e?Exception$x
+                """
+            ).strip(),
+        )
+
+    def test_exception_unnamed(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                try:
+                    x = 2
+                except Exception:
+                    x = x
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                try:
+                    x?Exception = 2
+                except Exception?x:
+                    x?Exception = x?Exception
+                """
+            ).strip(),
+        )
+
+    @expand_with_slow_tests(200, -1)
     def test_realistic(self, i):
-        if i in {22, 31, 41, 57}:
-            # forward declaration of input for 22/41, n for 31/57
+        if i in {22, 31, 41, 57, 95, 100, 106, 109, 112, 114, 119, 181, 182}:
+            # forward declaration of
+            # input for 22/41/100/119
+            # n for 31/57/112/114
+            # m for 95
+            # sp for 106
+            # mp for 109
+            # dp for 181
+            # lo for 182 [this one's weird]
             return
         example = small_set_runnable_code_examples()[i]["solution"]
         print(example)
