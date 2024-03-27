@@ -28,7 +28,7 @@ class Handler(ABC):
             The handler for the child.
         """
         return default_handler(
-            symbol, self.mask, self.currently_defined_names(), self.config
+            symbol, self.mask, self.currently_defined_symbols(), self.config
         )
 
     @abstractmethod
@@ -103,7 +103,7 @@ class DefaultHandler(Handler):
         return False
 
 
-def default_handler(symbol, mask, valid_symbols, config):
+def default_handler(symbol: int, mask, valid_symbols, config) -> Handler:
     from .defining_statement_handler import defining_statement_handlers
 
     symbol, _ = mask.tree_dist.symbols[symbol]
