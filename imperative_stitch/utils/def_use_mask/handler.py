@@ -27,11 +27,8 @@ class Handler(ABC):
         Returns:
             The handler for the child.
         """
-        from .defining_statement_handler import defining_statement_handlers
-
-        symbol, _ = self.mask.tree_dist.symbols[symbol]
-        return defining_statement_handlers().get(symbol, DefaultHandler)(
-            self.mask, self.currently_defined_symbols(), self.config
+        return default_handler(
+            symbol, self.mask, self.currently_defined_names(), self.config
         )
 
     @abstractmethod
@@ -104,3 +101,12 @@ class DefaultHandler(Handler):
 
     def is_defining(self, position: int) -> bool:
         return False
+
+
+def default_handler(symbol, mask, valid_symbols, config):
+    from .defining_statement_handler import defining_statement_handlers
+
+    symbol, _ = mask.tree_dist.symbols[symbol]
+    return defining_statement_handlers().get(symbol, DefaultHandler)(
+        mask, valid_symbols, config
+    )
