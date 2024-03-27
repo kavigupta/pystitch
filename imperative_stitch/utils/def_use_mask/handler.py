@@ -16,14 +16,6 @@ class Handler(ABC):
         self.config = config
 
     @abstractmethod
-    def on_enter(self):
-        pass
-
-    @abstractmethod
-    def on_exit(self):
-        pass
-
-    @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
         from .defining_statement_handler import defining_statement_handlers
 
@@ -80,12 +72,6 @@ class ConstructHandler(Handler):
 
 
 class DefaultHandler(Handler):
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
-
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         return super().on_child_enter(position, symbol)
 

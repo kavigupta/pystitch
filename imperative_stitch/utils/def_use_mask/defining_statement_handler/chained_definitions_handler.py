@@ -16,13 +16,6 @@ class ComprehensionExpressionHandler(ConstructHandler):
         super().__init__(mask, set(valid_symbols), config)
         self.defined_symbols = set()
 
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        # automatically resets
-        pass
-
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position == self.child_fields["generators"]:
             return GeneratorsHandler(self.mask, self.valid_symbols, self.config)
@@ -55,12 +48,6 @@ class GeneratorsHandler(Handler):
     """
     Handles a list of generators, each treated as a defining statement.
     """
-
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         return ComprehensionHandler(self.mask, self.valid_symbols, self.config)

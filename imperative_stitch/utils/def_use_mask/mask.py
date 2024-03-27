@@ -47,10 +47,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         else:
             self.handlers.append(self.handlers[-1].on_child_enter(position, symbol))
 
-        self.handlers[-1].on_enter()
-
     def on_exit(self, position: int, symbol: int):
-        self.handlers[-1].on_exit()
         popped = self.handlers.pop()
         if not self.handlers:
             assert position == symbol == 0
