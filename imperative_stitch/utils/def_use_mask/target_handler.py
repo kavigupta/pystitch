@@ -39,7 +39,7 @@ class TargetHandler(Handler):
         pass
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
-        if isinstance(child, TargetHandler):
+        if hasattr(child, "defined_symbols"):
             self.defined_symbols.update(child.defined_symbols)
 
 
