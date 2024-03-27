@@ -13,7 +13,7 @@ class AbstractionHandler(Handler):
         self.body = self.abstraction.body.to_type_annotated_ns_s_exp(
             config.dfa, self.abstraction.dfa_root
         )
-        self.mask_copy, self.injected_handler = self.mask.with_handler(
+        self.mask_copy = self.mask.with_handler(
             lambda mask_copy: DefaultHandler.of(
                 mask_copy,
                 valid_symbols,
@@ -22,7 +22,6 @@ class AbstractionHandler(Handler):
             )
         )
         self._body_handler = self.body_traversal_coroutine(self.body, 0)
-        self._argument_handlers = {}  # map from argument to handler
         self._is_defining = None
         self._variables_to_reuse = {}
 
@@ -68,11 +67,7 @@ class AbstractionHandler(Handler):
         try:
             self._is_defining = self._body_handler.send(node)
         except StopIteration:
-            assert self.injected_handler is self.mask_copy.handlers[-1]
-            assert (
-                self.currently_defined_symbols()
-                is self.injected_handler.currently_defined_symbols()
-            )
+            pass
 
     def currently_defined_symbols(self) -> set[int]:
         return self.mask_copy.handlers[-1].currently_defined_symbols()

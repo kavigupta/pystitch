@@ -91,4 +91,4 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         mask_copy = copy.copy(self)
         handler = handler_fn(mask_copy)
         mask_copy.handlers = [handler]
-        return mask_copy, handler
+        return mask_copy
