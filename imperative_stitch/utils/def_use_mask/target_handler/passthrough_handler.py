@@ -26,12 +26,34 @@ class PassthroughLHSHandler(TargetHandler):
         return True
 
 
-class StarredHandler(PassthroughLHSHandler, TargetConstructHandler):
-
-    name = "Starred~L"
+class PassthroughLHSConstructHandler(PassthroughLHSHandler, TargetConstructHandler):
+    use_fields: list[str] = None
 
     def __init__(self, mask, valid_symbols, config):
         PassthroughLHSHandler.__init__(self, mask, valid_symbols, config)
         TargetConstructHandler.__init__(self, mask, valid_symbols, config)
 
-        self.indices = [self.child_fields["value"]]
+        self.indices = [self.child_fields[x] for x in self.use_fields]
+
+
+class StarredHandler(PassthroughLHSConstructHandler):
+    name = "Starred~L"
+    use_fields = ["value"]
+
+
+class ArgumentsHandler(PassthroughLHSConstructHandler):
+    name = "arguments~As"
+    use_fields = ("posonlyargs", "args", "vararg", "kwonlyargs", "kwarg")
+
+
+class TupleLHSHandler(PassthroughLHSConstructHandler):
+    """
+    This is for LHS values where nothing is actually being defined (e.g., Subscript, Attribute, etc.)
+    """
+
+    name = "Tuple~L"
+    use_fields = ["elts"]
+
+
+class ListLHSHandler(TupleLHSHandler):
+    name = "List~L"
