@@ -1087,7 +1087,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             config["name"] = f"fn_{i+1}"
             config["body"] = ParsedAST.parse_s_expression(config["body"])
             test_abstr_configs[f"fn_{i+1}"] = config
-        test_abstrs = [Abstraction(**test_abstr_configs[x]) for x in test_abstr_configs]
+        test_abstrs = [Abstraction(**x) for x in test_abstr_configs.values()]
 
         test_program = "(Module (/seq (/splice (fn_3 &s:1 &n:1 &find_base:0 &s:0 &n:0 (/choiceseq (fn_24 &b:1 &s:1 &n:1 &m:1 &sum_digits:1) (For (Name &q:1 Store) (Call (Name g_range Load) (list (_starred_content (Constant i1 None)) (_starred_content (fn_6 &n:1))) nil) (/seq (Assign (list (Name &b:1 Store)) (fn_12 &q:1 &s:1 &n:1) None) (If (Compare (BinOp (BinOp (Name &b:1 Load) Mult (Name &q:1 Load)) Add (Name &s:1 Load)) (list Eq) (list (Name &n:1 Load))) (/seq (Return (Name &b:1 Load))) (/seq))) (/seq) None))))) nil)"
         test_ast = ParsedAST.parse_s_expression(test_program)
@@ -1115,7 +1115,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
 
         annotated = test_ast.to_type_annotated_ns_s_exp(dfa, "M")
-        counts = fam.count_programs([[annotated]])
+        fam.count_programs([[annotated]])
 
     def test_nested_generator_from_annie_simple(self):
         stitch_abstrs = [
@@ -1167,7 +1167,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             config["name"] = f"fn_{i+1}"
             config["body"] = ParsedAST.parse_s_expression(config["body"])
             test_abstr_configs[f"fn_{i+1}"] = config
-        test_abstrs = [Abstraction(**test_abstr_configs[x]) for x in test_abstr_configs]
+        test_abstrs = [Abstraction(**x) for x in test_abstr_configs.values()]
         # 1 3 5 24
 
         test_program = """
@@ -1203,7 +1203,7 @@ nil)
         )
 
         annotated = test_ast.to_type_annotated_ns_s_exp(dfa, "M")
-        counts = fam.count_programs([[annotated]])
+        fam.count_programs([[annotated]])
 
     @expand_with_slow_tests(len(load_stitch_output_set()), 10)
     def test_realistic_with_abstractions(self, i):
