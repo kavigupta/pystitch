@@ -17,6 +17,16 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
+        """
+        When a child is entered, this method is called to determine the handler.
+
+        Args:
+            position: The position in the s-expression.
+            symbol: The symbol of the child.
+
+        Returns:
+            The handler for the child.
+        """
         return default_handler(
             symbol, self.mask, self.currently_defined_symbols(), self.config
         )
@@ -83,7 +93,6 @@ class ConstructHandler(Handler):
 
 
 class DefaultHandler(Handler):
-
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         return super().on_child_enter(position, symbol)
 
