@@ -1,7 +1,7 @@
 import ast
 
 from ..handler import Handler
-from .target_handler import TargetHandler
+from .target_handler import TargetConstructHandler, TargetHandler
 
 
 class PassthroughLHSHandler(TargetHandler):
@@ -12,9 +12,7 @@ class PassthroughLHSHandler(TargetHandler):
     If indices is None, it will target all children.
     """
 
-    def __init__(self, mask, valid_symbols, config, indices=None):
-        super().__init__(mask, valid_symbols, config)
-        self.indices = indices
+    indices: list[int] = None
 
     def child_is_targeted(self, position: int) -> bool:
         return self.indices is None or position in self.indices
@@ -28,7 +26,12 @@ class PassthroughLHSHandler(TargetHandler):
         return True
 
 
-assert ast.Starred._fields == ("value", "ctx")
-StarredHandler = lambda mask, valid_symbols, config: PassthroughLHSHandler(
-    mask, valid_symbols, config, indices=[0]
-)
+class StarredHandler(PassthroughLHSHandler, TargetConstructHandler):
+
+    name = "Starred~L"
+
+    def __init__(self, mask, valid_symbols, config):
+        PassthroughLHSHandler.__init__(self, mask, valid_symbols, config)
+        TargetConstructHandler.__init__(self, mask, valid_symbols, config)
+
+        self.indices = [self.child_fields["value"]]

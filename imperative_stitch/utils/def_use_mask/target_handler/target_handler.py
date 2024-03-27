@@ -1,4 +1,4 @@
-from ..handler import Handler
+from ..handler import ConstructHandler, Handler
 
 
 class TargetHandler(Handler):
@@ -15,3 +15,9 @@ class TargetHandler(Handler):
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if isinstance(child, TargetHandler):
             self.defined_symbols.update(child.defined_symbols)
+
+
+class TargetConstructHandler(TargetHandler, ConstructHandler):
+    def __init__(self, mask, valid_symbols, config):
+        TargetHandler.__init__(self, mask, valid_symbols, config)
+        ConstructHandler.__init__(self, mask, valid_symbols, config)

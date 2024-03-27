@@ -1,9 +1,9 @@
 from ..handler import Handler
-from .target_handler import TargetHandler
+from .target_handler import TargetConstructHandler
 
 
-class AliasTargetHandler(TargetHandler):
-    fields = {"name": 0, "asname": 1}
+class AliasTargetHandler(TargetConstructHandler):
+    name = "alias~alias"
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         # since we hit name first, we can just overwrite the defined_symbols
