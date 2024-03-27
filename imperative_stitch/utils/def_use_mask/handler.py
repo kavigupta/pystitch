@@ -17,8 +17,8 @@ class Handler(ABC):
 
     @abstractmethod
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
-        return DefaultHandler.of(
-            self.mask, self.currently_defined_symbols(), self.config, symbol
+        return default_handler(
+            symbol, self.mask, self.currently_defined_symbols(), self.config
         )
 
     @abstractmethod
@@ -83,9 +83,6 @@ class ConstructHandler(Handler):
 
 
 class DefaultHandler(Handler):
-    @classmethod
-    def of(cls, mask, valid_symbols, config, symbol: int):
-        return default_handler(symbol, mask, valid_symbols, config)
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         return super().on_child_enter(position, symbol)

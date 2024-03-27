@@ -2,7 +2,7 @@ import neurosym as ns
 
 from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX
 
-from .handler import DefaultHandler, Handler
+from .handler import Handler, default_handler
 
 
 class AbstractionHandler(Handler):
@@ -14,12 +14,7 @@ class AbstractionHandler(Handler):
             config.dfa, self.abstraction.dfa_root
         )
         self.mask_copy = self.mask.with_handler(
-            lambda mask_copy: DefaultHandler.of(
-                mask_copy,
-                valid_symbols,
-                self.config,
-                0,  # dosent' matter
-            )
+            lambda mask_copy: default_handler(0, mask_copy, valid_symbols, self.config)
         )
         self._body_handler = self.body_traversal_coroutine(self.body, 0)
         self._is_defining = None
