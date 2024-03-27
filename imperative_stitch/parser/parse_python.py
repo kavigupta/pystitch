@@ -18,6 +18,10 @@ from .symbol import Symbol
 
 
 def fields_for_node(node):
+    if isinstance(node, str):
+        node = node.split("~")[0]
+        node = getattr(ast, node)
+
     return node._fields
 
 
