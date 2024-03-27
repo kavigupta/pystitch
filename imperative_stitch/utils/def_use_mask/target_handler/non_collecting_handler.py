@@ -1,22 +1,14 @@
 from ..handler import Handler
+from .target_handler import TargetHandler
 
 
-class NonCollectingTargetHandler(Handler):
-    @property
-    def defined_symbols(self):
-        return set()
-
-    def on_enter(self):
-        pass
-
-    def on_exit(self):
-        pass
+class NonCollectingTargetHandler(TargetHandler):
+    """
+    This is for LHS values where nothing is actually being defined (e.g., Subscript, Attribute, etc.)
+    """
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         return super().on_child_enter(position, symbol)
-
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
-        pass
 
     def is_defining(self, position: int) -> bool:
         return False
