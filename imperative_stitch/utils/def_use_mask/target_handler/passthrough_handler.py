@@ -1,5 +1,3 @@
-import ast
-
 from ..handler import Handler
 from .target_handler import TargetConstructHandler, TargetHandler
 
