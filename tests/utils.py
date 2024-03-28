@@ -1,4 +1,5 @@
 import ast
+import copy
 import inspect
 import json
 from functools import lru_cache
@@ -6,6 +7,10 @@ from textwrap import dedent
 
 import pytest
 from parameterized import parameterized
+
+from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.data.stitch_output_set import load_annies_compressed_dataset
+from imperative_stitch.parser.parsed_ast import ParsedAST
 
 
 def canonicalize(code):
@@ -53,3 +58,32 @@ def assertDSL(test_obj, dsl, expected):
     print(dsl)
     test_obj.maxDiff = None
     test_obj.assertEqual(dsl, expected)
+
+
+def cwq(s):
+    """
+    Canonicalize with question marks and dollars
+    """
+    s = dedent(s)
+    s = s.replace("?", "__QUESTION__MARK__")
+    s = s.replace("$", "__DOLLAR__")
+    s = ast.unparse(ast.parse(s))
+    s = s.replace("__QUESTION__MARK__", "?")
+    s = s.replace("__DOLLAR__", "$")
+    return s
+
+
+@lru_cache(None)
+def load_annies_compressed_individual_programs():
+    dat = copy.deepcopy(load_annies_compressed_dataset())
+    result = []
+    for key in sorted(dat.keys()):
+        x = dat[key]
+        abstrs = x["abstractions"]
+        rewrs = x["rewritten"]
+        for it, abstr in enumerate(abstrs):
+            abstr["body"] = ParsedAST.parse_s_expression(abstr["body"])
+            abstrs[it] = Abstraction(name=f"fn_{it + 1}", **abstr)
+        for rewritten in rewrs:
+            result.append((abstrs, rewritten))
+    return result

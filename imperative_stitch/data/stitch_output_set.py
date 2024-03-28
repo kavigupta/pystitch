@@ -71,6 +71,12 @@ def load_stitch_output_set():
         return json.load(f)
 
 
+@lru_cache(maxsize=1)
+def load_annies_compressed_dataset():
+    with open("data/annies_compressed_dataset.json") as f:
+        return json.load(f)
+
+
 def main():
     small = stitch_output_set(10)
     with open("data/stitch_output_set_small.json", "w") as f:
