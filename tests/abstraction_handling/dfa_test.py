@@ -239,6 +239,7 @@ class DFATest(unittest.TestCase):
             print("#" * 80)
             print(code)
             code = ParsedAST.parse_python_module(code).to_ns_s_exp(kwargs)
+            print(ns.render_s_expression(code))
             classified = classify_nodes_in_program(dfa, code, "M")
             result = sorted(
                 {
