@@ -172,6 +172,12 @@ class ProduceDslTest(unittest.TestCase):
             """,
         )
 
+    def test_create_dsl_with_type_annot(self):
+        # just check it doesn't crash
+        program = ParsedAST.parse_python_module("x:int = 5; y: float=5")
+        subset = DSLSubset.from_program(self.dfa, program, root="M")
+        create_dsl(export_dfa(), subset, "M")
+
 
 def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
     dfa = export_dfa()
