@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from imperative_stitch.parser.parse_python import fields_for_node
-from imperative_stitch.utils.def_use_mask.names import match_either
+from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX, match_either
 
 
 class Handler(ABC):
@@ -56,11 +56,11 @@ class Handler(ABC):
         """
         names = set()
         for symbol in self.currently_defined_symbols():
-            mat = match_either(self.mask.tree_dist.symbols[symbol][0])
+            sym = self.mask.tree_dist.symbols[symbol][0]
+            mat = match_either(sym)
             if not mat:
-                raise ValueError(
-                    f"Could not match {self.mask.tree_dist.symbols[symbol][0]}"
-                )
+                assert VARIABLE_REGEX.match(sym), f"Could not match {sym}"
+                continue
             names.add(mat.group("name"))
         return names
 

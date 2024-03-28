@@ -187,7 +187,12 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
     programs = [parser(p) for p in programs]
     # print(p.abstraction_calls())
     programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
-    subset = DSLSubset.from_program(dfa, *programs, root=root)
+    roots = [root] * len(programs)
+    programs += [a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs]
+    roots += [a.dfa_root for a in abstrs]
+    for x, y in zip(roots, programs):
+        print(x, y)
+    subset = DSLSubset.from_program(dfa, *programs, root=tuple(roots))
     dsl = create_dsl(dfa, subset, root)
     fam = ns.BigramProgramDistributionFamily(
         dsl,
@@ -198,7 +203,12 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
         node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
     )
     counts = fam.count_programs(
-        [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
+        [
+            [
+                program.to_type_annotated_ns_s_exp(dfa, root)
+                for program, root in zip(programs, roots)
+            ]
+        ]
     )
     dist = fam.counts_to_distribution(counts)[0]
     return dfa, dsl, fam, dist
