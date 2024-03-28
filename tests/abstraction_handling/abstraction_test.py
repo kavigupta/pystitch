@@ -5,7 +5,10 @@ from textwrap import dedent
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import load_stitch_output_set
+from imperative_stitch.data.stitch_output_set import (
+    load_annies_compressed_dataset,
+    load_stitch_output_set,
+)
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import (
@@ -13,6 +16,10 @@ from imperative_stitch.utils.def_use_mask.ordering import (
     python_node_ordering_with_abstractions,
 )
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
+from tests.utils import (
+    expand_with_slow_tests,
+    load_annies_compressed_individual_programs,
+)
 
 fn_1_body = """
 (/subseq
@@ -519,3 +526,26 @@ class AbstractionRenderingTest(unittest.TestCase):
             abstraction = Abstraction(**abstraction, name=f"fn_{idx}")
             abstractions.append(abstraction)
         python_node_ordering_with_abstractions(abstractions)
+
+
+class AbstractionRenderingAnnieSetTest(unittest.TestCase):
+
+    def check_renders(self, s_exp):
+        self.assertEqual(ParsedAST.parse_s_expression(s_exp).to_s_exp(), s_exp)
+
+    def check_renders_with_bodies_expanded(self, s_exp, abstrs):
+        abstrs_dict = {x.name: x for x in abstrs}
+        parsed = ParsedAST.parse_s_expression(s_exp)
+        parsed = parsed.abstraction_calls_to_bodies_recursively(abstrs_dict)
+        parsed.to_s_exp()
+        parsed.to_python()
+
+    @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
+    def test_renders_realistic(self, i):
+        _, rewritten = load_annies_compressed_individual_programs()[i]
+        self.check_renders(rewritten)
+
+    @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
+    def test_renders_realistic_with_bodies_expanded(self, i):
+        abstrs, rewritten = load_annies_compressed_individual_programs()[i]
+        self.check_renders_with_bodies_expanded(rewritten, abstrs)
