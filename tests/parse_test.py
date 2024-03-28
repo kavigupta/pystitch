@@ -34,10 +34,9 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.maxDiff = None
         parsed = ParsedAST.parse_s_expression(s_exp)
         print(parsed)
-        self.assertEqual(
-            ns.render_s_expression(ns.parse_s_expression(s_exp)),
-            parsed.to_s_exp(no_leaves=no_leaves),
-        )
+        with no_recursionlimit():
+            s_exp_update = ns.render_s_expression(ns.parse_s_expression(s_exp))
+        self.assertEqual(s_exp_update, parsed.to_s_exp(no_leaves=no_leaves))
 
     def check_with_args(self, test_code, no_leaves=False):
         test_code = self.canonicalize(test_code)
