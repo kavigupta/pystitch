@@ -12,6 +12,7 @@ def defining_statement_handlers():
         ImportHandler,
         LambdaHandler,
     )
+    from .except_handler_handler import ExceptHandlerHandler
 
     return {
         x.name: x
@@ -21,6 +22,7 @@ def defining_statement_handlers():
             ImportFromHandler,
             ForHandler,
             LambdaHandler,
+            ExceptHandlerHandler,
             *defining_construct_handler,
             *chained_definition_handlers,
         ]

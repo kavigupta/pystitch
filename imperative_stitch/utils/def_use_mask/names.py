@@ -1,10 +1,10 @@
 import re
 
 NAME_REGEX = re.compile(
-    r"const-(?P<typ>&)(?P<name>\w+|\*):(?P<scope>\d+)~(Name|NameStr|NullableNameStr)"
+    r"const-(?P<typ>&)(?P<name>\w+|\*):(?P<scope>\d+)~(Name|NullableName|NameStr|NullableNameStr)"
 )
 GLOBAL_REGEX = re.compile(
-    r"const-(?P<typ>g)_(?P<name>\w+|\*)~(Name|NameStr|NullableNameStr)"
+    r"const-(?P<typ>g)_(?P<name>\w+|\*)~(Name|NullableName|NameStr|NullableNameStr)"
 )
 VARIABLE_REGEX = re.compile(r"var-.*")
 
