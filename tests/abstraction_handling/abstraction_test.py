@@ -530,7 +530,10 @@ class AbstractionRenderingTest(unittest.TestCase):
 
 class AbstractionRenderingAnnieSetTest(unittest.TestCase):
     def check_renders(self, s_exp):
-        self.assertEqual(ParsedAST.parse_s_expression(s_exp).to_s_exp(), s_exp)
+        print(s_exp)
+        parsed = ParsedAST.parse_s_expression(s_exp)
+        print(parsed)
+        self.assertEqual(parsed.to_s_exp(), s_exp)
 
     def check_renders_with_bodies_expanded(self, s_exp, abstrs):
         abstrs_dict = {x.name: x for x in abstrs}
@@ -538,6 +541,14 @@ class AbstractionRenderingAnnieSetTest(unittest.TestCase):
         parsed = parsed.abstraction_calls_to_bodies_recursively(abstrs_dict)
         parsed.to_s_exp()
         parsed.to_python()
+
+    def test_temp(self):
+        print(ParsedAST.parse_python_statement("edges[a, b]").to_s_exp())
+        x = """
+        (Expr (Subscript (Name g_edges Load) (_slice_tuple (Tuple (list (_slice_content (Name g_a Load)) (_slice_content (Name g_b Load))) Load)) Load))
+
+"""
+        self.check_renders(x)
 
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
     def test_renders_realistic(self, i):
