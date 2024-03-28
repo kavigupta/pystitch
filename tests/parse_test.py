@@ -30,6 +30,15 @@ class ParseUnparseInverseTest(unittest.TestCase):
         for y in s_exp.children:
             self.assert_valid_s_exp(y, no_leaves)
 
+    def check_s_exp(self, s_exp, no_leaves=False):
+        self.maxDiff = None
+        parsed = ParsedAST.parse_s_expression(s_exp)
+        print(parsed)
+        self.assertEqual(
+            ns.render_s_expression(ns.parse_s_expression(s_exp)),
+            parsed.to_s_exp(no_leaves=no_leaves),
+        )
+
     def check_with_args(self, test_code, no_leaves=False):
         test_code = self.canonicalize(test_code)
         s_exp = python_to_s_exp(
@@ -37,6 +46,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         )
         with no_recursionlimit():
             self.assert_valid_s_exp(ns.parse_s_expression(s_exp), no_leaves=no_leaves)
+        self.check_s_exp(s_exp, no_leaves=no_leaves)
         s_exp_parsed = ParsedAST.parse_s_expression(s_exp)
         print(repr(s_exp_parsed))
         modified = s_exp_to_python(s_exp)
@@ -87,6 +97,12 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def test_lambda(self):
         self.check("lambda: 1 + 2")
 
+    def test_subscript_basic(self):
+        self.check("x[2]")
+
+    def test_subscript_tuple(self):
+        self.check("x[2, 3]")
+
     def test_if(self):
         self.check("if True: pass")
 
@@ -114,6 +130,11 @@ class ParseUnparseInverseTest(unittest.TestCase):
         except Exception as e:
             self.assertFalse(f"Error: {e}")
             raise e
+
+    def test_subscript_s_exp(self):
+        self.check_s_exp(
+            "(_slice_tuple (Tuple (list (_slice_content (Constant i3 None))) Load))"
+        )
 
 
 class AbstractionBodyRenderTest(unittest.TestCase):
