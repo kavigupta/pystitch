@@ -57,11 +57,7 @@ def convert_output(abstractions, rewritten):
         NotApplicable: various errors related to the semantics not allowing for extraction
     """
     [abstr_dict] = abstractions
-    abstr_dict = {
-        **abstr_dict,
-        "body": ParsedAST.parse_s_expression(abstr_dict["body"]),
-    }
-    abstr = dict(fn_1=Abstraction(name="fn_1", **abstr_dict))
+    abstr = dict(fn_1=Abstraction.of(name="fn_1", **abstr_dict))
 
     elements = {}
     unchanged = {}
