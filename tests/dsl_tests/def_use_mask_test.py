@@ -17,7 +17,12 @@ from imperative_stitch.utils.def_use_mask.names import match_either
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.dsl_tests.dsl_test import fit_to
-from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
+from tests.utils import (
+    cwq,
+    expand_with_slow_tests,
+    load_annies_compressed_individual_programs,
+    small_set_runnable_code_examples,
+)
 
 
 class DefUseMaskTestGeneric(unittest.TestCase):
@@ -940,21 +945,15 @@ class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
-    @expand_with_slow_tests(len(load_annies_compressed_dataset()), 10)
+
+    @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
     def test_annies_compressed_with_abstractions(self, i):
-        dat = load_annies_compressed_dataset()
-        key = sorted(dat.keys())[i]
-        x = copy.deepcopy(dat[key])
-        abstrs = x["abstractions"]
-        rewrs = x["rewritten"]
-        for it, abstr in enumerate(abstrs):
-            abstr["body"] = ParsedAST.parse_s_expression(abstr["body"])
-            abstrs[it] = Abstraction(name=f"fn_{it + 1}", **abstr)
+        abstrs, rewritten = load_annies_compressed_individual_programs()[i]
         abstrs_dict = {x.name: x for x in abstrs}
-        for rewritten in rewrs:
-            code = (
-                ParsedAST.parse_s_expression(rewritten)
-                .abstraction_calls_to_bodies_recursively(abstrs_dict)
-                .to_s_exp()
-            )
-            self.assertAbstractionAnnotation(code, rewritten, abstrs)
+
+        code = (
+            ParsedAST.parse_s_expression(rewritten)
+            .abstraction_calls_to_bodies_recursively(abstrs_dict)
+            .to_s_exp()
+        )
+        self.assertAbstractionAnnotation(code, rewritten, abstrs)
