@@ -6,8 +6,8 @@ def defining_statement_handlers():
     from .chained_definitions_handler import chained_definition_handlers
     from .defining_construct_handler import defining_construct_handler
     from .defining_statement_handler import (
-        AssignHandler,
         AnnAssignHandler,
+        AssignHandler,
         ForHandler,
         ImportFromHandler,
         ImportHandler,
