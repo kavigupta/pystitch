@@ -542,15 +542,12 @@ class AbstractionRenderingAnnieSetTest(unittest.TestCase):
         parsed.to_s_exp()
         parsed.to_python()
 
-    def test_temp(self):
-        print(ParsedAST.parse_python_statement("edges[a, b]").to_s_exp())
-        x = """
-        (Expr (Subscript (Name g_edges Load) (_slice_tuple (Tuple (list (_slice_content (Name g_a Load)) (_slice_content (Name g_b Load))) Load)) Load))
-
-"""
-        self.check_renders(x)
-
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
     def test_renders_realistic(self, i):
         _, rewritten = load_annies_compressed_individual_programs()[i]
         self.check_renders(rewritten)
+
+    @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
+    def test_renders_realistic_with_bodies_expanded(self, i):
+        abstractions, rewritten = load_annies_compressed_individual_programs()[i]
+        self.check_renders_with_bodies_expanded(rewritten, abstractions)
