@@ -294,6 +294,40 @@ class AbstractionRenderingTest(unittest.TestCase):
             """,
         )
 
+    def test_body_expand_recursive(self):
+        context = ParsedAST.parse_s_expression(
+            "(fn_2 (Call (Name g_print Load) (list (Constant i2 None)) nil) &c:0 &a:0 &b:0 &d:0 (/choiceseq (fn_3)))"
+        )
+        context = context.abstraction_calls_to_bodies_recursively(
+            {"fn_2": fn_2, "fn_3": fn_3}
+        )
+        assertSameCode(
+            self,
+            context.to_python(),
+            """
+            if a == 0:
+                if b == 0:
+                    if c == 0:
+                        print(-1)
+                    else:
+                        print(0)
+                else:
+                    print(1)
+                    print(-c / b)
+            else:
+                x = 30
+                x = 10
+                d = b ** 2 - 4 * a * c
+                if d > 0:
+                    print(2)
+                elif d == 0:
+                    print(1)
+                    print(-b / (2 * a))
+                else:
+                    print(0)
+            """,
+        )
+
     def test_body_rendering_multi_with_pragmas(self):
         stub = fn_2.substitute_body(fn_2_args, pragmas=True)
         print(stub.to_python())
