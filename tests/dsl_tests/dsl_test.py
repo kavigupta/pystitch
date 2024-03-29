@@ -1,7 +1,6 @@
 import unittest
 from fractions import Fraction
 
-from imperative_stitch.utils.recursion import no_recursionlimit
 import neurosym as ns
 import numpy as np
 
