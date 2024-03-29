@@ -65,6 +65,43 @@ class Abstraction:
     dfa_metavars: list[str]
     dfa_choicevars: list[str]
 
+    @classmethod
+    def of(
+        cls,
+        name,
+        body,
+        dfa_root,
+        *,
+        dfa_symvars=(),
+        dfa_metavars=(),
+        dfa_choicevars=(),
+        arity=None,
+        sym_arity=None,
+        choice_arity=None,
+    ):
+        if isinstance(body, str):
+            body = ParsedAST.parse_s_expression(body)
+        if arity is not None:
+            assert arity == len(dfa_metavars)
+        if sym_arity is not None:
+            assert sym_arity == len(dfa_symvars)
+        if choice_arity is not None:
+            assert choice_arity == len(dfa_choicevars)
+        dfa_symvars = list(dfa_symvars)
+        dfa_metavars = list(dfa_metavars)
+        dfa_choicevars = list(dfa_choicevars)
+        return cls(
+            name=name,
+            body=body,
+            arity=len(dfa_metavars),
+            sym_arity=len(dfa_symvars),
+            choice_arity=len(dfa_choicevars),
+            dfa_root=dfa_root,
+            dfa_symvars=dfa_symvars,
+            dfa_metavars=dfa_metavars,
+            dfa_choicevars=dfa_choicevars,
+        )
+
     def __post_init__(self):
         assert self.arity == len(self.dfa_metavars)
         assert self.sym_arity == len(self.dfa_symvars)
