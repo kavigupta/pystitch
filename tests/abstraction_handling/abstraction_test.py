@@ -26,17 +26,7 @@ fn_1_body = """
     (Assign (list (Name %2 Store)) (Call (Name g_input Load) nil nil) None))
 """
 
-fn_1 = Abstraction(
-    name="fn_1",
-    body=ParsedAST.parse_s_expression(fn_1_body),
-    arity=0,
-    sym_arity=2,
-    choice_arity=0,
-    dfa_root="seqS",
-    dfa_symvars=["X", "X"],
-    dfa_metavars=[],
-    dfa_choicevars=[],
-)
+fn_1 = Abstraction.of("fn_1", fn_1_body, "seqS", dfa_symvars=["X", "X"])
 
 fn_1_args = [ParsedAST.parse_s_expression(x) for x in ["&a:0", "&z:0"]]
 
@@ -94,13 +84,10 @@ fn_2_body = """
 )
 """
 
-fn_2 = Abstraction(
-    name="fn_2",
-    body=ParsedAST.parse_s_expression(fn_2_body),
-    arity=1,
-    sym_arity=4,
-    choice_arity=1,
-    dfa_root="S",
+fn_2 = Abstraction.of(
+    "fn_2",
+    fn_2_body,
+    "S",
     dfa_symvars=["X", "X", "X", "X"],
     dfa_metavars=["E"],
     dfa_choicevars=["seqS"],
@@ -124,22 +111,14 @@ fn_2_args_with_stub = fn_2_args_w_nothing[:-1] + [
     ParsedAST.parse_s_expression("(fn_3)")
 ]
 
-fn_3 = Abstraction(
-    name="fn_3",
-    body=ParsedAST.parse_s_expression(
-        """
+fn_3 = Abstraction.of(
+    "fn_3",
+    """
         (/seq
             (Assign (list (Name &x:0 Store)) (Constant i30 None) None)
             (Assign (list (Name &x:0 Store)) (Constant i10 None) None))
-        """
-    ),
-    arity=0,
-    sym_arity=0,
-    choice_arity=0,
+        """,
     dfa_root="seqS",
-    dfa_symvars=[],
-    dfa_metavars=[],
-    dfa_choicevars=[],
 )
 
 
@@ -430,37 +409,32 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
 
     def test_nested_abstraction_render(self):
-        fn_5_init = {
-            "body": ParsedAST.parse_s_expression(
-                """
-                (/subseq
-                    (While
-                        (Name %2 Load)
-                        (/seq
-                            (AugAssign
-                                (Name %3 Store)
-                                Add
-                                (BinOp (Name %2 Load) Mod (Name %1 Load)))
-                            (AugAssign (Name %2 Store) FloorDiv (Name %1 Load))
-                            ?0)
-                        (/seq))
-                    (If
-                        (Compare
-                            (Name %3 Load) (list Eq) (list (Name %4 Load)))
-                        (/seq (Return (Name %1 Load)))
-                        (/seq)))
-                """
-            ),
-            "sym_arity": 4,
-            "dfa_symvars": ["Name", "Name", "Name", "Name"],
-            "dfa_metavars": [],
-            "dfa_choicevars": ["seqS"],
-            "choice_arity": 1,
-            "arity": 0,
-            "dfa_root": "seqS",
-        }
+        body = """
+        (/subseq
+            (While
+                (Name %2 Load)
+                (/seq
+                    (AugAssign
+                        (Name %3 Store)
+                        Add
+                        (BinOp (Name %2 Load) Mod (Name %1 Load)))
+                    (AugAssign (Name %2 Store) FloorDiv (Name %1 Load))
+                    ?0)
+                (/seq))
+            (If
+                (Compare
+                    (Name %3 Load) (list Eq) (list (Name %4 Load)))
+                (/seq (Return (Name %1 Load)))
+                (/seq)))
+        """
 
-        fn_5 = Abstraction(name="fn_5", **fn_5_init)
+        fn_5 = Abstraction.of(
+            "fn_5",
+            body,
+            "seqS",
+            dfa_symvars=["Name", "Name", "Name", "Name"],
+            dfa_choicevars=["seqS"],
+        )
         tmp_abstraction_calls = {"fn_5": fn_5}
         result = (
             ParsedAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))")
@@ -518,31 +492,25 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
 
     def test_in_order_comprehension(self):
-        fn = Abstraction(
-            name="fn_3",
-            body=ParsedAST.parse_s_expression(
-                """
-                (Expr
-                    (ListComp
-                        #0
-                        (list
-                            (comprehension
-                                (Name %1 Store)
-                                (Call 
-                                    #1
-                                    (list (_starred_content (Constant i10 None))) 
-                                    nil)
-                                nil
-                                i0))))
-                """
-            ),
-            arity=2,
-            sym_arity=1,
-            choice_arity=0,
-            dfa_root="S",
+        fn = Abstraction.of(
+            "fn_3",
+            """
+            (Expr
+                (ListComp
+                    #0
+                    (list
+                        (comprehension
+                            (Name %1 Store)
+                            (Call 
+                                #1
+                                (list (_starred_content (Constant i10 None))) 
+                                nil)
+                            nil
+                            i0))))
+            """,
+            "S",
             dfa_symvars=["Name"],
             dfa_metavars=["E", "E"],
-            dfa_choicevars=[],
         )
         self.assertEqual(
             fn.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
@@ -551,11 +519,10 @@ class AbstractionRenderingTest(unittest.TestCase):
     @parameterized.expand(range(len(load_stitch_output_set())))
     def test_abstraction_bodies_in_order_no_crash(self, i):
         x = copy.deepcopy(load_stitch_output_set()[i])
-        abstractions = []
-        for idx, abstraction in enumerate(x["abstractions"], 1):
-            abstraction["body"] = ParsedAST.parse_s_expression(abstraction["body"])
-            abstraction = Abstraction(**abstraction, name=f"fn_{idx}")
-            abstractions.append(abstraction)
+        abstractions = [
+            Abstraction.of(**abstraction, name=f"fn_{idx}")
+            for idx, abstraction in enumerate(x["abstractions"], 1)
+        ]
         python_node_ordering_with_abstractions(abstractions)
 
 

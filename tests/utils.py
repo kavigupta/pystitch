@@ -79,11 +79,11 @@ def load_annies_compressed_individual_programs():
     result = []
     for key in sorted(dat.keys()):
         x = dat[key]
-        abstrs = x["abstractions"]
+        abstrs = [
+            Abstraction.of(name=f"fn_{it}", **abstr)
+            for it, abstr in enumerate(x["abstractions"], 1)
+        ]
         rewrs = x["rewritten"]
-        for it, abstr in enumerate(abstrs):
-            abstr["body"] = ParsedAST.parse_s_expression(abstr["body"])
-            abstrs[it] = Abstraction(name=f"fn_{it + 1}", **abstr)
         for rewritten in rewrs:
             result.append((abstrs, rewritten))
     return result

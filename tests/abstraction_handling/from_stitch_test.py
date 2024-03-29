@@ -49,17 +49,7 @@ class SequenceTest(unittest.TestCase):
         (Assign (list (Name %2 Store)) (Call (Name g_input Load) nil nil) None))
     """
 
-    fn_1 = Abstraction(
-        name="fn_1",
-        body=ParsedAST.parse_s_expression(fn_1_body),
-        arity=0,
-        sym_arity=2,
-        choice_arity=0,
-        dfa_root="seqS",
-        dfa_symvars=["X", "X"],
-        dfa_metavars=[],
-        dfa_choicevars=[],
-    )
+    fn_1 = Abstraction.of("fn_1", fn_1_body, "seqS", dfa_symvars=["X", "X"])
 
     abtractions = {"fn_1": fn_1}
 
@@ -171,15 +161,10 @@ class SequenceTest(unittest.TestCase):
 
 
 class MultiKindTest(unittest.TestCase):
-    fn_1 = Abstraction(
-        name="fn_1",
-        body=ParsedAST.parse_s_expression(
-            "(/seq (If (BinOp (BinOp (BinOp (BinOp (Constant i1 None) Mult (Constant i2 None)) Mult (Constant i3 None)) Mult (Constant i4 None)) Mult (Constant i5 None)) (/seq (Assign (list (Name %1 Store)) (BinOp (Name %1 Load) Add #0) None) (Assign (list (Name %2 Store)) (List (list (Name g_print Load) (Name g_sum Load) (Name g_u Load)) Load) None) ?0) nil))"
-        ),
-        arity=1,
-        sym_arity=2,
-        choice_arity=1,
-        dfa_root="seqS",
+    fn_1 = Abstraction.of(
+        "fn_1",
+        "(/seq (If (BinOp (BinOp (BinOp (BinOp (Constant i1 None) Mult (Constant i2 None)) Mult (Constant i3 None)) Mult (Constant i4 None)) Mult (Constant i5 None)) (/seq (Assign (list (Name %1 Store)) (BinOp (Name %1 Load) Add #0) None) (Assign (list (Name %2 Store)) (List (list (Name g_print Load) (Name g_sum Load) (Name g_u Load)) Load) None) ?0) nil))",
+        "seqS",
         dfa_symvars=["X", "X"],
         dfa_metavars=["E"],
         dfa_choicevars=["seqS"],
@@ -247,30 +232,23 @@ class MultiKindTest(unittest.TestCase):
         nil)
     """
 
-    fn_2 = Abstraction(
-        name="fn_2",
-        body=ParsedAST.parse_s_expression(
-            """
-            (If
-                (Compare #1 (list Eq) (list (Constant i0 None)))
-                (/seq (Expr (Call (Name g_print Load) (list #2) nil)))
-                (/seq
-                    (If
-                        (Compare #1 (list Eq) (list (Constant i1 None)))
-                        (/seq (Expr (Call (Name g_print Load) (list #0) nil)))
-                        (/seq (Expr (Call (Name g_print Load) (list (Constant i0 None)) nil)))
-                    )
+    fn_2 = Abstraction.of(
+        "fn_2",
+        """
+        (If
+            (Compare #1 (list Eq) (list (Constant i0 None)))
+            (/seq (Expr (Call (Name g_print Load) (list #2) nil)))
+            (/seq
+                (If
+                    (Compare #1 (list Eq) (list (Constant i1 None)))
+                    (/seq (Expr (Call (Name g_print Load) (list #0) nil)))
+                    (/seq (Expr (Call (Name g_print Load) (list (Constant i0 None)) nil)))
                 )
             )
-            """
-        ),
-        arity=3,
-        sym_arity=0,
-        choice_arity=0,
-        dfa_root="S",
-        dfa_symvars=[],
+        )
+        """,
+        "S",
         dfa_metavars=["E", "E", "E"],
-        dfa_choicevars=[],
     )
 
     ctx_for_fn2_1 = """
@@ -292,18 +270,11 @@ class MultiKindTest(unittest.TestCase):
     )
     """
 
-    fn_3 = Abstraction(
-        name="fn_3",
-        body=ParsedAST.parse_s_expression(
-            "(BinOp (BinOp #0 Mult (BinOp #0 Add (Constant i1 None))) FloorDiv (Constant i2 None))"
-        ),
-        arity=1,
-        sym_arity=0,
-        choice_arity=0,
-        dfa_root="E",
+    fn_3 = Abstraction.of(
+        "fn_3",
+        "(BinOp (BinOp #0 Mult (BinOp #0 Add (Constant i1 None))) FloorDiv (Constant i2 None))",
+        "E",
         dfa_metavars=["E"],
-        dfa_symvars=[],
-        dfa_choicevars=[],
     )
 
     ctx_for_fn3_1 = """
@@ -346,46 +317,25 @@ class MultiKindTest(unittest.TestCase):
     )
     """
 
-    fn_4 = Abstraction(
-        name="fn_4",
-        body=ParsedAST.parse_s_expression(
-            "(/seq (If #0 (/seq (Expr (Constant True None))) (/seq ?0)))"
-        ),
-        arity=1,
-        sym_arity=2,
-        choice_arity=1,
-        dfa_root="seqS",
+    fn_4 = Abstraction.of(
+        "fn_4",
+        "(/seq (If #0 (/seq (Expr (Constant True None))) (/seq ?0)))",
+        "seqS",
         dfa_symvars=["X", "X"],
         dfa_metavars=["E"],
         dfa_choicevars=["seqS"],
     )
 
-    fn_5 = Abstraction(
-        name="fn_5",
-        body=ParsedAST.parse_s_expression(
-            "(Assign (list (Name &x:0 Store)) (Call (Name g_input Load) nil nil) None)"
-        ),
-        arity=0,
-        sym_arity=0,
-        choice_arity=0,
-        dfa_root="S",
-        dfa_symvars=[],
-        dfa_metavars=[],
-        dfa_choicevars=[],
+    fn_5 = Abstraction.of(
+        "fn_5",
+        "(Assign (list (Name &x:0 Store)) (Call (Name g_input Load) nil nil) None)",
+        "S",
     )
 
-    fn_6 = Abstraction(
-        name="fn_6",
-        body=ParsedAST.parse_s_expression(
-            "(/seq (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None))"
-        ),
-        arity=0,
-        sym_arity=0,
-        choice_arity=0,
-        dfa_root="seqS",
-        dfa_symvars=[],
-        dfa_metavars=[],
-        dfa_choicevars=[],
+    fn_6 = Abstraction.of(
+        "fn_6",
+        "(/seq (Assign (list (Name &z:0 Store)) (Name &x:0 Load) None))",
+        "seqS",
     )
 
     abstractions = {
@@ -663,8 +613,7 @@ class RealDataTest(unittest.TestCase):
         eg = copy.deepcopy(load_stitch_output_set()[i])
         abstr_dict = eg["abstractions"][0].copy()
         print(abstr_dict)
-        abstr_dict["body"] = ParsedAST.parse_s_expression(abstr_dict["body"])
-        abstr = dict(fn_1=Abstraction(name="fn_1", **abstr_dict))
+        abstr = dict(fn_1=Abstraction.of(name="fn_1", **abstr_dict))
         for code, rewritten in zip(eg["code"], eg["rewritten"]):
             code = s_exp_to_python(code)
             ParsedAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(abstr)
