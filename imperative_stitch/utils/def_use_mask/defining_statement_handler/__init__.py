@@ -7,6 +7,7 @@ def defining_statement_handlers():
     from .defining_construct_handler import defining_construct_handler
     from .defining_statement_handler import (
         AssignHandler,
+        AnnAssignHandler,
         ForHandler,
         ImportFromHandler,
         ImportHandler,
@@ -18,6 +19,7 @@ def defining_statement_handlers():
         x.name: x
         for x in [
             AssignHandler,
+            AnnAssignHandler,
             ImportHandler,
             ImportFromHandler,
             ForHandler,
