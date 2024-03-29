@@ -1,6 +1,7 @@
 import unittest
 from fractions import Fraction
 
+from imperative_stitch.utils.recursion import no_recursionlimit
 import neurosym as ns
 import numpy as np
 
@@ -193,7 +194,7 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
-    # print(p.abstraction_calls())
+    original_programs = programs[:]
     programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
     roots = [root] * len(programs)
     programs += [a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs]
@@ -214,7 +215,7 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
         [
             [
                 program.to_type_annotated_ns_s_exp(dfa, root)
-                for program, root in zip(programs, roots)
+                for program, root in zip(original_programs, roots)
             ]
         ]
     )
