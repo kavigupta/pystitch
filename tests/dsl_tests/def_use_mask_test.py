@@ -527,17 +527,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         return ParsedAST.parse_python_module(code).map(self.replace_s_expr)
 
     def blank_abstraction(self, name, content):
-        return Abstraction(
-            name=name,
-            body=ParsedAST.parse_python_statements(content),
-            arity=0,
-            sym_arity=0,
-            choice_arity=0,
-            dfa_root="seqS",
-            dfa_symvars=[],
-            dfa_metavars=[],
-            dfa_choicevars=[],
-        )
+        return Abstraction.of(name, content, "seqS")
 
     def test_with_empty_abstraction(self):
         code = cwq(
@@ -612,18 +602,11 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=self.parse_with_hijacking,
             abstrs=[
-                Abstraction(
-                    name="fn_1",
-                    body=ParsedAST.parse_s_expression(
-                        "(Assign (list (Name %1 Store)) (Name %2 Load) None)"
-                    ),
-                    arity=0,
-                    sym_arity=2,
-                    choice_arity=0,
-                    dfa_root="S",
+                Abstraction.of(
+                    "fn_1",
+                    "(Assign (list (Name %1 Store)) (Name %2 Load) None)",
+                    "S",
                     dfa_symvars=["Name"] * 2,
-                    dfa_metavars=[],
-                    dfa_choicevars=[],
                 )
             ],
         )
@@ -652,18 +635,11 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=self.parse_with_hijacking,
             abstrs=[
-                Abstraction(
-                    name="fn_1",
-                    body=ParsedAST.parse_s_expression(
-                        "(Assign (list (Name %2 Store)) (Name %1 Load) None)"
-                    ),
-                    arity=0,
-                    sym_arity=2,
-                    choice_arity=0,
-                    dfa_root="S",
+                Abstraction.of(
+                    "fn_1",
+                    "(Assign (list (Name %2 Store)) (Name %1 Load) None)",
+                    "S",
                     dfa_symvars=["Name"] * 2,
-                    dfa_metavars=[],
-                    dfa_choicevars=[],
                 )
             ],
         )
@@ -692,18 +668,12 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=self.parse_with_hijacking,
             abstrs=[
-                Abstraction(
-                    name="fn_1",
-                    body=ParsedAST.parse_s_expression(
-                        "(Assign (list (Name %1 Store)) #0 None)"
-                    ),
-                    arity=1,
-                    sym_arity=1,
-                    choice_arity=0,
-                    dfa_root="S",
+                Abstraction.of(
+                    "fn_1",
+                    "(Assign (list (Name %1 Store)) #0 None)",
+                    "S",
                     dfa_symvars=["Name"],
                     dfa_metavars=["E"],
-                    dfa_choicevars=[],
                 )
             ],
         )
@@ -732,18 +702,11 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=self.parse_with_hijacking,
             abstrs=[
-                Abstraction(
-                    name="fn_1",
-                    body=ParsedAST.parse_s_expression(
-                        "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) (Name %1 Load) None))"
-                    ),
-                    arity=0,
-                    sym_arity=2,
-                    choice_arity=0,
-                    dfa_root="seqS",
+                Abstraction.of(
+                    "fn_1",
+                    "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) (Name %1 Load) None))",
+                    "seqS",
                     dfa_symvars=["Name"] * 2,
-                    dfa_metavars=[],
-                    dfa_choicevars=[],
                 )
             ],
         )
@@ -772,18 +735,12 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=self.parse_with_hijacking,
             abstrs=[
-                Abstraction(
-                    name="fn_1",
-                    body=ParsedAST.parse_s_expression(
-                        "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) #0 None))"
-                    ),
-                    arity=1,
-                    sym_arity=2,
-                    choice_arity=0,
-                    dfa_root="seqS",
+                Abstraction.of(
+                    "fn_1",
+                    "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) #0 None))",
+                    "seqS",
                     dfa_symvars=["Name"] * 2,
                     dfa_metavars=["E"],
-                    dfa_choicevars=[],
                 )
             ],
         )
@@ -813,18 +770,12 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=self.parse_with_hijacking,
             abstrs=[
-                Abstraction(
-                    name="fn_1",
-                    body=ParsedAST.parse_s_expression(
-                        "(/seq #0 (Assign (list (Name %2 Store)) (Name %1 Load) None))"
-                    ),
-                    arity=1,
-                    sym_arity=2,
-                    choice_arity=0,
-                    dfa_root="seqS",
+                Abstraction.of(
+                    "fn_1",
+                    "(/seq #0 (Assign (list (Name %2 Store)) (Name %1 Load) None))",
+                    "seqS",
                     dfa_symvars=["Name"] * 2,
                     dfa_metavars=["S"],
-                    dfa_choicevars=[],
                 )
             ],
         )
@@ -843,31 +794,25 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
 
     def test_out_of_order_within_abstraction(self):
-        fn_3 = Abstraction(
-            name="fn_3",
-            body=ParsedAST.parse_s_expression(
-                """
-                (Expr
-                    (ListComp
-                        #0
-                        (list
-                            (comprehension
-                                (Name %1 Store)
-                                (Call
-                                    #1
-                                    (list (_starred_content (Constant i10 None)))
-                                    nil)
-                                nil
-                                i0))))
-                """
-            ),
-            arity=2,
-            sym_arity=1,
-            choice_arity=0,
-            dfa_root="S",
+        fn_3 = Abstraction.of(
+            "fn_3",
+            """
+            (Expr
+                (ListComp
+                    #0
+                    (list
+                        (comprehension
+                            (Name %1 Store)
+                            (Call
+                                #1
+                                (list (_starred_content (Constant i10 None)))
+                                nil)
+                            nil
+                            i0))))
+            """,
+            "S",
             dfa_symvars=["Name"],
             dfa_metavars=["E", "E"],
-            dfa_choicevars=[],
         )
         code = cwq(
             """
@@ -903,29 +848,13 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=self.parse_with_hijacking,
             abstrs=[
-                Abstraction(
-                    name="fn_1",
-                    body=ParsedAST.parse_s_expression("(Name &b:0 Load)"),
-                    arity=0,
-                    sym_arity=0,
-                    choice_arity=0,
-                    dfa_root="E",
-                    dfa_symvars=[],
-                    dfa_metavars=[],
-                    dfa_choicevars=[],
-                ),
-                Abstraction(
-                    name="fn_2",
-                    body=ParsedAST.parse_s_expression(
-                        "(Assign (list (Name %1 Store)) #0 None)"
-                    ),
-                    arity=1,
-                    sym_arity=1,
-                    choice_arity=0,
-                    dfa_root="S",
+                Abstraction.of("fn_1", "(Name &b:0 Load)", "E"),
+                Abstraction.of(
+                    "fn_2",
+                    "(Assign (list (Name %1 Store)) #0 None)",
+                    "S",
                     dfa_symvars=["Name"],
                     dfa_metavars=["E"],
-                    dfa_choicevars=[],
                 ),
             ],
         )
@@ -947,10 +876,10 @@ class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
     @expand_with_slow_tests(len(load_stitch_output_set()), 10)
     def test_realistic_with_abstractions(self, i):
         x = copy.deepcopy(load_stitch_output_set()[i])
-        abstractions = []
-        for it, abstr in enumerate(x["abstractions"]):
-            abstr["body"] = ParsedAST.parse_s_expression(abstr["body"])
-            abstractions.append(Abstraction(name=f"fn_{it + 1}", **abstr))
+        abstractions = [
+            Abstraction.of(name=f"fn_{it + 1}", **abstr)
+            for it, abstr in enumerate(x["abstractions"])
+        ]
         for code, rewritten in zip(x["code"], x["rewritten"]):
             self.assertAbstractionAnnotation(code, rewritten, abstractions)
 
