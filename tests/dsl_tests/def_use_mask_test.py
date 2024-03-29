@@ -471,6 +471,24 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
+    def test_complicated_type_annot(self):
+        code = self.annotate_program(
+            cwq(
+                """
+                x: List[Dict[str, int]] = []
+                """
+            )
+        )
+        print(code)
+        self.assertEqual(
+            code.strip(),
+            cwq(
+                """
+                x: List[Dict[str, int]] = []
+                """
+            ).strip(),
+        )
+
     @expand_with_slow_tests(200, -1)
     def test_realistic(self, i):
         if i in {22, 31, 41, 57, 95, 100, 106, 109, 112, 114, 119, 181, 182}:

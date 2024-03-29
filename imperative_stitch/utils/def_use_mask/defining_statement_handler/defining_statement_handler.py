@@ -47,6 +47,12 @@ class AssignHandler(DefiningStatementHandler):
     define_symbols_on_exit = "type_comment"
 
 
+class AnnAssignHandler(DefiningStatementHandler):
+    name = "AnnAssign~S"
+    targeted = ["target"]
+    define_symbols_on_exit = "simple"
+
+
 class ForHandler(DefiningStatementHandler):
     name = "For~S"
     targeted = ["target"]
