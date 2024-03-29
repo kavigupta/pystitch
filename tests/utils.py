@@ -10,7 +10,6 @@ from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.stitch_output_set import load_annies_compressed_dataset
-from imperative_stitch.parser.parsed_ast import ParsedAST
 
 
 def canonicalize(code):
