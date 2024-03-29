@@ -205,6 +205,16 @@ class ParsedAST(ABC):
             )
         )
 
+    def abstraction_calls_to_bodies_recursively(self, abstractions, *, pragmas=False):
+        """
+        Replace all abstraction calls with their bodies, recursively.
+        """
+        result = self
+        while True:
+            result = result.abstraction_calls_to_bodies(abstractions, pragmas=pragmas)
+            if not result.abstraction_calls():
+                return result
+
     @classmethod
     def constant(cls, leaf):
         """
