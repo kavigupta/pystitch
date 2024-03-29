@@ -82,7 +82,7 @@ class CollectingHandler(Handler):
     @property
     def node(self):
         sym, arity = self.mask.tree_dist.symbols[self.sym]
-        assert len(self.children) == arity
+        assert len(self.children) == arity, f"Expected {arity} children, got {len(self.children)}"
         return ns.SExpression(
             sym, [self.children[i].node for i in range(len(self.children))]
         )
