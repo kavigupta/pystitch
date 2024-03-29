@@ -104,6 +104,7 @@ class CollectingHandler(Handler):
     """
     Wrapper around another handler that collects the node as it is being created.
     """
+
     def __init__(self, sym, underlying_handler):
         super().__init__(
             underlying_handler.mask,
