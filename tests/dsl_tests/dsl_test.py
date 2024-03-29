@@ -151,6 +151,14 @@ class ProduceDslTest(unittest.TestCase):
             """,
         )
 
+    def test_produce_dsl_bad_type_annotate_length(self):
+        program = ParsedAST.parse_python_module("x: List[int, int] = 2")
+        print(program.to_s_exp())
+        subset = DSLSubset.from_program(self.dfa, program, root="M")
+        dsl = create_dsl(export_dfa(), subset, "M")
+        ta_lines = {x.strip() for x in dsl.render().split("\n") if "list~TA" in x}
+        self.assertEqual(ta_lines, {"list~TA~2 :: (TA, TA) -> TA"})
+
     def test_fit_to_programs_including_abstractions(self):
         new_dfa = {"E": {}, "seqS": {}}
         new_dfa["E"]["fn_1"] = []

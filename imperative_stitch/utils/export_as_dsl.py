@@ -88,7 +88,7 @@ def is_sequence(type_name, head_symbol):
         type_name,
         head_symbol,
     )
-    return seq_type
+    return seq_type or seq_symbol
 
 
 def clean_type(x):
