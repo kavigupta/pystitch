@@ -926,8 +926,8 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
-class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
 
+class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
     @expand_with_slow_tests(len(load_stitch_output_set()), 10)
     def test_realistic_with_abstractions(self, i):
         x = copy.deepcopy(load_stitch_output_set()[i])
@@ -940,7 +940,6 @@ class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
-
     @expand_with_slow_tests(len(load_annies_compressed_dataset()), 10)
     def test_annies_compressed_with_abstractions(self, i):
         dat = load_annies_compressed_dataset()

@@ -508,6 +508,12 @@ class AbstractionCallAST(ParsedAST):
 class SliceElementAST(ParsedAST):
     content: ParsedAST
 
+    @classmethod
+    def of(cls, x):
+        if isinstance(x, SliceElementAST):
+            return x
+        return SliceElementAST(x)
+
     def to_ns_s_exp(self, config):
         # should not be necessary; since we have the assertion
         # but pylint is not smart enough to figure that out
@@ -526,7 +532,7 @@ class SliceElementAST(ParsedAST):
                 assert len(content.children) == 2
                 content_children = list(content.children)
                 content_children[0] = ListAST(
-                    [SliceElementAST(x) for x in content_children[0].children]
+                    [SliceElementAST.of(x) for x in content_children[0].children]
                 )
                 content = NodeAST(typ=ast.Tuple, children=content_children)
 

@@ -529,9 +529,11 @@ class AbstractionRenderingTest(unittest.TestCase):
 
 
 class AbstractionRenderingAnnieSetTest(unittest.TestCase):
-
     def check_renders(self, s_exp):
-        self.assertEqual(ParsedAST.parse_s_expression(s_exp).to_s_exp(), s_exp)
+        print(s_exp)
+        parsed = ParsedAST.parse_s_expression(s_exp)
+        print(parsed)
+        self.assertEqual(parsed.to_s_exp(), s_exp)
 
     def check_renders_with_bodies_expanded(self, s_exp, abstrs):
         abstrs_dict = {x.name: x for x in abstrs}
@@ -547,5 +549,5 @@ class AbstractionRenderingAnnieSetTest(unittest.TestCase):
 
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
     def test_renders_realistic_with_bodies_expanded(self, i):
-        abstrs, rewritten = load_annies_compressed_individual_programs()[i]
-        self.check_renders_with_bodies_expanded(rewritten, abstrs)
+        abstractions, rewritten = load_annies_compressed_individual_programs()[i]
+        self.check_renders_with_bodies_expanded(rewritten, abstractions)
