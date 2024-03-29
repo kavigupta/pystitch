@@ -6,15 +6,17 @@ from .handler import Handler, default_handler
 
 
 class AbstractionHandler(Handler):
-    def __init__(self, mask, valid_symbols, config, head_symbol):
-        super().__init__(mask, valid_symbols, config)
+    def __init__(self, mask, defined_production_idxs, config, head_symbol):
+        super().__init__(mask, defined_production_idxs, config)
         head_symbol = "~".join(head_symbol.split("~")[:-1])
         self.abstraction = config.abstractions[head_symbol]
         self.body = self.abstraction.body.to_type_annotated_ns_s_exp(
             config.dfa, self.abstraction.dfa_root
         )
         self.mask_copy = self.mask.with_handler(
-            lambda mask_copy: default_handler(0, mask_copy, valid_symbols, self.config)
+            lambda mask_copy: default_handler(
+                0, mask_copy, defined_production_idxs, self.config
+            )
         )
         self._body_handler = self.body_traversal_coroutine(self.body, 0)
         self._is_defining = None
@@ -64,15 +66,15 @@ class AbstractionHandler(Handler):
         except StopIteration:
             pass
 
-    def currently_defined_symbols(self) -> set[int]:
-        return self.mask_copy.handlers[-1].currently_defined_symbols()
+    def currently_defined_indices(self) -> set[int]:
+        return self.mask_copy.handlers[-1].currently_defined_indices()
 
 
 class CollectingHandler(Handler):
     def __init__(self, sym, underlying_handler):
         super().__init__(
             underlying_handler.mask,
-            underlying_handler.currently_defined_symbols(),
+            underlying_handler.currently_defined_indices(),
             underlying_handler.config,
         )
         self.underlying_handler = underlying_handler
@@ -82,7 +84,9 @@ class CollectingHandler(Handler):
     @property
     def node(self):
         sym, arity = self.mask.tree_dist.symbols[self.sym]
-        assert len(self.children) == arity, f"Expected {arity} children, got {len(self.children)}"
+        assert (
+            len(self.children) == arity
+        ), f"Expected {arity} children, got {len(self.children)}"
         return ns.SExpression(
             sym, [self.children[i].node for i in range(len(self.children))]
         )

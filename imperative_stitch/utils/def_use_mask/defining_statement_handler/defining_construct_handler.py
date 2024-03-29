@@ -13,8 +13,8 @@ class DefiningConstructHandler(ChildFrameCreatorHandler):
     # these fields must be defined in the subclass
     construct_name_field: str = None
 
-    def __init__(self, mask, valid_symbols, config):
-        super().__init__(mask, valid_symbols, config)
+    def __init__(self, mask, defined_production_idxs, config):
+        super().__init__(mask, defined_production_idxs, config)
         assert isinstance(self.construct_name_field, str)
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
@@ -22,8 +22,8 @@ class DefiningConstructHandler(ChildFrameCreatorHandler):
             self.construct_name_field is not None
             and position == self.child_fields[self.construct_name_field]
         ):
-            self.valid_symbols.add(symbol)
-            self.original_valid_symbols.add(symbol)
+            self.defined_production_idxs.add(symbol)
+            self.original_defined_production_idxs.add(symbol)
         return super().on_child_enter(position, symbol)
 
     def is_defining(self, position: int) -> bool:
