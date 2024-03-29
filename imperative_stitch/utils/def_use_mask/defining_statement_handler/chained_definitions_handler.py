@@ -11,14 +11,16 @@ class ComprehensionExpressionHandler(ConstructHandler):
 
     # handled out of order. generators first
 
-    def __init__(self, mask, valid_symbols, config):
+    def __init__(self, mask, defined_production_idxs, config):
         # copy the valid symbols so changes don't affect the parent
-        super().__init__(mask, set(valid_symbols), config)
+        super().__init__(mask, set(defined_production_idxs), config)
         self.defined_symbols = set()
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position == self.child_fields["generators"]:
-            return GeneratorsHandler(self.mask, self.valid_symbols, self.config)
+            return GeneratorsHandler(
+                self.mask, self.defined_production_idxs, self.config
+            )
         return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
@@ -50,7 +52,9 @@ class GeneratorsHandler(Handler):
     """
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        return ComprehensionHandler(self.mask, self.valid_symbols, self.config)
+        return ComprehensionHandler(
+            self.mask, self.defined_production_idxs, self.config
+        )
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         pass

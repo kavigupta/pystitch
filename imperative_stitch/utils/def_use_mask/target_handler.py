@@ -1,7 +1,7 @@
 from .handler import ConstructHandler, Handler
 
 
-def create_target_handler(root_symbol: int, mask, valid_symbols, config):
+def create_target_handler(root_symbol: int, mask, defined_production_idxs, config):
     """
     Create a target handler for the given root symbol.
     """
@@ -23,8 +23,8 @@ def create_target_handler(root_symbol: int, mask, valid_symbols, config):
     symbol = root_symbol
     symbol, _ = mask.tree_dist.symbols[symbol]
     if symbol.startswith("list"):
-        return PassthroughLHSHandler(mask, valid_symbols, config)
-    return targets_map[symbol](mask, valid_symbols, config)
+        return PassthroughLHSHandler(mask, defined_production_idxs, config)
+    return targets_map[symbol](mask, defined_production_idxs, config)
 
 
 class TargetHandler(Handler):
@@ -32,8 +32,8 @@ class TargetHandler(Handler):
     Handler that collects targets.
     """
 
-    def __init__(self, mask, valid_symbols, config):
-        super().__init__(mask, valid_symbols, config)
+    def __init__(self, mask, defined_production_idxs, config):
+        super().__init__(mask, defined_production_idxs, config)
         self.defined_symbols = set()
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
@@ -42,9 +42,9 @@ class TargetHandler(Handler):
 
 
 class TargetConstructHandler(TargetHandler, ConstructHandler):
-    def __init__(self, mask, valid_symbols, config):
-        TargetHandler.__init__(self, mask, valid_symbols, config)
-        ConstructHandler.__init__(self, mask, valid_symbols, config)
+    def __init__(self, mask, defined_production_idxs, config):
+        TargetHandler.__init__(self, mask, defined_production_idxs, config)
+        ConstructHandler.__init__(self, mask, defined_production_idxs, config)
 
 
 class PassthroughLHSHandler(TargetHandler):
@@ -67,9 +67,9 @@ class PassthroughLHSHandler(TargetHandler):
 class PassthroughLHSConstructHandler(PassthroughLHSHandler, TargetConstructHandler):
     use_fields: list[str] = None
 
-    def __init__(self, mask, valid_symbols, config):
-        PassthroughLHSHandler.__init__(self, mask, valid_symbols, config)
-        TargetConstructHandler.__init__(self, mask, valid_symbols, config)
+    def __init__(self, mask, defined_production_idxs, config):
+        PassthroughLHSHandler.__init__(self, mask, defined_production_idxs, config)
+        TargetConstructHandler.__init__(self, mask, defined_production_idxs, config)
 
         self.indices = [self.child_fields[x] for x in self.use_fields]
 
