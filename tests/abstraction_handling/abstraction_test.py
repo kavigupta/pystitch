@@ -5,10 +5,7 @@ from textwrap import dedent
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import (
-    load_annies_compressed_dataset,
-    load_stitch_output_set,
-)
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import (

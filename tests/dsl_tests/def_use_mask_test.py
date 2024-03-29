@@ -6,16 +6,9 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import (
-    load_annies_compressed_dataset,
-    load_stitch_output_set,
-)
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
-from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import match_either
-from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import (
     cwq,
@@ -945,7 +938,6 @@ class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
-
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
     def test_annies_compressed_with_abstractions(self, i):
         abstrs, rewritten = load_annies_compressed_individual_programs()[i]
