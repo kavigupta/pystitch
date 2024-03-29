@@ -1,3 +1,5 @@
+import neurosym as ns
+
 from imperative_stitch.parser.parse_python import fields_for_node
 
 
@@ -28,3 +30,16 @@ def python_node_ordering_with_abstractions(abstrs):
             result
         )
     return result
+
+
+class PythonNodeOrdering(ns.DictionaryNodeOrdering):
+    """
+    Orders the subnodes of a node according to a dictionary.
+    """
+
+    def __init__(self, dist):
+        super().__init__(
+            dist,
+            python_node_ordering_with_abstractions([]),
+            tolerate_missing=True,
+        )

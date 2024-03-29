@@ -7,6 +7,8 @@ import numpy as np
 from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
+from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
+from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 from ..utils import assertDSL
@@ -191,8 +193,13 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
     dfa = export_dfa()
     programs = [parser(p) for p in programs]
     subset = DSLSubset.from_program(dfa, *programs, root=root)
-    dsl = create_dsl(export_dfa(), subset, root)
-    fam = ns.BigramProgramDistributionFamily(dsl)
+    dsl = create_dsl(dfa, subset, root)
+    fam = ns.BigramProgramDistributionFamily(
+        dsl,
+        additional_preorder_masks=[DefUseChainPreorderMask],
+        include_type_preorder_mask=False,
+        node_ordering=PythonNodeOrdering,
+    )
     counts = fam.count_programs(
         [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
     )
@@ -258,6 +265,36 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ],
         )
 
+    def test_enumerate_def_use_check(self):
+        self.assertEqual(
+            self.enumerate("x = 2; y = x", "y = 2; x = y"),
+            [
+                (Fraction(1, 8), "x = 2\nx = 2"),
+                (Fraction(1, 8), "x = 2\nx = x"),
+                (Fraction(1, 8), "x = 2\ny = 2"),
+                (Fraction(1, 8), "x = 2\ny = x"),
+                (Fraction(1, 8), "y = 2\nx = 2"),
+                (Fraction(1, 8), "y = 2\nx = y"),
+                (Fraction(1, 8), "y = 2\ny = 2"),
+                (Fraction(1, 8), "y = 2\ny = y"),
+            ],
+        )
+
+    def test_enumerate_def_use_check_wglobal(self):
+        self.assertEqual(
+            self.enumerate("x = print; y = x", "y = print; x = y"),
+            [
+                (Fraction(1, 6), "x = print\nx = print"),
+                (Fraction(1, 6), "x = print\ny = print"),
+                (Fraction(1, 6), "y = print\nx = print"),
+                (Fraction(1, 6), "y = print\ny = print"),
+                (Fraction(1, 12), "x = print\nx = x"),
+                (Fraction(1, 12), "x = print\ny = x"),
+                (Fraction(1, 12), "y = print\nx = y"),
+                (Fraction(1, 12), "y = print\ny = y"),
+            ],
+        )
+
     def compute_likelihood(self, corpus, program):
         dfa, _, fam, dist = fit_to(corpus)
         program = ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
@@ -286,6 +323,20 @@ class EnumerateFittedDslTest(unittest.TestCase):
             [
                 ("(const-&y:0~Name)", Fraction(2, 3)),
                 ("(const-i4~Const)", Fraction(1, 3)),
+            ],
+        )
+
+    def test_likelihood_def_use_check(self):
+        like, results = self.compute_likelihood(
+            ["x = 2; y = x", "y = 2; x = y"], "x = 2; y = x"
+        )
+        self.assertAlmostEqual(like, Fraction(1, 8))
+        self.assertEqual(
+            results,
+            [
+                ("(const-&x:0~Name)", Fraction(1, 2)),
+                ("(const-&y:0~Name)", Fraction(1, 2)),
+                ("(Name~E (const-&x:0~Name) (Load~Ctx))", Fraction(1, 2)),
             ],
         )
 
