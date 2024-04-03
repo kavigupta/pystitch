@@ -215,7 +215,6 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=[DefUseChainPreorderMask],
-        include_type_preorder_mask=False,
         node_ordering=PythonNodeOrdering,
     )
     counts = fam.count_programs(
