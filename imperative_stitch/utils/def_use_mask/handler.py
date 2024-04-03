@@ -66,11 +66,10 @@ class Handler(ABC):
         """
         names = set()
         for symbol in self.currently_defined_indices():
-            mat = match_either(self.mask.tree_dist.symbols[symbol][0])
+            sym, _ = self.mask.tree_dist.symbols[symbol]
+            mat = match_either(sym)
             if not mat:
-                raise ValueError(
-                    f"Could not match {self.mask.tree_dist.symbols[symbol][0]}"
-                )
+                raise ValueError(f"Expected name but received {sym}")
             names.add(mat.group("name"))
         return names
 
