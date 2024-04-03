@@ -57,7 +57,9 @@ class AbstractionHandler(Handler):
         Make sure to collect the children of the abstraction, so it can
             be iterated once the abstraction is fully processed.
         """
-        assert self._traversal_order_stack.pop() == position
+        assert (
+            self._traversal_order_stack.pop() == position
+        ), "Incorrect traversal order"
         return CollectingHandler(
             symbol,
             super().on_child_enter(position, symbol),
