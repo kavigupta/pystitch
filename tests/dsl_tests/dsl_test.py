@@ -207,7 +207,17 @@ class ProduceDslTest(unittest.TestCase):
         create_dsl(export_dfa(), subset, "M")
 
 
-def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
+def fit_to(
+    programs,
+    parser=ParsedAST.parse_python_module,
+    root="M",
+    include_type_preorder_mask=True,
+):
+    """
+    Set include_type_preorder_mask to False to disable the type preorder mask,
+        this is basically only useful in the specific context where we are testing
+        the names mask and want no other masks to be applied.
+    """
     dfa = export_dfa()
     programs = [parser(p) for p in programs]
     subset = DSLSubset.from_program(dfa, *programs, root=root)
@@ -215,6 +225,7 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M"):
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=[DefUseChainPreorderMask],
+        include_type_preorder_mask=include_type_preorder_mask,
         node_ordering=PythonNodeOrdering,
     )
     counts = fam.count_programs(
