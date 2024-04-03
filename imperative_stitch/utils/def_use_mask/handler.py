@@ -66,7 +66,7 @@ class Handler(ABC):
         """
         names = set()
         for symbol in self.currently_defined_indices():
-            sym = self.mask.tree_dist.symbols[symbol][0]
+            sym, _ = self.mask.tree_dist.symbols[symbol]
             mat = match_either(sym)
             if not mat:
                 assert VARIABLE_REGEX.match(sym), f"Could not match {sym}"
