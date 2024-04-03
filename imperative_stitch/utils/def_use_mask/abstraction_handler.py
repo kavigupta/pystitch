@@ -33,6 +33,9 @@ class AbstractionHandler(Handler):
 
     def __init__(self, mask, defined_production_idxs, config, head_symbol):
         super().__init__(mask, defined_production_idxs, config)
+        self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
+            self.mask.tree_dist.symbol_to_index[head_symbol]
+        )[::-1]
         head_symbol = "~".join(head_symbol.split("~")[:-1])
         self.abstraction = config.abstractions[head_symbol]
         self.body = self.abstraction.body.to_type_annotated_ns_s_exp(
@@ -54,6 +57,7 @@ class AbstractionHandler(Handler):
         Make sure to collect the children of the abstraction, so it can
             be iterated once the abstraction is fully processed.
         """
+        assert self._traversal_order_stack.pop() == position
         return CollectingHandler(
             symbol,
             super().on_child_enter(position, symbol),
