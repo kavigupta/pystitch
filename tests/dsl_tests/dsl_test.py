@@ -218,12 +218,13 @@ def fit_to(
     abstrs=(),
     use_def_use=True,
     use_node_ordering=True,
+    smoothing=True,
 ):
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
     original_programs = programs[:]
-    # programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
+    programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
     roots = [root] * len(programs)
     if use_def_use:
         programs += [a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs]
@@ -253,7 +254,7 @@ def fit_to(
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=apms if use_def_use else [],
-        include_type_preorder_mask=False,
+        include_type_preorder_mask=True,
         node_ordering=node_ordering,
     )
     counts = fam.count_programs(
@@ -265,13 +266,14 @@ def fit_to(
         ]
     )
     dist = fam.counts_to_distribution(counts)[0]
-    dist = dist.bound_minimum_likelihood(1e-4, smooth_mask)
+    if smoothing:
+        dist = dist.bound_minimum_likelihood(1e-4, smooth_mask)
     return dfa, dsl, fam, dist
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
     def enumerate(self, *programs):
-        _, _, fam, dist = fit_to(programs)
+        _, _, fam, dist = fit_to(programs, smoothing=False)
         out = [
             (
                 Fraction.from_float(np.exp(y)).limit_denominator(),
