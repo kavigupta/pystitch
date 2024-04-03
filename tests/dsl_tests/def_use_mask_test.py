@@ -958,3 +958,14 @@ class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
             .to_s_exp()
         )
         self.assertAbstractionAnnotation(code, rewritten, abstrs)
+
+
+class DefUseMaskWihAbstractionsLikliehoodAnnieSetTest(DefUseMaskTestGeneric):
+    @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
+    def test_annies_compressed_realistic(self, i):
+        abstrs, rewritten = load_annies_compressed_individual_programs()[i]
+        rewritten = ParsedAST.parse_s_expression(rewritten)
+        code = rewritten.abstraction_calls_to_bodies({x.name: x for x in abstrs})
+        dfa, _, fam, dist = fit_to([rewritten, code], parser=lambda x: x, abstrs=abstrs)
+        # should not error
+        fam.compute_likelihood(dist, rewritten.to_type_annotated_ns_s_exp(dfa, "M"))
