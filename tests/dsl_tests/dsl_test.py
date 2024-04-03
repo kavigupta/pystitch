@@ -90,6 +90,24 @@ class SubsetTest(unittest.TestCase):
             ),
         )
 
+    def test_subset_fill_in_missing(self):
+        subset = DSLSubset.from_program(
+            self.dfa,
+            ParsedAST.parse_python_module("x = x + 2; y = y + x + 2"),
+            ParsedAST.parse_python_module("x = 2; y = 3; z = 4; a = 7"),
+            root=("M", "M"),
+        )
+        print(subset)
+        self.assertEqual(
+            subset.lengths_by_sequence_type, {"seqS": [2, 4], "[L]": [1], "[TI]": [0]}
+        )
+        subset = subset.fill_in_missing_lengths()
+        print(subset)
+        self.assertEqual(
+            subset.lengths_by_sequence_type,
+            {"seqS": [2, 3, 4], "[L]": [1], "[TI]": [0]},
+        )
+
 
 class ProduceDslTest(unittest.TestCase):
     def setUp(self):

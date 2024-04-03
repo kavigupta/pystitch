@@ -63,6 +63,17 @@ class DSLSubset:
             leaves={k: sorted(v) for k, v in leaves.items()},
         )
 
+    def fill_in_missing_lengths(self):
+        """
+        Fill in "missing lengths" for each sequence type. E.g., if the lengths
+            of a sequence type are [1, 3], this function will add 2 to the list.
+        """
+        lengths_new = {
+            seq_type: list(range(min(lengths), max(lengths) + 1))
+            for seq_type, lengths in self.lengths_by_sequence_type.items()
+        }
+        return DSLSubset(lengths_by_sequence_type=lengths_new, leaves=self.leaves)
+
 
 def is_sequence_type(x):
     x = ns.parse_type(x)
