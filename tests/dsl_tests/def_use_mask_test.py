@@ -793,6 +793,68 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
+    def test_definition_in_choiceseq(self):
+        code = cwq(
+            """
+            b = 2
+            "~(/splice (fn_1 &c:0 &a:0 (/choiceseq (Assign (list (Name &c:0 Store)) (Name &b:0 Load) None))))"
+            a = a
+            """
+        )
+        annotated = self.annotate_program(
+            code,
+            parser=self.parse_with_hijacking,
+            abstrs=[
+                Abstraction.of(
+                    "fn_1",
+                    "(/seq ?0 (Assign (list (Name %2 Store)) (Name %1 Load) None))",
+                    "seqS",
+                    dfa_symvars=["Name"] * 2,
+                    dfa_choicevars=["seqS"],
+                )
+            ],
+        )
+        print(annotated)
+        self.assertEqual(
+            cwq(annotated).strip(),
+            cwq(
+                """
+                b?a$c = 2
+                # c?a$b = b
+                # a?b$c = c?b
+                fn_1(__ref__(c?b), __ref__(a?b$c), __code__('c?a$b = b'))
+                a?b$c = a?b$c
+                """
+            ).strip(),
+        )
+
+    def test_impossible_likelihood_bug(self):
+        # ensure that the likelihood computation doesn't crash
+        # see https://github.com/kavigupta/neurosym-lib/pull/78 which fixed this
+        code = cwq(
+            """
+            "~(/splice (fn_1 &b:0 &a:0 (/choiceseq)))"
+            a = a
+            """
+        )
+        program = self.parse_with_hijacking(code)
+        abstrs = [
+            Abstraction.of(
+                "fn_1",
+                "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) ?0)",
+                "seqS",
+                dfa_symvars=["Name"] * 2,
+                dfa_choicevars=["seqS"],
+            )
+        ]
+        dfa, _, fam, dist = fit_to([program], parser=lambda x: x, abstrs=abstrs)
+        print(program)
+        print(dist)
+        self.assertEqual(
+            fam.compute_likelihood(dist, program.to_type_annotated_ns_s_exp(dfa, "M")),
+            -float("inf"),
+        )
+
     def test_out_of_order_within_abstraction(self):
         fn_3 = Abstraction.of(
             "fn_3",
