@@ -360,7 +360,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         )
 
     def compute_likelihood(self, corpus, program):
-        dfa, _, fam, dist = fit_to(corpus)
+        dfa, _, fam, dist = fit_to(corpus, smoothing=False)
         program = ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
             dfa, "M"
         )
