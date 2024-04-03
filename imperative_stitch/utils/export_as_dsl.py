@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union
 
 import neurosym as ns
+import numpy as np
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
 
@@ -140,6 +141,12 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
             dslf.concrete(constant + SEPARATOR + target, ns.render_type(typ), None)
     dslf.prune_to(start_state, tolerate_pruning_entire_productions=True)
     return dslf.finalize()
+
+
+def create_smoothing_mask(dsl_full, dsl_subset):
+    symbols_full = dsl_full.ordered_symbols(include_root=True)
+    symbols_subset = set(dsl_subset.ordered_symbols(include_root=True))
+    return np.array([s in symbols_subset for s in symbols_full])
 
 
 def add_disambiguating_type_tags(dfa, prog, start_state):

@@ -9,7 +9,11 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
+from imperative_stitch.utils.export_as_dsl import (
+    DSLSubset,
+    create_dsl,
+    create_smoothing_mask,
+)
 
 from ..utils import assertDSL
 
@@ -207,26 +211,50 @@ class ProduceDslTest(unittest.TestCase):
         create_dsl(export_dfa(), subset, "M")
 
 
-def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
+def fit_to(
+    programs,
+    parser=ParsedAST.parse_python_module,
+    root="M",
+    abstrs=(),
+    use_def_use=True,
+    use_node_ordering=True,
+):
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
     original_programs = programs[:]
-    programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
+    # programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
     roots = [root] * len(programs)
-    programs += [a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs]
-    roots += [a.dfa_root for a in abstrs]
+    if use_def_use:
+        programs += [a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs]
+        roots += [a.dfa_root for a in abstrs]
     for x, y in zip(roots, programs):
         print(x, y)
-    subset = DSLSubset.from_program(dfa, *programs, root=tuple(roots))
-    dsl = create_dsl(dfa, subset, root)
+    dsl = create_dsl(
+        dfa, DSLSubset.from_program(dfa, *programs, root=tuple(roots)), root
+    )
+    dsl_subset = create_dsl(
+        dfa,
+        DSLSubset.from_program(
+            dfa, *original_programs, root=(root,) * len(original_programs)
+        ),
+        root,
+    )
+    smooth_mask = create_smoothing_mask(dsl, dsl_subset)
+    print(smooth_mask)
+    apms = [
+        lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
+    ]
+    node_ordering = (
+        (lambda dist: PythonNodeOrdering(dist, abstrs))
+        if use_node_ordering
+        else ns.DefaultNodeOrdering
+    )
     fam = ns.BigramProgramDistributionFamily(
         dsl,
-        additional_preorder_masks=[
-            lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
-        ],
+        additional_preorder_masks=apms if use_def_use else [],
         include_type_preorder_mask=False,
-        node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
+        node_ordering=node_ordering,
     )
     counts = fam.count_programs(
         [
@@ -237,6 +265,7 @@ def fit_to(programs, parser=ParsedAST.parse_python_module, root="M", abstrs=()):
         ]
     )
     dist = fam.counts_to_distribution(counts)[0]
+    dist = dist.bound_minimum_likelihood(1e-4, smooth_mask)
     return dfa, dsl, fam, dist
 
 

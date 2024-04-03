@@ -968,4 +968,36 @@ class DefUseMaskWihAbstractionsLikliehoodAnnieSetTest(DefUseMaskTestGeneric):
         code = rewritten.abstraction_calls_to_bodies({x.name: x for x in abstrs})
         dfa, _, fam, dist = fit_to([rewritten, code], parser=lambda x: x, abstrs=abstrs)
         # should not error
-        fam.compute_likelihood(dist, rewritten.to_type_annotated_ns_s_exp(dfa, "M"))
+        likelihood_def_use = fam.compute_likelihood(
+            dist, rewritten.to_type_annotated_ns_s_exp(dfa, "M")
+        )
+
+        if likelihood_def_use == -float("inf"):
+            # the code is invalid
+            return
+
+        dfa, _, fam, dist = fit_to(
+            [rewritten, code],
+            parser=lambda x: x,
+            abstrs=abstrs,
+            use_def_use=False,
+            use_node_ordering=False,
+        )
+        likelihood_plain = fam.compute_likelihood(
+            dist, rewritten.to_type_annotated_ns_s_exp(dfa, "M")
+        )
+
+        dfa, _, fam, dist = fit_to(
+            [rewritten, code],
+            parser=lambda x: x,
+            abstrs=abstrs,
+            use_def_use=False,
+            use_node_ordering=True,
+        )
+        likelihood_just_order = fam.compute_likelihood(
+            dist, rewritten.to_type_annotated_ns_s_exp(dfa, "M")
+        )
+
+        # add a small epsilon to account for floating point errors
+        self.assertGreater(likelihood_def_use + 1e-5, likelihood_plain)
+        self.assertAlmostEqual(likelihood_plain, likelihood_just_order, places=2)
