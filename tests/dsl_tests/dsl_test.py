@@ -235,19 +235,23 @@ def fit_to(
     return dfa, dsl, fam, dist
 
 
+def enumerate_distribution(fam, dist, min_likelihood=-10):
+    out = [
+        (
+            Fraction.from_float(np.exp(y)).limit_denominator(),
+            s_exp_to_python(ns.render_s_expression(x)),
+        )
+        for x, y in fam.enumerate(dist, min_likelihood=min_likelihood)
+    ]
+    out = sorted(out, key=lambda x: (-x[0], x[1]))
+    print(out)
+    return out
+
+
 class EnumerateFittedDslTest(unittest.TestCase):
     def enumerate(self, *programs):
         _, _, fam, dist = fit_to(programs)
-        out = [
-            (
-                Fraction.from_float(np.exp(y)).limit_denominator(),
-                s_exp_to_python(ns.render_s_expression(x)),
-            )
-            for x, y in fam.enumerate(dist, min_likelihood=-10)
-        ]
-        out = sorted(out, key=lambda x: (-x[0], x[1]))
-        print(out)
-        return out
+        return enumerate_distribution(fam, dist)
 
     def test_enumerate_fitted_dsl_basic(self):
         self.assertEqual(
