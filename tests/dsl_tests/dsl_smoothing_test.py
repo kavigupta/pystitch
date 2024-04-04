@@ -1,5 +1,4 @@
 import unittest
-from fractions import Fraction
 
 import neurosym as ns
 import numpy as np
