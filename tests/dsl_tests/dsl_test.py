@@ -219,6 +219,7 @@ def fit_to(
     use_def_use=True,
     use_node_ordering=True,
     smoothing=True,
+    include_type_preorder_mask=True,
 ):
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     dfa = export_dfa(abstrs=abstrs)
@@ -254,7 +255,7 @@ def fit_to(
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=apms if use_def_use else [],
-        include_type_preorder_mask=True,
+        include_type_preorder_mask=include_type_preorder_mask,
         node_ordering=node_ordering,
     )
     counts = fam.count_programs(

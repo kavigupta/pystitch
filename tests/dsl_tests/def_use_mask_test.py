@@ -40,7 +40,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_program(
         self, program, parser=ParsedAST.parse_python_module, abstrs=()
     ):
-        dfa, _, fam, _ = fit_to([program], parser=parser, abstrs=abstrs)
+        dfa, _, fam, _ = fit_to([program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False)
         annotated = ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
