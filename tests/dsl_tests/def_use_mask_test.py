@@ -28,14 +28,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             name = f"{name}?{'$'.join(alts)}"
         return f"const-&{name}:{scope}~Name"
 
-    def annotate_program(self, program):
-        dfa, _, fam, _ = fit_to([program], include_type_preorder_mask=False)
+    def annotate_program(self, program, parser=ParsedAST.parse_python_module):
+        dfa, _, fam, _ = fit_to(
+            [program], parser=parser, include_type_preorder_mask=False
+        )
         return ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
-                    ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
-                        dfa, "M"
-                    ),
+                    parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
                     fam.tree_distribution_skeleton,
                     self.annotate_alternates,
                 )
