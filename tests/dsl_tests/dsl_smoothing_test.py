@@ -44,8 +44,10 @@ class DSLSmoothingTest(unittest.TestCase):
             smooth_mask = None
         fam = ns.BigramProgramDistributionFamily(
             dsl,
-            additional_preorder_masks=[DefUseChainPreorderMask],
-            node_ordering=PythonNodeOrdering,
+            additional_preorder_masks=[
+                lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa, ())
+            ],
+            node_ordering=lambda dist: PythonNodeOrdering(dist, ()),
         )
         counts = fam.count_programs(
             [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
