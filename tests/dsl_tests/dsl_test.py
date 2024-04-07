@@ -9,7 +9,11 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
+from imperative_stitch.utils.export_as_dsl import (
+    DSLSubset,
+    create_dsl,
+    create_smoothing_mask,
+)
 
 from ..utils import assertDSL
 
@@ -211,6 +215,9 @@ def fit_to(
     programs,
     parser=ParsedAST.parse_python_module,
     root="M",
+    use_def_use=True,
+    use_node_ordering=True,
+    smoothing=True,
     include_type_preorder_mask=True,
 ):
     """
@@ -220,24 +227,35 @@ def fit_to(
     """
     dfa = export_dfa()
     programs = [parser(p) for p in programs]
-    subset = DSLSubset.from_program(dfa, *programs, root=root)
-    dsl = create_dsl(dfa, subset, root)
+    for y in zip(programs):
+        print(root, y)
+    dsl = create_dsl(dfa, DSLSubset.from_program(dfa, *programs, root=root), root)
+    dsl_subset = create_dsl(
+        dfa,
+        DSLSubset.from_program(dfa, *programs, root=root),
+        root,
+    )
+    smooth_mask = create_smoothing_mask(dsl, dsl_subset)
+    apms = [DefUseChainPreorderMask]
+    node_ordering = PythonNodeOrdering if use_node_ordering else ns.DefaultNodeOrdering
     fam = ns.BigramProgramDistributionFamily(
         dsl,
-        additional_preorder_masks=[DefUseChainPreorderMask],
+        additional_preorder_masks=apms if use_def_use else [],
         include_type_preorder_mask=include_type_preorder_mask,
-        node_ordering=PythonNodeOrdering,
+        node_ordering=node_ordering,
     )
     counts = fam.count_programs(
         [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
+    if smoothing:
+        dist = dist.bound_minimum_likelihood(1e-4, smooth_mask)
     return dfa, dsl, fam, dist
 
 
 class EnumerateFittedDslTest(unittest.TestCase):
     def enumerate(self, *programs):
-        _, _, fam, dist = fit_to(programs)
+        _, _, fam, dist = fit_to(programs, smoothing=False)
         out = [
             (
                 Fraction.from_float(np.exp(y)).limit_denominator(),
@@ -324,7 +342,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         )
 
     def compute_likelihood(self, corpus, program):
-        dfa, _, fam, dist = fit_to(corpus)
+        dfa, _, fam, dist = fit_to(corpus, smoothing=False)
         program = ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
             dfa, "M"
         )
