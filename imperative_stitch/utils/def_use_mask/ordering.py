@@ -1,6 +1,7 @@
 import neurosym as ns
 
 from imperative_stitch.parser.parse_python import fields_for_node
+from imperative_stitch.utils.export_as_dsl import clean_type
 
 
 def field_order(node, fields):
@@ -26,7 +27,8 @@ def python_node_dictionary():
 def python_node_ordering_with_abstractions(abstrs):
     result = python_node_dictionary()
     for i, abstr in enumerate(abstrs):
-        result[abstr.name + "~" + abstr.dfa_root] = abstr.arguments_traversal_order(
+        ann_name = abstr.name + "~" + clean_type(abstr.dfa_root)
+        result[ann_name] = abstr.arguments_traversal_order(
             result, previous_abstractions=abstrs[:i]
         )
     return result
