@@ -47,19 +47,21 @@ class AbstractionHandler(Handler):
         self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
             self.mask.tree_dist.symbol_to_index[head_symbol]
         )[::-1]
-        head_symbol = "~".join(head_symbol.split("~")[:-1])
-        self.abstraction = config.abstractions[head_symbol]
-        self.body = self.abstraction.body.to_type_annotated_ns_s_exp(
-            config.dfa, self.abstraction.dfa_root
-        )
-        self.mask_copy = None
-        self.handler_fn = handler_fn
-        self._body_handler = self.body_traversal_coroutine(self.body, 0)
-        self._is_defining = None
-        self._position = None
-        self._variables_to_reuse = {}
 
-        self._iterate_body(None)
+        head_symbol = "~".join(head_symbol.split("~")[:-1])
+        abstraction = config.abstractions[head_symbol]
+        body = abstraction.body.to_type_annotated_ns_s_exp(
+            config.dfa, abstraction.dfa_root
+        )
+
+        self.traverser = AbstractionBodyTraverser(
+            mask,
+            config,
+            body,
+            lambda mask_copy, sym: handler_fn(
+                sym, mask_copy, self.defined_production_idxs, self.config
+            ),
+        )
 
     def on_child_enter(self, position: int, symbol: int) -> "Handler":
         """
@@ -69,53 +71,93 @@ class AbstractionHandler(Handler):
         assert (
             self._traversal_order_stack.pop() == position
         ), "Incorrect traversal order"
-        underlying = self.mask_copy.handlers[-1].on_child_enter(self._position, symbol)
-        return CollectingHandler(
-            symbol,
-            underlying,
+        underlying = self.traverser.last_handler.on_child_enter(
+            self.traverser.current_position, symbol
         )
+        return CollectingHandler(symbol, underlying)
 
     def on_child_exit(self, position: int, symbol: int, child: "Handler"):
-        self.mask_copy.handlers[-1].on_child_exit(self._position, symbol, child)
-        self._iterate_body(child.node)
+        self.traverser.last_handler.on_child_exit(
+            self.traverser.current_position, symbol, child
+        )
+        self.traverser.new_argument(child.node)
 
     def is_defining(self, position: int) -> bool:
+        return self.traverser.is_defining
+
+    def currently_defined_indices(self) -> set[int]:
+        return self.traverser.last_handler.currently_defined_indices()
+
+    @property
+    def defined_symbols(self):
+        handler = self.traverser.last_handler
+        return handler.defined_symbols if hasattr(handler, "defined_symbols") else set()
+
+
+class AbstractionBodyTraverser:
+
+    def __init__(self, mask, config, body, create_handler):
+        self.mask = mask
+        self.config = config
+        self.create_handler = create_handler
+
+        self._mask_copy = None
+        self._body_handler = self.body_traversal_coroutine(body, 0)
+        self._is_defining = None
+        self._position = None
+        self._variables_to_reuse = {}
+
+        self.new_argument(None)
+
+    @property
+    def last_handler(self):
+        return self._mask_copy.handlers[-1]
+
+    @property
+    def current_position(self):
+        assert self._position is not None
+        return self._position
+
+    @property
+    def is_defining(self):
         assert self._is_defining is not None
         return self._is_defining
 
     def body_traversal_coroutine(self, node, position):
         if VARIABLE_REGEX.match(node.symbol):
             assert (
-                self.mask_copy is not None
+                self._mask_copy is not None
             ), "We do not support the identity abstraction"
-            # If the node is a variable, check if it is one that has already been processed
-            name = node.symbol
-            if name in self._variables_to_reuse:
-                node = self._variables_to_reuse[name]
-            else:
-                is_defining = self.mask_copy.handlers[-1].is_defining(position)
-                node = yield is_defining, position
-                self._variables_to_reuse[name] = node
-                return
+            yield from self.handle_variable(node, position)
+            return
         sym = self.mask.tree_dist.symbol_to_index[node.symbol]
-        root = self.mask_copy is None
+        root = self._mask_copy is None
         if root:
-            self.mask_copy = self.mask.with_handler(
-                lambda mask_copy: self.handler_fn(
-                    sym, mask_copy, self.defined_production_idxs, self.config
-                )
+            self._mask_copy = self.mask.with_handler(
+                lambda mask_copy: self.create_handler(mask_copy, sym)
             )
         else:
-            self.mask_copy.on_entry(position, sym)
+            self._mask_copy.on_entry(position, sym)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
         for i in order:
             yield from self.body_traversal_coroutine(node.children[i], i)
         if not root:
-            self.mask_copy.on_exit(position, sym)
+            self._mask_copy.on_exit(position, sym)
 
-    def _iterate_body(self, node):
+    def handle_variable(self, node, position):
+        # If the node is a variable, check if it is one that has already been processed
+        if node.symbol in self._variables_to_reuse:
+            yield from self.body_traversal_coroutine(
+                self._variables_to_reuse[node.symbol], position
+            )
+        else:
+            is_defining = self._mask_copy.handlers[-1].is_defining(position)
+            node = yield is_defining, position
+            self._variables_to_reuse[node.symbol] = node
+
+    def new_argument(self, node):
         """
-        Iterate through the body of the abstraction, and set the is_defining value.
+        Iterate through the body of the abstraction, and set the _is_defining and _position values.
 
         Args:
             node: The node to send to the coroutine. None if the coroutine is just starting,
@@ -125,17 +167,6 @@ class AbstractionHandler(Handler):
             self._is_defining, self._position = self._body_handler.send(node)
         except StopIteration:
             pass
-
-    def currently_defined_indices(self) -> set[int]:
-        return self.mask_copy.handlers[-1].currently_defined_indices()
-
-    @property
-    def defined_symbols(self):
-        return (
-            self.mask_copy.handlers[-1].defined_symbols
-            if hasattr(self.mask_copy.handlers[-1], "defined_symbols")
-            else set()
-        )
 
 
 class CollectingHandler(Handler):
