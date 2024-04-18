@@ -26,6 +26,8 @@ class DefiningStatementHandler(ConstructHandler):
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if position in self._targeted_positions:
+            print(child)
+            print(child.defined_symbols)
             self.defined_symbols |= child.defined_symbols
         if position == self.child_fields[self.define_symbols_on_exit]:
             self.defined_production_idxs |= self.defined_symbols

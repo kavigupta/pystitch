@@ -29,9 +29,20 @@ class AbstractionHandler(Handler):
         as the arguments to the abstraction are processed. The copy is created with
         a single handler, which is a default handler for the body.
 
+    handler_fn is used to create the default handler fn in the mask copy used to
+        absorb the body of the abstraction. This is necessary because the handler
+        could be something like a target handler.
+
     """
 
-    def __init__(self, mask, defined_production_idxs, config, head_symbol):
+    def __init__(
+        self,
+        mask,
+        defined_production_idxs,
+        config,
+        head_symbol,
+        handler_fn=default_handler,
+    ):
         super().__init__(mask, defined_production_idxs, config)
         self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
             self.mask.tree_dist.symbol_to_index[head_symbol]
@@ -41,11 +52,8 @@ class AbstractionHandler(Handler):
         self.body = self.abstraction.body.to_type_annotated_ns_s_exp(
             config.dfa, self.abstraction.dfa_root
         )
-        self.mask_copy = self.mask.with_handler(
-            lambda mask_copy: default_handler(
-                0, mask_copy, defined_production_idxs, self.config
-            )
-        )
+        self.mask_copy = None
+        self.handler_fn = handler_fn
         self._body_handler = self.body_traversal_coroutine(self.body, 0)
         self._is_defining = None
         self._position = None
@@ -77,6 +85,9 @@ class AbstractionHandler(Handler):
 
     def body_traversal_coroutine(self, node, position):
         if VARIABLE_REGEX.match(node.symbol):
+            assert (
+                self.mask_copy is not None
+            ), "We do not support the identity abstraction"
             # If the node is a variable, check if it is one that has already been processed
             name = node.symbol
             if name in self._variables_to_reuse:
@@ -87,11 +98,20 @@ class AbstractionHandler(Handler):
                 self._variables_to_reuse[name] = node
                 return
         sym = self.mask.tree_dist.symbol_to_index[node.symbol]
-        self.mask_copy.on_entry(position, sym)
+        root = self.mask_copy is None
+        if root:
+            self.mask_copy = self.mask.with_handler(
+                lambda mask_copy: self.handler_fn(
+                    sym, mask_copy, self.defined_production_idxs, self.config
+                )
+            )
+        else:
+            self.mask_copy.on_entry(position, sym)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
         for i in order:
             yield from self.body_traversal_coroutine(node.children[i], i)
-        self.mask_copy.on_exit(position, sym)
+        if not root:
+            self.mask_copy.on_exit(position, sym)
 
     def _iterate_body(self, node):
         """
@@ -108,6 +128,15 @@ class AbstractionHandler(Handler):
 
     def currently_defined_indices(self) -> set[int]:
         return self.mask_copy.handlers[-1].currently_defined_indices()
+
+    @property
+    def defined_symbols(self):
+        print("defined symbols", self.mask_copy.handlers[-1])
+        return (
+            self.mask_copy.handlers[-1].defined_symbols
+            if hasattr(self.mask_copy.handlers[-1], "defined_symbols")
+            else set()
+        )
 
 
 class CollectingHandler(Handler):
