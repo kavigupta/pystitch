@@ -6,12 +6,8 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import (
-    load_stitch_output_set,
-    load_stitch_output_set_no_dfa,
-)
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
-from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import (
@@ -24,7 +20,6 @@ from tests.utils import (
 
 class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_alternates(self, chosen, alts):
-        print(chosen)
         self.assertIn(chosen, alts)
         mat = match_either(chosen)
         if not mat:
@@ -43,16 +38,15 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         return f"const-&{name}:{scope}~Name"
 
     def annotate_program(
-        self, program, parser=ParsedAST.parse_python_module, abstrs=(), print_stubs=True
+        self, program, parser=ParsedAST.parse_python_module, abstrs=()
     ):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
         )
-        prog = parser(program).to_type_annotated_ns_s_exp(dfa, "M")
         annotated = ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
-                    prog,
+                    parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
                     fam.tree_distribution_skeleton,
                     self.annotate_alternates,
                 )
