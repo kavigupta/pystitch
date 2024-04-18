@@ -95,14 +95,17 @@ class AbstractionHandler(Handler):
 
 
 class AbstractionBodyTraverser:
+    """
+    Actually performs the traversal.
+    """
 
     def __init__(self, mask, config, body, create_handler):
         self.mask = mask
         self.config = config
         self.create_handler = create_handler
 
-        self._mask_copy = None
         self._body_handler = self.body_traversal_coroutine(body, 0)
+        self._mask_copy = None
         self._is_defining = None
         self._position = None
         self._variables_to_reuse = {}
