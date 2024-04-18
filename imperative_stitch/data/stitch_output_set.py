@@ -12,10 +12,15 @@ from imperative_stitch.parser import python_to_s_exp
 @permacache(
     "imperative_stitch/data/stitch_output_set/run_stitch_cached_11",
     key_function=dict(
-        c=stable_hash, include_dfa=drop_if_equal(True), iters=drop_if_equal(1)
+        c=stable_hash,
+        root_states=drop_if_equal(("S", "seqS")),
+        iters=drop_if_equal(1),
+        metavariables_anywhere=drop_if_equal(False),
     ),
 )
-def run_stitch_cached(c, include_dfa=True, iters=1):
+def run_stitch_cached(
+    c, root_states=("S", "seqS"), iters=1, metavariables_anywhere=False
+):
     return run_julia_stitch(
         c,
         stitch_jl_dir="../Stitch.jl/",
@@ -23,17 +28,23 @@ def run_stitch_cached(c, include_dfa=True, iters=1):
         max_arity=4,
         quiet=False,
         # TODO we should be able to root abstractions at E
-        root_states=("S", "seqS"),
+        root_states=root_states,
         metavariable_statements=False,
-        include_dfa=include_dfa,
+        metavariables_anywhere=metavariables_anywhere,
     )
 
 
 @permacache(
     "imperative_stitch/data/stitch_output_set/stitch_output_set_15",
-    key_function=dict(include_dfa=drop_if_equal(True), iters=drop_if_equal(1)),
+    key_function=dict(
+        root_states=drop_if_equal(("S", "seqS")),
+        iters=drop_if_equal(1),
+        metavariables_anywhere=drop_if_equal(False),
+    ),
 )
-def stitch_output_set(amount, include_dfa=True, iters=1):
+def stitch_output_set(
+    amount, root_states=("S", "seqS"), iters=1, metavariables_anywhere=False
+):
     sets = compression_testing_code(amount * 10)
 
     results = []
@@ -50,7 +61,10 @@ def stitch_output_set(amount, include_dfa=True, iters=1):
         ]
 
         abstractions, rewritten = run_stitch_cached(
-            c, include_dfa=include_dfa, iters=iters
+            c,
+            root_states=root_states,
+            iters=iters,
+            metavariables_anywhere=metavariables_anywhere,
         )
 
         result = dict(
@@ -78,6 +92,12 @@ def load_stitch_output_set():
 
 
 @lru_cache(maxsize=1)
+def load_stitch_output_set_no_dfa():
+    with open("data/stitch_output_set_no_dfa.json") as f:
+        return json.load(f)
+
+
+@lru_cache(maxsize=1)
 def load_annies_compressed_dataset():
     with open("data/annies_compressed_dataset.json") as f:
         return json.load(f)
@@ -92,7 +112,9 @@ def main():
     with open("data/stitch_output_set.json", "w") as f:
         json.dump(full, f, indent=2)
 
-    no_dfa = stitch_output_set(10, include_dfa=False, iters=20)
+    no_dfa = stitch_output_set(
+        10, root_states=None, iters=20, metavariables_anywhere=True
+    )
     with open("data/stitch_output_set_no_dfa.json", "w") as f:
         json.dump(no_dfa, f, indent=2)
 
