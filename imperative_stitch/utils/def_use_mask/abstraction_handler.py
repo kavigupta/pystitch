@@ -33,7 +33,6 @@ class AbstractionHandler(Handler):
 
     def __init__(self, mask, defined_production_idxs, config, head_symbol):
         super().__init__(mask, defined_production_idxs, config)
-        print(self.mask.tree_dist.ordering, head_symbol)
         self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
             self.mask.tree_dist.symbol_to_index[head_symbol]
         )[::-1]
@@ -62,9 +61,7 @@ class AbstractionHandler(Handler):
         assert (
             self._traversal_order_stack.pop() == position
         ), "Incorrect traversal order"
-        print(self.mask.tree_dist.symbols[symbol])
         underlying = self.mask_copy.handlers[-1].on_child_enter(self._position, symbol)
-        print(underlying)
         return CollectingHandler(
             symbol,
             underlying,

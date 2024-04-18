@@ -47,9 +47,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
         )
-        print("PROGRAM")
         prog = parser(program).to_type_annotated_ns_s_exp(dfa, "M")
-        print(ns.render_s_expression(prog))
         annotated = ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
