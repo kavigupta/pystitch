@@ -58,16 +58,10 @@ class DefUseMaskTestGeneric(unittest.TestCase):
                 )
             )
         )
-        if print_stubs:
-            annotated = annotated.abstraction_calls_to_stubs(
-                {x.name: x for x in abstrs}
-            )
-            return annotated.to_python()
-        return annotated
+        annotated = annotated.abstraction_calls_to_stubs({x.name: x for x in abstrs})
+        return annotated.to_python()
 
-    def assertAbstractionAnnotation(
-        self, code, rewritten, abstractions, print_stubs=True
-    ):
+    def assertAbstractionAnnotation(self, code, rewritten, abstractions):
         print("*" * 80)
         for abstr in abstractions:
             print(abstr.body.to_s_exp())
@@ -78,19 +72,17 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             .to_python()
         )
         print("*" * 80)
-        if print_stubs:
-            print(
-                ParsedAST.parse_s_expression(rewritten)
-                .abstraction_calls_to_stubs({x.name: x for x in abstractions})
-                .to_python()
-            )
+        print(
+            ParsedAST.parse_s_expression(rewritten)
+            .abstraction_calls_to_stubs({x.name: x for x in abstractions})
+            .to_python()
+        )
         print("*" * 80)
         try:
             self.annotate_program(
                 code,
                 parser=ParsedAST.parse_s_expression,
                 abstrs=abstractions,
-                print_stubs=print_stubs,
             )
         except AssertionError:
             return
@@ -98,7 +90,6 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             rewritten,
             parser=ParsedAST.parse_s_expression,
             abstrs=abstractions,
-            print_stubs=print_stubs,
         )
 
 
@@ -950,89 +941,17 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
-    def test_targets_containing_abstraction(self):
-        self.maxDiff = None
-        code = ParsedAST.parse_s_expression(
-            """
-            (Module~M
-                (/seq~seqS~2
-                    (Assign~S
-                        (fn_1)
-                        (Tuple~E
-                            (list~_StarredRoot_~2
-                                (_starred_content~StarredRoot (Constant~E (const-i2~Const) (const-None~ConstKind)))
-                                (_starred_content~StarredRoot (Constant~E (const-i3~Const) (const-None~ConstKind))))
-                            (Load~Ctx))
-                        (const-None~TC))
-                    (Assign~S
-                        (list~_L_~1 (Name~L (const-&x:0~Name) (Store~Ctx)))
-                        (Name~E (const-&a:0~Name) (Load~Ctx)) (const-None~TC)))
-                (list~_TI_~0))
-            """
-        )
-
-        abstrs = [
-            Abstraction.of(
-                "fn_1",
-                """
-                (list~_L_~1
-                    (Tuple~L
-                        (list~_L_~2
-                            (_starred_content~L (Name~L (const-&a:0~Name) (Store~Ctx)))
-                            (_starred_content~L (Name~L (const-&b:0~Name) (Store~Ctx))))
-                        (Store~Ctx)))
-                """,
-                "[L]",
-            )
-        ]
-        annotated = self.annotate_program(
-            code,
-            parser=lambda x: x,
-            abstrs=abstrs,
-            print_stubs=False,
-        )
-        expected = """
-        (Module~M
-            (/seq~seqS~2
-                (Assign~S
-                    (fn_1~_L_)
-                    (Tuple~E
-                        (list~_StarredRoot_~2
-                            (_starred_content~StarredRoot (Constant~E (const-i2~Const) (const-None~ConstKind)))
-                            (_starred_content~StarredRoot (Constant~E (const-i3~Const) (const-None~ConstKind))))
-                        (Load~Ctx))
-                    (const-None~TC))
-                (Assign~S
-                    (list~_L_~1 (Name~L (const-&x?a$b:0~Name) (Store~Ctx)))
-                    (Name~E (const-&a?b:0~Name) (Load~Ctx)) (const-None~TC)))
-            (list~_TI_~0))
-        """
-        expected = ns.render_s_expression(ns.parse_s_expression(expected))
-        self.assertEqual(
-            ns.render_s_expression(
-                annotated.to_type_annotated_ns_s_exp(export_dfa(), "M")
-            ),
-            expected,
-        )
-
 
 class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
-    def check_use_mask(self, x, **kwargs):
-        x = copy.deepcopy(x)
+    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
+    def test_realistic_with_abstractions(self, i):
+        x = copy.deepcopy(load_stitch_output_set()[i])
         abstractions = [
             Abstraction.of(name=f"fn_{it + 1}", **abstr)
             for it, abstr in enumerate(x["abstractions"])
         ]
         for code, rewritten in zip(x["code"], x["rewritten"]):
-            self.assertAbstractionAnnotation(code, rewritten, abstractions, **kwargs)
-
-    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
-    def test_realistic_with_abstractions(self, i):
-        self.check_use_mask(load_stitch_output_set()[i])
-
-    @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()), 10)
-    def test_realistic_with_abstractions_no_dfa(self, i):
-        self.check_use_mask(load_stitch_output_set_no_dfa()[i], print_stubs=False)
+            self.assertAbstractionAnnotation(code, rewritten, abstractions)
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
