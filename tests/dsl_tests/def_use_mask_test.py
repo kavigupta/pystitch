@@ -23,6 +23,7 @@ from tests.utils import (
 
 class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_alternates(self, chosen, alts):
+        print(chosen)
         self.assertIn(chosen, alts)
         mat = match_either(chosen)
         if not mat:
@@ -41,24 +42,28 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         return f"const-&{name}:{scope}~Name"
 
     def annotate_program(
-        self, program, parser=ParsedAST.parse_python_module, abstrs=()
+        self, program, parser=ParsedAST.parse_python_module, abstrs=(), print_stubs=True
     ):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
         )
+        print("PROGRAM")
+        prog = parser(program).to_type_annotated_ns_s_exp(dfa, "M")
+        print(ns.render_s_expression(prog))
         annotated = ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
-                    parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
+                    prog,
                     fam.tree_distribution_skeleton,
                     self.annotate_alternates,
                 )
             )
         )
-        annotated = annotated.abstraction_calls_to_stubs({x.name: x for x in abstrs})
-        return annotated.to_python()
+        if print_stubs:
+            annotated = annotated.abstraction_calls_to_stubs({x.name: x for x in abstrs})
+            return annotated.to_python()
 
-    def assertAbstractionAnnotation(self, code, rewritten, abstractions):
+    def assertAbstractionAnnotation(self, code, rewritten, abstractions, print_stubs=True):
         print("*" * 80)
         for abstr in abstractions:
             print(abstr.body.to_s_exp())
@@ -69,17 +74,19 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             .to_python()
         )
         print("*" * 80)
-        print(
-            ParsedAST.parse_s_expression(rewritten)
-            .abstraction_calls_to_stubs({x.name: x for x in abstractions})
-            .to_python()
-        )
+        if print_stubs:
+            print(
+                ParsedAST.parse_s_expression(rewritten)
+                .abstraction_calls_to_stubs({x.name: x for x in abstractions})
+                .to_python()
+            )
         print("*" * 80)
         try:
             self.annotate_program(
                 code,
                 parser=ParsedAST.parse_s_expression,
                 abstrs=abstractions,
+                print_stubs=print_stubs,
             )
         except AssertionError:
             return
@@ -87,6 +94,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             rewritten,
             parser=ParsedAST.parse_s_expression,
             abstrs=abstractions,
+            print_stubs=print_stubs,
         )
 
 
@@ -940,14 +948,15 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
-    def check_use_mask(self, x):
+
+    def check_use_mask(self, x, **kwargs):
         x = copy.deepcopy(x)
         abstractions = [
             Abstraction.of(name=f"fn_{it + 1}", **abstr)
             for it, abstr in enumerate(x["abstractions"])
         ]
         for code, rewritten in zip(x["code"], x["rewritten"]):
-            self.assertAbstractionAnnotation(code, rewritten, abstractions)
+            self.assertAbstractionAnnotation(code, rewritten, abstractions, **kwargs)
 
     @expand_with_slow_tests(len(load_stitch_output_set()), 10)
     def test_realistic_with_abstractions(self, i):
@@ -955,7 +964,7 @@ class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
 
     @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()), 10)
     def test_realistic_with_abstractions_no_dfa(self, i):
-        self.check_use_mask(load_stitch_output_set_no_dfa()[i])
+        self.check_use_mask(load_stitch_output_set_no_dfa()[i], print_stubs=False)
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):

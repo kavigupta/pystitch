@@ -33,6 +33,7 @@ class AbstractionHandler(Handler):
 
     def __init__(self, mask, defined_production_idxs, config, head_symbol):
         super().__init__(mask, defined_production_idxs, config)
+        print(self.mask.tree_dist.ordering, head_symbol)
         self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
             self.mask.tree_dist.symbol_to_index[head_symbol]
         )[::-1]
@@ -48,6 +49,7 @@ class AbstractionHandler(Handler):
         )
         self._body_handler = self.body_traversal_coroutine(self.body, 0)
         self._is_defining = None
+        self._position = None
         self._variables_to_reuse = {}
 
         self._iterate_body(None)
@@ -60,12 +62,16 @@ class AbstractionHandler(Handler):
         assert (
             self._traversal_order_stack.pop() == position
         ), "Incorrect traversal order"
+        print(self.mask.tree_dist.symbols[symbol])
+        underlying = self.mask_copy.handlers[-1].on_child_enter(self._position, symbol)
+        print(underlying)
         return CollectingHandler(
             symbol,
-            super().on_child_enter(position, symbol),
+            underlying,
         )
 
     def on_child_exit(self, position: int, symbol: int, child: "Handler"):
+        self.mask_copy.handlers[-1].on_child_exit(self._position, symbol, child)
         self._iterate_body(child.node)
 
     def is_defining(self, position: int) -> bool:
@@ -80,8 +86,9 @@ class AbstractionHandler(Handler):
                 node = self._variables_to_reuse[name]
             else:
                 is_defining = self.mask_copy.handlers[-1].is_defining(position)
-                node = yield is_defining
+                node = yield is_defining, position
                 self._variables_to_reuse[name] = node
+                return
         sym = self.mask.tree_dist.symbol_to_index[node.symbol]
         self.mask_copy.on_entry(position, sym)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
@@ -98,7 +105,7 @@ class AbstractionHandler(Handler):
                 otherwise the argument that was just processed.
         """
         try:
-            self._is_defining = self._body_handler.send(node)
+            self._is_defining, self._position = self._body_handler.send(node)
         except StopIteration:
             pass
 
@@ -108,7 +115,7 @@ class AbstractionHandler(Handler):
 
 class CollectingHandler(Handler):
     """
-    Wrapper around another handler that collects the node as it is being created.
+    Wrapper around another handler that forwards the node being created to a recorder handler.
     """
 
     def __init__(self, sym, underlying_handler):
