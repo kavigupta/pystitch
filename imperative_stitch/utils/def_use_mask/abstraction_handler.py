@@ -131,7 +131,6 @@ class AbstractionHandler(Handler):
 
     @property
     def defined_symbols(self):
-        print("defined symbols", self.mask_copy.handlers[-1])
         return (
             self.mask_copy.handlers[-1].defined_symbols
             if hasattr(self.mask_copy.handlers[-1], "defined_symbols")
