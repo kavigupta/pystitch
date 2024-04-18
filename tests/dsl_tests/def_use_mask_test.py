@@ -6,7 +6,7 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import load_stitch_output_set
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set, load_stitch_output_set_no_dfa
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
@@ -937,15 +937,22 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
-    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
-    def test_realistic_with_abstractions(self, i):
-        x = copy.deepcopy(load_stitch_output_set()[i])
+    def check_use_mask(self, x):
+        x = copy.deepcopy(x)
         abstractions = [
             Abstraction.of(name=f"fn_{it + 1}", **abstr)
             for it, abstr in enumerate(x["abstractions"])
         ]
         for code, rewritten in zip(x["code"], x["rewritten"]):
             self.assertAbstractionAnnotation(code, rewritten, abstractions)
+
+    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
+    def test_realistic_with_abstractions(self, i):
+        self.check_use_mask(load_stitch_output_set()[i])
+
+    @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()), 10)
+    def test_realistic_with_abstractions(self, i):
+        self.check_use_mask(load_stitch_output_set_no_dfa()[i])
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
