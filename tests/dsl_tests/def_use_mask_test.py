@@ -58,11 +58,15 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             )
         )
         if print_stubs:
-            annotated = annotated.abstraction_calls_to_stubs({x.name: x for x in abstrs})
+            annotated = annotated.abstraction_calls_to_stubs(
+                {x.name: x for x in abstrs}
+            )
             return annotated.to_python()
         return None
 
-    def assertAbstractionAnnotation(self, code, rewritten, abstractions, print_stubs=True):
+    def assertAbstractionAnnotation(
+        self, code, rewritten, abstractions, print_stubs=True
+    ):
         print("*" * 80)
         for abstr in abstractions:
             print(abstr.body.to_s_exp())
@@ -947,7 +951,6 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
-
     def check_use_mask(self, x, **kwargs):
         x = copy.deepcopy(x)
         abstractions = [
