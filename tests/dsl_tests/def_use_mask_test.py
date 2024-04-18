@@ -6,7 +6,10 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import load_stitch_output_set, load_stitch_output_set_no_dfa
+from imperative_stitch.data.stitch_output_set import (
+    load_stitch_output_set,
+    load_stitch_output_set_no_dfa,
+)
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
