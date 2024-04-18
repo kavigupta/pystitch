@@ -60,6 +60,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         if print_stubs:
             annotated = annotated.abstraction_calls_to_stubs({x.name: x for x in abstrs})
             return annotated.to_python()
+        return None
 
     def assertAbstractionAnnotation(self, code, rewritten, abstractions, print_stubs=True):
         print("*" * 80)
