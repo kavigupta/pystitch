@@ -1,6 +1,5 @@
 import ast
 import copy
-import json
 import sys
 import unittest
 
@@ -13,10 +12,7 @@ from imperative_stitch.data.stitch_output_set import (
 )
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import match_either
-from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import (
     cwq,
