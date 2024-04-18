@@ -2,7 +2,7 @@ import json
 from functools import lru_cache
 
 import tqdm
-from permacache import permacache, stable_hash
+from permacache import drop_if_equal, permacache, stable_hash
 
 from imperative_stitch.compress.julia_stitch import run_julia_stitch
 from imperative_stitch.data.compression_testing_code import compression_testing_code
@@ -11,25 +11,29 @@ from imperative_stitch.parser import python_to_s_exp
 
 @permacache(
     "imperative_stitch/data/stitch_output_set/run_stitch_cached_11",
-    key_function=dict(c=stable_hash),
+    key_function=dict(
+        c=stable_hash, include_dfa=drop_if_equal(True), iters=drop_if_equal(1)
+    ),
 )
-def run_stitch_cached(c):
+def run_stitch_cached(c, include_dfa=True, iters=1):
     return run_julia_stitch(
         c,
         stitch_jl_dir="../Stitch.jl/",
-        iters=1,
+        iters=iters,
         max_arity=4,
         quiet=False,
         # TODO we should be able to root abstractions at E
         root_states=("S", "seqS"),
         metavariable_statements=False,
+        include_dfa=include_dfa,
     )
 
 
 @permacache(
     "imperative_stitch/data/stitch_output_set/stitch_output_set_15",
+    key_function=dict(include_dfa=drop_if_equal(True), iters=drop_if_equal(1)),
 )
-def stitch_output_set(amount):
+def stitch_output_set(amount, include_dfa=True, iters=1):
     sets = compression_testing_code(amount * 10)
 
     results = []
@@ -45,7 +49,9 @@ def stitch_output_set(amount):
             for code in s
         ]
 
-        abstractions, rewritten = run_stitch_cached(c)
+        abstractions, rewritten = run_stitch_cached(
+            c, include_dfa=include_dfa, iters=iters
+        )
 
         result = dict(
             code=c,
@@ -85,6 +91,10 @@ def main():
     full = stitch_output_set(100)
     with open("data/stitch_output_set.json", "w") as f:
         json.dump(full, f, indent=2)
+
+    no_dfa = stitch_output_set(10, include_dfa=False, iters=20)
+    with open("data/stitch_output_set_no_dfa.json", "w") as f:
+        json.dump(no_dfa, f, indent=2)
 
 
 if __name__ == "__main__":
