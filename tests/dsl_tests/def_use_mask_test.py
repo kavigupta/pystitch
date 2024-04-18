@@ -1,5 +1,6 @@
 import ast
 import copy
+import json
 import sys
 import unittest
 
@@ -11,7 +12,11 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set_no_dfa,
 )
 from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
+from imperative_stitch.utils.classify_nodes import export_dfa
+from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import match_either
+from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import (
     cwq,
@@ -62,7 +67,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
                 {x.name: x for x in abstrs}
             )
             return annotated.to_python()
-        return None
+        return annotated
 
     def assertAbstractionAnnotation(
         self, code, rewritten, abstractions, print_stubs=True
@@ -947,6 +952,71 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
                 a?b = a?b
                 """
             ).strip(),
+        )
+
+    def test_targets_containing_abstraction(self):
+        self.maxDiff = None
+        code = ParsedAST.parse_s_expression(
+            """
+            (Module~M
+                (/seq~seqS~2
+                    (Assign~S
+                        (fn_1)
+                        (Tuple~E
+                            (list~_StarredRoot_~2
+                                (_starred_content~StarredRoot (Constant~E (const-i2~Const) (const-None~ConstKind)))
+                                (_starred_content~StarredRoot (Constant~E (const-i3~Const) (const-None~ConstKind))))
+                            (Load~Ctx))
+                        (const-None~TC))
+                    (Assign~S
+                        (list~_L_~1 (Name~L (const-&x:0~Name) (Store~Ctx)))
+                        (Name~E (const-&a:0~Name) (Load~Ctx)) (const-None~TC)))
+                (list~_TI_~0))
+            """
+        )
+
+        abstrs = [
+            Abstraction.of(
+                "fn_1",
+                """
+                (list~_L_~1
+                    (Tuple~L
+                        (list~_L_~2
+                            (_starred_content~L (Name~L (const-&a:0~Name) (Store~Ctx)))
+                            (_starred_content~L (Name~L (const-&b:0~Name) (Store~Ctx))))
+                        (Store~Ctx)))
+                """,
+                "[L]",
+            )
+        ]
+        annotated = self.annotate_program(
+            code,
+            parser=lambda x: x,
+            abstrs=abstrs,
+            print_stubs=False,
+        )
+        expected = """
+        (Module~M
+            (/seq~seqS~2
+                (Assign~S
+                    (fn_1~_L_)
+                    (Tuple~E
+                        (list~_StarredRoot_~2
+                            (_starred_content~StarredRoot (Constant~E (const-i2~Const) (const-None~ConstKind)))
+                            (_starred_content~StarredRoot (Constant~E (const-i3~Const) (const-None~ConstKind))))
+                        (Load~Ctx))
+                    (const-None~TC))
+                (Assign~S
+                    (list~_L_~1 (Name~L (const-&x?a$b:0~Name) (Store~Ctx)))
+                    (Name~E (const-&a?b:0~Name) (Load~Ctx)) (const-None~TC)))
+            (list~_TI_~0))
+        """
+        expected = ns.render_s_expression(ns.parse_s_expression(expected))
+        self.assertEqual(
+            ns.render_s_expression(
+                annotated.to_type_annotated_ns_s_exp(export_dfa(), "M")
+            ),
+            expected,
         )
 
 
