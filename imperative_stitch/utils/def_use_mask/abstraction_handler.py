@@ -149,14 +149,15 @@ class AbstractionBodyTraverser:
 
     def handle_variable(self, node, position):
         # If the node is a variable, check if it is one that has already been processed
-        if node.symbol in self._variables_to_reuse:
+        name = node.symbol
+        if name in self._variables_to_reuse:
             yield from self.body_traversal_coroutine(
-                self._variables_to_reuse[node.symbol], position
+                self._variables_to_reuse[name], position
             )
         else:
             is_defining = self._mask_copy.handlers[-1].is_defining(position)
             node = yield is_defining, position
-            self._variables_to_reuse[node.symbol] = node
+            self._variables_to_reuse[name] = node
 
     def new_argument(self, node):
         """
