@@ -954,7 +954,7 @@ class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
         self.check_use_mask(load_stitch_output_set()[i])
 
     @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()), 10)
-    def test_realistic_with_abstractions(self, i):
+    def test_realistic_with_abstractions_no_dfa(self, i):
         self.check_use_mask(load_stitch_output_set_no_dfa()[i])
 
 
