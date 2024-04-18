@@ -7,10 +7,7 @@ from permacache import permacache, stable_hash
 from imperative_stitch.analyze_program.extract.errors import NotApplicable
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.run_extraction import convert_output
-from imperative_stitch.data.stitch_output_set import (
-    load_stitch_output_set,
-    load_stitch_output_set_no_dfa,
-)
+from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser.convert import s_exp_to_python
 from imperative_stitch.parser.parsed_ast import AbstractionCallAST, ParsedAST
 from imperative_stitch.utils.run_code import run_python_with_timeout
@@ -611,7 +608,7 @@ class MultiKindTest(unittest.TestCase):
 
 
 class RealDataTest(unittest.TestCase):
-    def check_is_parseable(self, eg, check_stubs_pragmas=True):
+    def check_is_parseable(self, eg):
         eg = copy.deepcopy(eg)
         abstr = {
             f"fn_{i}": Abstraction.of(name=f"fn_{i}", **abstr_dict)
@@ -620,10 +617,7 @@ class RealDataTest(unittest.TestCase):
         print(abstr)
         for code, rewritten in zip(eg["code"], eg["rewritten"]):
             code = s_exp_to_python(code)
-            if check_stubs_pragmas:
-                ParsedAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(
-                    abstr
-                )
+            ParsedAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(abstr)
             out = (
                 ParsedAST.parse_s_expression(rewritten)
                 .abstraction_calls_to_bodies_recursively(abstr)
@@ -639,23 +633,16 @@ class RealDataTest(unittest.TestCase):
                 out,
                 code,
             )
-            if check_stubs_pragmas:
-                check_no_crash = (
-                    ParsedAST.parse_s_expression(rewritten)
-                    .abstraction_calls_to_bodies(abstr, pragmas=True)
-                    .to_python()
-                )
-                self.assertIsNotNone(check_no_crash)
+            check_no_crash = (
+                ParsedAST.parse_s_expression(rewritten)
+                .abstraction_calls_to_bodies(abstr, pragmas=True)
+                .to_python()
+            )
+            self.assertIsNotNone(check_no_crash)
 
     @expand_with_slow_tests(len(load_stitch_output_set()))
     def test_realistic_parseable(self, i):
         self.check_is_parseable(load_stitch_output_set()[i])
-
-    @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()))
-    def test_realistic_parseable_no_dfa(self, i):
-        self.check_is_parseable(
-            load_stitch_output_set_no_dfa()[i], check_stubs_pragmas=False
-        )
 
     def currently_invalid(self, abstrs):
         return any(abstr["dfa_choicevars"] for abstr in abstrs)
