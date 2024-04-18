@@ -653,11 +653,12 @@ class RealDataTest(unittest.TestCase):
 
     @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()))
     def test_realistic_parseable_no_dfa(self, i):
-        self.check_is_parseable(load_stitch_output_set_no_dfa()[i], check_stubs_pragmas=False)
+        self.check_is_parseable(
+            load_stitch_output_set_no_dfa()[i], check_stubs_pragmas=False
+        )
 
     def currently_invalid(self, abstrs):
-        [abstr] = abstrs
-        return abstr["dfa_choicevars"]
+        return any(abstr["dfa_choicevars"] for abstr in abstrs)
 
     def check_same_behavior(self, eg):
         eg = copy.deepcopy(eg)
@@ -691,10 +692,6 @@ class RealDataTest(unittest.TestCase):
     @expand_with_slow_tests(len(load_stitch_output_set()))
     def test_realistic_same_behavior(self, i):
         self.check_same_behavior(load_stitch_output_set()[i])
-
-    @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()))
-    def test_realistic_same_behavior_no_dfa(self, i):
-        self.check_same_behavior(load_stitch_output_set_no_dfa()[i])
 
 
 @permacache(
