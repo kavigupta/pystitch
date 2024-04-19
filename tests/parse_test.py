@@ -599,9 +599,8 @@ class AbstractionCallsTest(unittest.TestCase):
 
 
 class AbstractionBodiesTest(unittest.TestCase):
-    @parameterized.expand(range(len(load_stitch_output_set())))
-    def test_realistic_with_abstractions(self, i):
-        x = copy.deepcopy(load_stitch_output_set()[i])
+    def check_abstractions_in(self, x):
+        x = copy.deepcopy(x)
         for abstr in x["abstractions"]:
             body = ParsedAST.parse_s_expression(abstr["body"])
             body_ns_s_exp = ns.render_s_expression(
@@ -609,3 +608,7 @@ class AbstractionBodiesTest(unittest.TestCase):
             )
             body_from_ns_s_exp = ParsedAST.parse_s_expression(body_ns_s_exp).to_s_exp()
             self.assertEqual(abstr["body"], body_from_ns_s_exp)
+
+    @parameterized.expand(range(len(load_stitch_output_set())))
+    def test_realistic_with_abstractions(self, i):
+        self.check_abstractions_in(load_stitch_output_set()[i])

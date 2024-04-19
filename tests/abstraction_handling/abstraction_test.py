@@ -516,14 +516,17 @@ class AbstractionRenderingTest(unittest.TestCase):
             fn.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
         )
 
-    @parameterized.expand(range(len(load_stitch_output_set())))
-    def test_abstraction_bodies_in_order_no_crash(self, i):
-        x = copy.deepcopy(load_stitch_output_set()[i])
+    def check_abstraction_bodies_in(self, x):
+        x = copy.deepcopy(x)
         abstractions = [
             Abstraction.of(**abstraction, name=f"fn_{idx}")
             for idx, abstraction in enumerate(x["abstractions"], 1)
         ]
         python_node_ordering_with_abstractions(abstractions)
+
+    @parameterized.expand(range(len(load_stitch_output_set())))
+    def test_abstraction_bodies_in_order_no_crash(self, i):
+        self.check_abstraction_bodies_in(load_stitch_output_set()[i])
 
 
 class AbstractionRenderingAnnieSetTest(unittest.TestCase):
