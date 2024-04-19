@@ -608,18 +608,19 @@ class MultiKindTest(unittest.TestCase):
 
 
 class RealDataTest(unittest.TestCase):
-    @expand_with_slow_tests(len(load_stitch_output_set()))
-    def test_realistic_parseable(self, i):
-        eg = copy.deepcopy(load_stitch_output_set()[i])
-        abstr_dict = eg["abstractions"][0].copy()
-        print(abstr_dict)
-        abstr = dict(fn_1=Abstraction.of(name="fn_1", **abstr_dict))
+    def check_is_parseable(self, eg):
+        eg = copy.deepcopy(eg)
+        abstr = {
+            f"fn_{i}": Abstraction.of(name=f"fn_{i}", **abstr_dict)
+            for i, abstr_dict in enumerate(eg["abstractions"], 1)
+        }
+        print(abstr)
         for code, rewritten in zip(eg["code"], eg["rewritten"]):
             code = s_exp_to_python(code)
             ParsedAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(abstr)
             out = (
                 ParsedAST.parse_s_expression(rewritten)
-                .abstraction_calls_to_bodies(abstr)
+                .abstraction_calls_to_bodies_recursively(abstr)
                 .to_python()
             )
             print("#" * 80)
@@ -639,13 +640,15 @@ class RealDataTest(unittest.TestCase):
             )
             self.assertIsNotNone(check_no_crash)
 
-    def currently_invalid(self, abstrs):
-        [abstr] = abstrs
-        return abstr["dfa_choicevars"]
-
     @expand_with_slow_tests(len(load_stitch_output_set()))
-    def test_realistic_same_behavior(self, i):
-        eg = copy.deepcopy(load_stitch_output_set()[i])
+    def test_realistic_parseable(self, i):
+        self.check_is_parseable(load_stitch_output_set()[i])
+
+    def currently_invalid(self, abstrs):
+        return any(abstr["dfa_choicevars"] for abstr in abstrs)
+
+    def check_same_behavior(self, eg):
+        eg = copy.deepcopy(eg)
         if self.currently_invalid(eg["abstractions"]):
             return
         try:
@@ -672,6 +675,10 @@ class RealDataTest(unittest.TestCase):
                 rewr,
                 extracted=abstraction,
             )
+
+    @expand_with_slow_tests(len(load_stitch_output_set()))
+    def test_realistic_same_behavior(self, i):
+        self.check_same_behavior(load_stitch_output_set()[i])
 
 
 @permacache(
