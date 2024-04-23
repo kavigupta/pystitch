@@ -7,10 +7,12 @@ from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX, match_eit
 class Handler(ABC):
     """
     Corresponds to a given node in the ns.SExpression AST.
-    Keeps track of a set of defined production indices.
+    Keeps track of a list of defined production indices,
+        in order of definition.
     """
 
     def __init__(self, mask, defined_production_idxs, config):
+        assert isinstance(defined_production_idxs, list)
         self.mask = mask
         self.defined_production_idxs = defined_production_idxs
         self.config = config
@@ -41,10 +43,11 @@ class Handler(ABC):
             to the child.
         """
 
-    def currently_defined_indices(self) -> set[int]:
+    def currently_defined_indices(self) -> list[int]:
         """
-        Returns the set of currently defined symbols.
+        Returns the list of currently defined symbols, in order of definition.
         """
+        assert isinstance(self.defined_production_idxs, list)
         return self.defined_production_idxs
 
     @abstractmethod
@@ -117,6 +120,8 @@ def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handl
     # pylint: disable=cyclic-import
     from .abstraction_handler import AbstractionHandler
     from .defining_statement_handler import defining_statement_handlers
+
+    assert isinstance(defined_production_idxs, list)
 
     symbol, _ = mask.tree_dist.symbols[symbol]
     if symbol.startswith("fn_"):

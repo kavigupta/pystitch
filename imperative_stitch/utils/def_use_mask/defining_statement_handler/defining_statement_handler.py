@@ -17,7 +17,7 @@ class DefiningStatementHandler(ConstructHandler):
         assert isinstance(self.targeted, list)
         assert isinstance(self.define_symbols_on_exit, str)
         self._targeted_positions = [self.child_fields[child] for child in self.targeted]
-        self.defined_symbols = set()
+        self.defined_symbols = []
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position in self._targeted_positions:
@@ -28,9 +28,9 @@ class DefiningStatementHandler(ConstructHandler):
         if position in self._targeted_positions:
             print(child)
             print(child.defined_symbols)
-            self.defined_symbols |= child.defined_symbols
+            self.defined_symbols += child.defined_symbols
         if position == self.child_fields[self.define_symbols_on_exit]:
-            self.defined_production_idxs |= self.defined_symbols
+            self.defined_production_idxs += self.defined_symbols
         super().on_child_exit(position, symbol, child)
 
     def is_defining(self, position: int) -> bool:
@@ -40,7 +40,7 @@ class DefiningStatementHandler(ConstructHandler):
 class ChildFrameCreatorHandler(DefiningStatementHandler):
     def __init__(self, mask, defined_production_idxs, config):
         self.original_defined_production_idxs = defined_production_idxs
-        super().__init__(mask, set(defined_production_idxs), config)
+        super().__init__(mask, list(defined_production_idxs), config)
 
 
 class AssignHandler(DefiningStatementHandler):

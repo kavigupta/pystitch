@@ -70,7 +70,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         if not self.handlers:
             assert position == symbol == 0
-            self.handlers.append(DefaultHandler(self, set(), self.config))
+            self.handlers.append(DefaultHandler(self, [], self.config))
         else:
             self.handlers.append(self.handlers[-1].on_child_enter(position, symbol))
 
