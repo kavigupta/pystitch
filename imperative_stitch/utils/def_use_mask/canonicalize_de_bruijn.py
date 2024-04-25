@@ -1,3 +1,4 @@
+import copy
 import neurosym as ns
 
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
@@ -75,11 +76,22 @@ def get_defined_indices(mask):
     return currently_defined
 
 
-def uncanonicalize_de_brujin(s_exp_de_bruijn):
-    if not s_exp_de_bruijn.symbol.startswith("dbvar-"):
-        return ns.SExpression(
-            s_exp_de_bruijn.symbol,
-            [uncanonicalize_de_brujin(child) for child in s_exp_de_bruijn.children],
-        )
-    idx = get_idx(s_exp_de_bruijn)
-    return ns.SExpression(f"const-&_{idx}:0~Name", ())
+def uncanonicalize_de_brujin(tree_dist, s_exp_de_bruijn):
+    s_exp_de_bruijn = copy.deepcopy(s_exp_de_bruijn)
+
+    def replace_de_brujin(node):
+        if node.symbol.startswith("dbvar-"):
+            idx = get_idx(node)
+            print(node, idx)
+        return node
+
+    ns.collect_preorder_symbols(
+        s_exp_de_bruijn, tree_dist, replace_node_midstream=replace_de_brujin
+    )
+    # if not s_exp_de_bruijn.symbol.startswith("dbvar-"):
+    #     return ns.SExpression(
+    #         s_exp_de_bruijn.symbol,
+    #         [uncanonicalize_de_brujin(child) for child in s_exp_de_bruijn.children],
+    #     )
+    # idx = get_idx(s_exp_de_bruijn)
+    # return ns.SExpression(f"const-&_{idx}:0~Name", ())
