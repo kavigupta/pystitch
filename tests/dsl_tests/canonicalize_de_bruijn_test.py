@@ -1,33 +1,14 @@
-import ast
-import copy
-import sys
 import unittest
 from fractions import Fraction
 
 import neurosym as ns
 import numpy as np
 
-from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import (
-    load_stitch_output_set,
-    load_stitch_output_set_no_dfa,
-)
-from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
+from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
-    uncanonicalize_de_bruijn,
-)
-from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
-from imperative_stitch.utils.def_use_mask.names import match_either
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
-from tests.dsl_tests.dsl_test import fit_to
-from tests.utils import (
-    cwq,
-    expand_with_slow_tests,
-    load_annies_compressed_individual_programs,
-    small_set_runnable_code_examples,
-)
+from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
 
 
 class CanonicalizeDeBruijnTest(unittest.TestCase):
@@ -102,8 +83,8 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
     @expand_with_slow_tests(1000)
     def test_semantics(self, i):
         eg = small_set_runnable_code_examples()[i]
-        from .def_use_mask_test import DefUseMaskTest
         from ..extract.rewrite_semantic_test import RewriteSemanticsTest
+        from .def_use_mask_test import DefUseMaskTest
 
         code_original = eg["solution"]
         DefUseMaskTest().annotate_program(code_original)
@@ -125,7 +106,6 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
 
 
 class LikelihoodDeBruijnTest(unittest.TestCase):
-
     def test_likelihood(self):
         fit_to = ["x = 2; y = x; y = x"]
         # this program is $0 = 2; $0 = $1; $1 = $2

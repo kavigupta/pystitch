@@ -59,6 +59,7 @@ class DSLSubset:
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
         """
+        # pylint: disable=cyclic-import
         from .def_use_mask.canonicalize_de_bruijn import (
             canonicalized_python_name_as_leaf,
             create_de_brujin,
