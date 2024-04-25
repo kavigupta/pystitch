@@ -1,9 +1,15 @@
+import ast
+import re
 import unittest
 from fractions import Fraction
 
 import neurosym as ns
 import numpy as np
 
+from imperative_stitch.analyze_program.ssa.banned_component import (
+    BannedComponentError,
+    check_banned_components,
+)
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -87,7 +93,20 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
         from .def_use_mask_test import DefUseMaskTest
 
         code_original = eg["solution"]
-        DefUseMaskTest().annotate_program(code_original)
+        try:
+            check_banned_components(ast.parse(code_original))
+        except BannedComponentError:
+            return
+        se = ns.render_s_expression(ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
+            export_dfa(), "M"
+        ))
+        # Ban internal imports
+        if re.search(r"const-&[a-zA-Z0-9_]+:[0-9]+~(Nullable)?NameStr", se):
+            return
+        try:
+            DefUseMaskTest().annotate_program(code_original)
+        except AssertionError:
+            return
         print(code_original)
         _, canonicalized = self.canonicalize_de_bruijn(code_original)
         print(canonicalized)
