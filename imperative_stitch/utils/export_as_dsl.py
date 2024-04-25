@@ -59,10 +59,19 @@ class DSLSubset:
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
         """
+        from .def_use_mask.canonicalize_de_bruijn import (
+            canonicalized_python_name_as_leaf,
+            create_de_brujin,
+        )
+
+        de_brujin_new = create_de_brujin(0, 1).symbol
+        num_vars = 0
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
         for program in s_exps:
             for node in traverse(program):
+                if node.symbol == de_brujin_new:
+                    num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = unclean_type(state)
                 assert isinstance(node, ns.SExpression)
@@ -70,6 +79,8 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
+        for var in range(num_vars):
+            leaves["Name"].add(canonicalized_python_name_as_leaf(var))
         return cls(
             lengths_by_sequence_type={
                 k: sorted(v) for k, v in lengths_by_list_type.items()
@@ -87,6 +98,10 @@ class DSLSubset:
             for seq_type, lengths in self.lengths_by_sequence_type.items()
         }
         return DSLSubset(lengths_by_sequence_type=lengths_new, leaves=self.leaves)
+
+
+def get_dfa_state(sym):
+    return sym.split(SEPARATOR)[1]
 
 
 def traverse(s_exp):

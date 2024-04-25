@@ -1,24 +1,41 @@
 import copy
+
 import neurosym as ns
 
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
+from imperative_stitch.utils.export_as_dsl import (
+    SEPARATOR,
+    DSLSubset,
+    create_dsl,
+    get_dfa_state,
+)
+
+
+def canonicalized_python_name(name):
+    return f"__{name}"
+
+
+def canonicalized_python_name_as_leaf(name, use_type=False):
+    result = f"const-&{canonicalized_python_name(name)}:0"
+    if use_type:
+        result += SEPARATOR + "Name"
+    return result
 
 
 def create_de_brujin(idx, num_explicit_vars):
     if idx <= num_explicit_vars:
-        return ns.SExpression(f"dbvar-{idx}", ())
+        return ns.SExpression(f"dbvar-{idx}{SEPARATOR}Name", ())
     return ns.SExpression(
-        "dbvar-successor",
+        "dbvar-successor~Name",
         (create_de_brujin(idx - 1, num_explicit_vars),),
     )
 
 
 def get_idx(s_exp_de_bruijn):
     assert s_exp_de_bruijn.symbol.startswith("dbvar-")
-    after = s_exp_de_bruijn.symbol[len("dbvar-") :]
+    after = s_exp_de_bruijn.symbol.split(SEPARATOR)[0][len("dbvar-") :]
     if after == "successor":
         assert len(s_exp_de_bruijn.children) == 1
         return get_idx(s_exp_de_bruijn.children[0]) + 1
@@ -29,9 +46,7 @@ def get_idx(s_exp_de_bruijn):
 def canonicalize_de_bruijn(program, dfa, root_node, abstrs, num_explicit_vars):
     s_exp = program.to_type_annotated_ns_s_exp(dfa, root_node)
 
-    dsl = create_dsl(
-        dfa, DSLSubset.from_program(dfa, program, root=root_node), root_node
-    )
+    dsl = create_dsl(dfa, DSLSubset.from_type_annotated_s_exps([s_exp]), root_node)
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=[
@@ -76,22 +91,58 @@ def get_defined_indices(mask):
     return currently_defined
 
 
-def uncanonicalize_de_brujin(tree_dist, s_exp_de_bruijn):
-    s_exp_de_bruijn = copy.deepcopy(s_exp_de_bruijn)
+def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
+    if isinstance(s_exp_de_bruijn, str):
+        s_exp_de_bruijn = ns.parse_s_expression(s_exp_de_bruijn)
+    else:
+        assert isinstance(s_exp_de_bruijn, ns.SExpression)
+        s_exp_de_bruijn = copy.deepcopy(s_exp_de_bruijn)
+    dsl = create_dsl(
+        dfa,
+        DSLSubset.from_type_annotated_s_exps([s_exp_de_bruijn]),
+        get_dfa_state(s_exp_de_bruijn.symbol),
+    )
+    fam = ns.BigramProgramDistributionFamily(
+        dsl,
+        additional_preorder_masks=[
+            lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
+        ],
+        include_type_preorder_mask=True,
+        node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
+    )
+    tree_dist = fam.tree_distribution_skeleton
 
-    def replace_de_brujin(node):
+    def replace_de_brujin(node, mask):
+        indices = get_defined_indices(mask)
+        idx = get_idx(node)
+        if idx == 0:
+            return ns.SExpression(
+                canonicalized_python_name_as_leaf(len(indices), use_type=True), ()
+            )
+        sym_idx = indices[-idx]
+        sym, _ = tree_dist.symbols[sym_idx]
+        return ns.SExpression(sym, ())
+
+    id_to_new = {}
+
+    def traverse_replacer(node, mask):
         if node.symbol.startswith("dbvar-"):
-            idx = get_idx(node)
-            print(node, idx)
+            new_node = replace_de_brujin(node, mask)
+            id_to_new[id(node)] = new_node
+            return new_node
         return node
 
-    ns.collect_preorder_symbols(
-        s_exp_de_bruijn, tree_dist, replace_node_midstream=replace_de_brujin
+    list(
+        ns.collect_preorder_symbols(
+            s_exp_de_bruijn,
+            tree_dist,
+            replace_node_midstream=traverse_replacer,
+        )
     )
-    # if not s_exp_de_bruijn.symbol.startswith("dbvar-"):
-    #     return ns.SExpression(
-    #         s_exp_de_bruijn.symbol,
-    #         [uncanonicalize_de_brujin(child) for child in s_exp_de_bruijn.children],
-    #     )
-    # idx = get_idx(s_exp_de_bruijn)
-    # return ns.SExpression(f"const-&_{idx}:0~Name", ())
+
+    def replace(node):
+        if id(node) in id_to_new:
+            return id_to_new[id(node)]
+        return ns.SExpression(node.symbol, [replace(child) for child in node.children])
+
+    return replace(s_exp_de_bruijn)

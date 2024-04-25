@@ -7,7 +7,6 @@ from typing import List, Union
 
 import neurosym as ns
 
-
 from ..utils.recursion import limit_to_size, no_recursionlimit
 from .splice import Splice
 from .symbol import Symbol, create_descoper
@@ -108,6 +107,17 @@ class ParsedAST(ABC):
         )
 
         return canonicalize_de_bruijn(self, dfa, start_state, abstrs, de_bruijn_limit)
+
+    @classmethod
+    def from_type_annotated_de_bruijn_ns_s_exp(cls, s_exp, dfa, abstrs=()):
+        # pylint: disable=cyclic-import
+        from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
+            uncanonicalize_de_bruijn,
+        )
+
+        s_exp = uncanonicalize_de_bruijn(dfa, s_exp, abstrs)
+
+        return cls.parse_s_expression(ns.render_s_expression(s_exp))
 
     def to_python(self):
         """
