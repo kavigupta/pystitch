@@ -30,15 +30,22 @@ from tests.utils import (
 )
 
 
-class DefUseMaskTestGeneric(unittest.TestCase):
-    def test_canonicalize_de_bruijn(self):
-        programs = ["x = 2; y = x + 1; z = x + y; x = 3"]
-        programs = [ParsedAST.parse_python_module(program) for program in programs]
+class CanonicalizeDeBruijnTest(unittest.TestCase):
+    def canonicalize_de_bruijn(self, program):
+        programs = [ParsedAST.parse_python_module(program)]
         dfa = export_dfa()
-        sexp = programs[0].to_type_annotated_de_bruijn_ns_s_exp(
+        s_exp = programs[0].to_type_annotated_de_bruijn_ns_s_exp(
             dfa, "M", de_bruijn_limit=2
         )
-        self.maxDiff = None
+        print(ns.render_s_expression(s_exp))
+        canonicalized = ParsedAST.from_type_annotated_de_bruijn_ns_s_exp(
+            ns.render_s_expression(s_exp), dfa
+        ).to_python()
+        return s_exp, canonicalized
+
+    def test_canonicalize_de_bruijn(self):
+        program = "x = 2; y = x + 1; z = x + y; x = 3"
+        s_exp, canonicalized = self.canonicalize_de_bruijn(program)
         expected = """
         (Module~M 
             (/seq~seqS~4
@@ -60,15 +67,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
                     (const-None~TC)))
             (list~_TI_~0))
         """
+        self.maxDiff = None
         self.assertEqual(
-            ns.render_s_expression(sexp),
+            ns.render_s_expression(s_exp),
             ns.render_s_expression(ns.parse_s_expression(expected)),
         )
 
         self.assertEqual(
-            ParsedAST.from_type_annotated_de_bruijn_ns_s_exp(
-                ns.render_s_expression(sexp), dfa
-            ).to_python(),
+            canonicalized,
             cwq(
                 """
                 __0 = 2
@@ -78,6 +84,47 @@ class DefUseMaskTestGeneric(unittest.TestCase):
                 """
             ),
         )
+
+    def assertCanonicalized(self, original, expected):
+        _, canonicalized = self.canonicalize_de_bruijn(cwq(original))
+        self.assertEqual(canonicalized, cwq(expected))
+
+    def test_canonicalize_def(self):
+        self.assertCanonicalized(
+            """
+            def f(x, y, z, k=2): return x + y + z + k
+            """,
+            """
+            def __0(__1, __2, __3, __4=2): return __1 + __2 + __3 + __4
+            """,
+        )
+
+    @expand_with_slow_tests(1000)
+    def test_semantics(self, i):
+        eg = small_set_runnable_code_examples()[i]
+        from .def_use_mask_test import DefUseMaskTest
+        from ..extract.rewrite_semantic_test import RewriteSemanticsTest
+
+        code_original = eg["solution"]
+        DefUseMaskTest().annotate_program(code_original)
+        print(code_original)
+        _, canonicalized = self.canonicalize_de_bruijn(code_original)
+        print(canonicalized)
+        # out = outputs(code_original, eg["inputs"][:10])
+        # if out is None:
+        #     return
+        RewriteSemanticsTest().assert_code_same(
+            dict(
+                inputs=eg["inputs"][:10],
+                outputs=eg["outputs"][:10],
+            ),
+            code_original,
+            canonicalized,
+            extracted="",
+        )
+
+
+class LikelihoodDeBruijnTest(unittest.TestCase):
 
     def test_likelihood(self):
         fit_to = ["x = 2; y = x; y = x"]

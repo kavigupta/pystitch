@@ -112,13 +112,18 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     )
     tree_dist = fam.tree_distribution_skeleton
 
+    count_vars = 0
+
     def replace_de_brujin(node, mask):
+        nonlocal count_vars
         indices = get_defined_indices(mask)
         idx = get_idx(node)
         if idx == 0:
-            return ns.SExpression(
-                canonicalized_python_name_as_leaf(len(indices), use_type=True), ()
+            result = ns.SExpression(
+                canonicalized_python_name_as_leaf(count_vars, use_type=True), ()
             )
+            count_vars += 1
+            return result
         sym_idx = indices[-idx]
         sym, _ = tree_dist.symbols[sym_idx]
         return ns.SExpression(sym, ())
