@@ -47,16 +47,29 @@ class DSLSubset:
         else:
             assert isinstance(root, str)
             root = (root,) * len(programs)
+        programs = [
+            program.to_type_annotated_ns_s_exp(dfa, root_sym)
+            for program, root_sym in zip(programs, root)
+        ]
+        return cls.from_type_annotated_s_exps(programs)
+
+    @classmethod
+    def from_type_annotated_s_exps(cls, s_exps):
+        """
+        Construct a DSLSubset from a list of type-annotated s-expressions. Used by
+            DSLSubset.from_program.
+        """
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
-        for program, root_sym in zip(programs, root):
-            code = program.to_ns_s_exp(dict(no_leaves=True))
-            for node, state in list(classify_nodes_in_program(dfa, code, root_sym)):
+        for program in s_exps:
+            for node in traverse(program):
+                symbol, state, *_ = node.symbol.split(SEPARATOR)
+                state = unclean_type(state)
                 assert isinstance(node, ns.SExpression)
-                if is_sequence(state, node.symbol):
+                if is_sequence(state, symbol):
                     lengths_by_list_type[state].add(len(node.children))
-                elif len(node.children) == 0 and not node.symbol.startswith("fn_"):
-                    leaves[state].add(node.symbol)
+                elif len(node.children) == 0 and not symbol.startswith("fn_"):
+                    leaves[state].add(symbol)
         return cls(
             lengths_by_sequence_type={
                 k: sorted(v) for k, v in lengths_by_list_type.items()
@@ -74,6 +87,12 @@ class DSLSubset:
             for seq_type, lengths in self.lengths_by_sequence_type.items()
         }
         return DSLSubset(lengths_by_sequence_type=lengths_new, leaves=self.leaves)
+
+
+def traverse(s_exp):
+    yield s_exp
+    for child in s_exp.children:
+        yield from traverse(child)
 
 
 def is_sequence_type(x):
@@ -108,6 +127,16 @@ def clean_type(x):
     Replace [] with __ in the type name
     """
     return x.replace("[", "_").replace("]", "_")
+
+
+def unclean_type(x):
+    """
+    Replace __ with [] in the type name
+    """
+    if "_" not in x:
+        return x
+    assert x.count("_") == 2, x
+    return x.replace("_", "[", 1).replace("_", "]", 1)
 
 
 def create_dsl(dfa, dsl_subset, start_state, dslf=None):
