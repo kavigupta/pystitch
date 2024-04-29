@@ -97,9 +97,11 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
             check_banned_components(ast.parse(code_original))
         except BannedComponentError:
             return
-        se = ns.render_s_expression(ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
-            export_dfa(), "M"
-        ))
+        se = ns.render_s_expression(
+            ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
+                export_dfa(), "M"
+            )
+        )
         # Ban internal imports
         if re.search(r"const-&[a-zA-Z0-9_]+:[0-9]+~(Nullable)?NameStr", se):
             return
