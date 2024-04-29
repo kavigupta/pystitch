@@ -525,6 +525,14 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
+    abstr_two_assigns = Abstraction.of(
+        "fn_1",
+        "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) #0 None))",
+        "seqS",
+        dfa_symvars=["Name"] * 2,
+        dfa_metavars=["E"],
+    )
+
     def replace_s_expr(self, s_expr):
         if not isinstance(s_expr, NodeAST):
             return s_expr
@@ -751,15 +759,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         annotated = self.annotate_program(
             code,
             parser=self.parse_with_hijacking,
-            abstrs=[
-                Abstraction.of(
-                    "fn_1",
-                    "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) #0 None))",
-                    "seqS",
-                    dfa_symvars=["Name"] * 2,
-                    dfa_metavars=["E"],
-                )
-            ],
+            abstrs=[self.abstr_two_assigns],
         )
         print(annotated)
         self.assertEqual(

@@ -45,8 +45,17 @@ def get_idx(s_exp_de_bruijn):
 
 def canonicalize_de_bruijn(program, dfa, root_node, abstrs, num_explicit_vars):
     s_exp = program.to_type_annotated_ns_s_exp(dfa, root_node)
+    abstrs_dict = {abstr.name: abstr for abstr in abstrs}
+    abstr_bodies = [
+        abstr.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
+            dfa, abstr.dfa_root
+        )
+        for abstr in abstrs
+    ]
 
-    dsl = create_dsl(dfa, DSLSubset.from_type_annotated_s_exps([s_exp]), root_node)
+    dsl = create_dsl(
+        dfa, DSLSubset.from_type_annotated_s_exps([s_exp] + abstr_bodies), root_node
+    )
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=[
@@ -97,9 +106,18 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     else:
         assert isinstance(s_exp_de_bruijn, ns.SExpression)
         s_exp_de_bruijn = copy.deepcopy(s_exp_de_bruijn)
+
+    abstrs_dict = {abstr.name: abstr for abstr in abstrs}
+    abstr_bodies = [
+        abstr.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
+            dfa, abstr.dfa_root
+        )
+        for abstr in abstrs
+    ]
+
     dsl = create_dsl(
         dfa,
-        DSLSubset.from_type_annotated_s_exps([s_exp_de_bruijn]),
+        DSLSubset.from_type_annotated_s_exps([s_exp_de_bruijn] + abstr_bodies),
         get_dfa_state(s_exp_de_bruijn.symbol),
     )
     fam = ns.BigramProgramDistributionFamily(

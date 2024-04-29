@@ -18,21 +18,25 @@ from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_exa
 
 
 class CanonicalizeDeBruijnTest(unittest.TestCase):
-    def canonicalize_de_bruijn(self, program):
-        programs = [ParsedAST.parse_python_module(program)]
-        dfa = export_dfa()
-        s_exp = programs[0].to_type_annotated_de_bruijn_ns_s_exp(
-            dfa, "M", de_bruijn_limit=2
-        )
+    def python_to_python_via_de_bruijn(self, program):
+        program = ParsedAST.parse_python_module(program)
+        dfa, s_exp = self.run_canonicalize(program)
         print(ns.render_s_expression(s_exp))
         canonicalized = ParsedAST.from_type_annotated_de_bruijn_ns_s_exp(
-            ns.render_s_expression(s_exp), dfa
+            ns.render_s_expression(s_exp), dfa, abstrs=()
         ).to_python()
         return s_exp, canonicalized
 
+    def run_canonicalize(self, program, abstrs=()):
+        dfa = export_dfa(abstrs=abstrs)
+        s_exp = program.to_type_annotated_de_bruijn_ns_s_exp(
+            dfa, "M", de_bruijn_limit=2, abstrs=abstrs
+        )
+        return dfa, s_exp
+
     def test_canonicalize_de_bruijn(self):
         program = "x = 2; y = x + 1; z = x + y; x = 3"
-        s_exp, canonicalized = self.canonicalize_de_bruijn(program)
+        s_exp, canonicalized = self.python_to_python_via_de_bruijn(program)
         expected = """
         (Module~M 
             (/seq~seqS~4
@@ -72,8 +76,53 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
             ),
         )
 
+    def test_canonicalize_de_bruijn_abstractions(self):
+        from .def_use_mask_test import DefUseMaskWithAbstractionsTest
+
+        code = cwq(
+            """
+            b = 2
+            "~(/splice (fn_1 (Name &a:0 Load) &b:0 &a:0))"
+            a = a
+            """
+        )
+
+        t = DefUseMaskWithAbstractionsTest()
+        program = t.parse_with_hijacking(code)
+        abstrs = [t.abstr_two_assigns]
+        dfa, s_exp = self.run_canonicalize(program, abstrs=abstrs)
+        expected = """
+        (Module~M
+            (/seq~seqS~3
+                (Assign~S (list~_L_~1 (Name~L (dbvar-0~Name) (Store~Ctx))) (Constant~E (const-i2~Const) (const-None~ConstKind)) (const-None~TC))
+                (/splice~S (fn_1~seqS (Name~E (dbvar-1~Name) (Load~Ctx)) (dbvar-1~Name) (dbvar-0~Name)))
+                (Assign~S (list~_L_~1 (Name~L (dbvar-2~Name) (Store~Ctx))) (Name~E (dbvar-2~Name) (Load~Ctx)) (const-None~TC)))
+                (list~_TI_~0))
+        """
+        self.assertEqual(
+            ns.render_s_expression(s_exp),
+            ns.render_s_expression(ns.parse_s_expression(expected)),
+        )
+        res = (
+            ParsedAST.from_type_annotated_de_bruijn_ns_s_exp(
+                ns.render_s_expression(s_exp), dfa, abstrs=abstrs
+            )
+            .abstraction_calls_to_stubs({x.name: x for x in abstrs})
+            .to_python()
+        )
+        self.assertEqual(
+            res,
+            cwq(
+                """
+                __0 = 2
+                fn_1(__code__('__1'), __ref__(__0), __ref__(__1))
+                __1 = __1
+                """
+            ),
+        )
+
     def assertCanonicalized(self, original, expected):
-        _, canonicalized = self.canonicalize_de_bruijn(cwq(original))
+        _, canonicalized = self.python_to_python_via_de_bruijn(cwq(original))
         self.assertEqual(canonicalized, cwq(expected))
 
     def test_canonicalize_def(self):
@@ -97,9 +146,11 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
             check_banned_components(ast.parse(code_original))
         except BannedComponentError:
             return
-        se = ns.render_s_expression(ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
-            export_dfa(), "M"
-        ))
+        se = ns.render_s_expression(
+            ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
+                export_dfa(), "M"
+            )
+        )
         # Ban internal imports
         if re.search(r"const-&[a-zA-Z0-9_]+:[0-9]+~(Nullable)?NameStr", se):
             return
@@ -108,7 +159,7 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
         except AssertionError:
             return
         print(code_original)
-        _, canonicalized = self.canonicalize_de_bruijn(code_original)
+        _, canonicalized = self.python_to_python_via_de_bruijn(code_original)
         print(canonicalized)
         # out = outputs(code_original, eg["inputs"][:10])
         # if out is None:
