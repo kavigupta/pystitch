@@ -5,7 +5,10 @@ from textwrap import dedent
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import load_stitch_output_set
+from imperative_stitch.data.stitch_output_set import (
+    load_stitch_output_set,
+    load_stitch_output_set_no_dfa,
+)
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import (
@@ -527,6 +530,10 @@ class AbstractionRenderingTest(unittest.TestCase):
     @parameterized.expand(range(len(load_stitch_output_set())))
     def test_abstraction_bodies_in_order_no_crash(self, i):
         self.check_abstraction_bodies_in(load_stitch_output_set()[i])
+
+    @parameterized.expand(range(len(load_stitch_output_set_no_dfa())))
+    def test_abstraction_bodies_in_order_no_crash_no_dfa(self, i):
+        self.check_abstraction_bodies_in(load_stitch_output_set_no_dfa()[i])
 
 
 class AbstractionRenderingAnnieSetTest(unittest.TestCase):

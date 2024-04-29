@@ -59,6 +59,7 @@ def run_julia_stitch_generic(
     include_dfa=True,
     root_states=("E", "S", "seqS"),
     metavariable_statements=True,
+    metavariables_anywhere=False,
 ):
     size_by_symbol = {
         "Module": 0.0,
@@ -90,12 +91,13 @@ def run_julia_stitch_generic(
         f"--application-utility-fixed={application_utility_fixed}",
         f"--application-utility-metavar={application_utility_metavar}",
         f"--application-utility-symvar={application_utility_symvar}",
-        f"--dfa-valid-root-states={json.dumps(list(root_states))}",
+        f"--dfa-valid-root-states={json.dumps(list(root_states)) if root_states is not None else 'any'}",
         *(
             []
             if metavariable_statements
             else ["--dfa-metavariable-disallow-S", "--dfa-metavariable-disallow-seqS"]
         ),
+        *(["--dfa-metavariable-allow-anything"] if metavariables_anywhere else []),
         *extra_args,
     ]
     if not quiet:
