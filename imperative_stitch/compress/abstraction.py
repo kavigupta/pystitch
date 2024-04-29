@@ -107,8 +107,6 @@ class Abstraction:
         assert self.sym_arity == len(self.dfa_symvars)
         assert self.choice_arity == len(self.dfa_choicevars)
 
-        assert self.dfa_root in ["E", "S", "seqS"]
-
         assert isinstance(self.body, ParsedAST), self.body
 
     def process_arguments(self, arguments):
