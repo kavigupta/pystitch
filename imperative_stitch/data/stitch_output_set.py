@@ -113,7 +113,7 @@ def main():
         json.dump(full, f, indent=2)
 
     no_dfa = stitch_output_set(
-        10, iters=20, root_states=None, metavariables_anywhere=True
+        100, iters=20, root_states=None, metavariables_anywhere=True
     )
     with open("data/stitch_output_set_no_dfa.json", "w") as f:
         json.dump(no_dfa, f, indent=2)
