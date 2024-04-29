@@ -7,7 +7,7 @@ class ExceptHandlerHandler(ConstructHandler):
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if self.is_defining(position):
             if self.mask.tree_dist.symbols[symbol][0] != "const-None~NullableName":
-                self.defined_production_idxs.add(symbol)
+                self.defined_production_idxs.append(symbol)
         return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
