@@ -5,6 +5,7 @@ import unittest
 import neurosym as ns
 from parameterized import parameterized
 
+from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
@@ -604,13 +605,17 @@ class AbstractionCallsTest(unittest.TestCase):
 class AbstractionBodiesTest(unittest.TestCase):
     def check_abstractions_in(self, x):
         x = copy.deepcopy(x)
-        for abstr in x["abstractions"]:
+        prev_abstrs = []
+        for i, abstr in enumerate(x["abstractions"], 1):
             body = ParsedAST.parse_s_expression(abstr["body"])
             body_ns_s_exp = ns.render_s_expression(
-                body.to_type_annotated_ns_s_exp(export_dfa(), abstr["dfa_root"])
+                body.to_type_annotated_ns_s_exp(
+                    export_dfa(abstrs=prev_abstrs), abstr["dfa_root"]
+                )
             )
             body_from_ns_s_exp = ParsedAST.parse_s_expression(body_ns_s_exp).to_s_exp()
             self.assertEqual(abstr["body"], body_from_ns_s_exp)
+            prev_abstrs.append(Abstraction.of(f"fn_{i}", **abstr))
 
     @parameterized.expand(range(len(load_stitch_output_set())))
     def test_realistic_with_abstractions(self, i):
