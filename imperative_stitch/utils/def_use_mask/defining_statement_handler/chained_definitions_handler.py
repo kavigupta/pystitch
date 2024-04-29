@@ -13,8 +13,8 @@ class ComprehensionExpressionHandler(ConstructHandler):
 
     def __init__(self, mask, defined_production_idxs, config):
         # copy the valid symbols so changes don't affect the parent
-        super().__init__(mask, set(defined_production_idxs), config)
-        self.defined_symbols = set()
+        super().__init__(mask, defined_production_idxs[:], config)
+        self.defined_symbols = []
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position == self.child_fields["generators"]:

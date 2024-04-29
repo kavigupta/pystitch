@@ -46,6 +46,12 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             return True
         return mat.group("name") in names
 
+    def currently_defined_indices(self):
+        """
+        Return the indices of the symbols that are currently defined.
+        """
+        return self.handlers[-1].currently_defined_indices()
+
     def compute_mask(self, position: int, symbols: List[int]) -> List[bool]:
         """
         Compute the mask for the given position and symbols. If the last handler is
@@ -64,7 +70,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         if not self.handlers:
             assert position == symbol == 0
-            self.handlers.append(DefaultHandler(self, set(), self.config))
+            self.handlers.append(DefaultHandler(self, [], self.config))
         else:
             self.handlers.append(self.handlers[-1].on_child_enter(position, symbol))
 

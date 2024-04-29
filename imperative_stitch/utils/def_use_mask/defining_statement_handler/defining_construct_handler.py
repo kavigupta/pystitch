@@ -22,8 +22,8 @@ class DefiningConstructHandler(ChildFrameCreatorHandler):
             self.construct_name_field is not None
             and position == self.child_fields[self.construct_name_field]
         ):
-            self.defined_production_idxs.add(symbol)
-            self.original_defined_production_idxs.add(symbol)
+            self.defined_production_idxs.append(symbol)
+            self.original_defined_production_idxs.append(symbol)
         return super().on_child_enter(position, symbol)
 
     def is_defining(self, position: int) -> bool:
