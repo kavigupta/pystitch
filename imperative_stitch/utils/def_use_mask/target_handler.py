@@ -44,11 +44,11 @@ class TargetHandler(Handler):
 
     def __init__(self, mask, defined_production_idxs, config):
         super().__init__(mask, defined_production_idxs, config)
-        self.defined_symbols = set()
+        self.defined_symbols = []
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if hasattr(child, "defined_symbols"):
-            self.defined_symbols.update(child.defined_symbols)
+            self.defined_symbols += child.defined_symbols
 
 
 class TargetConstructHandler(TargetHandler, ConstructHandler):
@@ -128,7 +128,7 @@ class NameTargetHandler(TargetConstructHandler):
         if self.is_defining(position):
             # for alias, we don't want to keep None
             if self.mask.tree_dist.symbols[symbol][0] != "const-None~NullableNameStr":
-                self.defined_symbols = {symbol}
+                self.defined_symbols = [symbol]
         return super().on_child_enter(position, symbol)
 
     def is_defining(self, position: int) -> bool:
