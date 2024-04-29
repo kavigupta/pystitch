@@ -85,7 +85,7 @@ class AbstractionHandler(Handler):
     def is_defining(self, position: int) -> bool:
         return self.traverser.is_defining
 
-    def currently_defined_indices(self) -> set[int]:
+    def currently_defined_indices(self) -> list[int]:
         return self.traverser.last_handler.currently_defined_indices()
 
     @property
