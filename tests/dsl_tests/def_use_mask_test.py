@@ -24,7 +24,6 @@ from tests.utils import (
 
 class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_alternates(self, chosen, alts):
-        print(chosen)
         self.assertIn(chosen, alts)
         mat = match_either(chosen)
         if not mat:
@@ -48,11 +47,10 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
         )
-        prog = parser(program).to_type_annotated_ns_s_exp(dfa, "M")
         annotated = ParsedAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
-                    prog,
+                    parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
                     fam.tree_distribution_skeleton,
                     self.annotate_alternates,
                 )
