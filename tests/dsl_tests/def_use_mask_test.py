@@ -972,7 +972,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             code,
             parser=lambda x: x,
             abstrs=abstrs,
-            print_stubs=False,
+            convert_to_python=False,
         )
         expected = """
         (Module~M
@@ -1015,7 +1015,7 @@ class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
 
     @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()), 10)
     def test_realistic_with_abstractions_no_dfa(self, i):
-        self.check_use_mask(load_stitch_output_set_no_dfa()[i], print_stubs=False)
+        self.check_use_mask(load_stitch_output_set_no_dfa()[i], convert_to_python=False)
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
