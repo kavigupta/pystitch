@@ -221,6 +221,11 @@ def fit_to(
     smoothing=True,
     include_type_preorder_mask=True,
 ):
+    """
+    Set include_type_preorder_mask to False to disable the type preorder mask,
+        this is basically only useful in the specific context where we are testing
+        the names mask and want no other masks to be applied.
+    """
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
     dsl = create_dsl(
@@ -230,7 +235,6 @@ def fit_to(
         dfa, DSLSubset.from_program(dfa, *programs, root=root), root
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
-    print(smooth_mask)
     apms = [
         lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
     ]
