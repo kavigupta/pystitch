@@ -310,6 +310,10 @@ def export_dfa(*, abstrs=frozendict({}), transitions=TRANSITIONS):
     result["seqS"]["/subseq"] = ["S"]
     result["seqS"]["/choiceseq"] = ["S"]
     result["S"]["/splice"] = ["seqS"]
+    # result["Name"] = {}
+    # result["DBV"] = {}
+    # result["Name"]["dbvar"] = ["DBV"]
+    # result["DBV"]["dbvar-successor"] = ["DBV"]
 
     for k, abstr in abstrs.items():
         assert k == abstr.name, (k, abstr.name)

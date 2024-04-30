@@ -24,6 +24,7 @@ class DSLSubset:
 
     lengths_by_sequence_type: Dict[str, List[int]]
     leaves: Dict[str, List[str]]
+    include_dbvars: bool
 
     @classmethod
     def from_program(
@@ -99,6 +100,7 @@ class DSLSubset:
                 k: sorted(v) for k, v in lengths_by_list_type.items()
             },
             leaves={k: sorted(v) for k, v in leaves.items()},
+            include_dbvars=num_vars > 0,
         )
 
     def fill_in_missing_lengths(self):
@@ -110,7 +112,11 @@ class DSLSubset:
             seq_type: list(range(min(lengths), max(lengths) + 1))
             for seq_type, lengths in self.lengths_by_sequence_type.items()
         }
-        return DSLSubset(lengths_by_sequence_type=lengths_new, leaves=self.leaves)
+        return DSLSubset(
+            lengths_by_sequence_type=lengths_new,
+            leaves=self.leaves,
+            include_dbvars=self.include_dbvars,
+        )
 
 
 def get_dfa_state(sym):
@@ -168,6 +174,11 @@ def unclean_type(x):
 
 
 def create_dsl(dfa, dsl_subset, start_state, dslf=None):
+    from .def_use_mask.canonicalize_de_bruijn import (
+        dbvar_successor_symbol,
+        dbvar_wrapper_symbol,
+    )
+
     if dslf is None:
         dslf = ns.DSLFactory()
     for target in dfa:
@@ -196,6 +207,9 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
         for constant in leaves:
             typ = ns.ArrowType((), ns.parse_type(target))
             dslf.concrete(constant + SEPARATOR + target, ns.render_type(typ), None)
+    if dsl_subset.include_dbvars:
+        dslf.concrete(dbvar_successor_symbol, "DBV -> DBV", None)
+        dslf.concrete(dbvar_wrapper_symbol, "DBV -> Name", None)
     dslf.prune_to(start_state, tolerate_pruning_entire_productions=True)
     return dslf.finalize()
 

@@ -12,6 +12,9 @@ from imperative_stitch.utils.export_as_dsl import (
     get_dfa_state,
 )
 
+dbvar_wrapper_symbol = "dbvar~Name"
+dbvar_successor_symbol = "dbvar-successor~DBV"
+
 
 def canonicalized_python_name(name):
     return f"__{name}"
@@ -24,16 +27,25 @@ def canonicalized_python_name_as_leaf(name, use_type=False):
     return result
 
 
-def create_de_brujin(idx, num_explicit_vars):
+def create_de_brujin_child(idx, num_explicit_vars):
     if idx <= num_explicit_vars:
-        return ns.SExpression(f"dbvar-{idx}{SEPARATOR}Name", ())
+        return ns.SExpression(f"dbvar-{idx}{SEPARATOR}DBV", ())
     return ns.SExpression(
-        "dbvar-successor~Name",
-        (create_de_brujin(idx - 1, num_explicit_vars),),
+        dbvar_successor_symbol,
+        (create_de_brujin_child(idx - 1, num_explicit_vars),),
+    )
+
+
+def create_de_brujin(idx, num_explicit_vars):
+    return ns.SExpression(
+        "dbvar~Name", (create_de_brujin_child(idx, num_explicit_vars),)
     )
 
 
 def get_idx(s_exp_de_bruijn):
+    if s_exp_de_bruijn.symbol == "dbvar~Name":
+        assert len(s_exp_de_bruijn.children) == 1, s_exp_de_bruijn
+        return get_idx(s_exp_de_bruijn.children[0])
     assert s_exp_de_bruijn.symbol.startswith("dbvar-")
     after = s_exp_de_bruijn.symbol.split(SEPARATOR)[0][len("dbvar-") :]
     if after == "successor":
@@ -149,8 +161,9 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     id_to_new = {}
 
     def traverse_replacer(node, mask):
-        if node.symbol.startswith("dbvar-"):
-            new_node = replace_de_brujin(node, mask)
+        if node.symbol == "dbvar~Name":
+            assert len(node.children) == 1
+            new_node = replace_de_brujin(node.children[0], mask)
             id_to_new[id(node)] = new_node
             return new_node
         return node
