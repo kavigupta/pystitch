@@ -227,9 +227,7 @@ def fit_to(
         dfa, DSLSubset.from_program(dfa, *programs, root=root, abstrs=abstrs), root
     )
     dsl_subset = create_dsl(
-        dfa,
-        DSLSubset.from_program(dfa, *programs, root=root),
-        root,
+        dfa, DSLSubset.from_program(dfa, *programs, root=root), root
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
     print(smooth_mask)
