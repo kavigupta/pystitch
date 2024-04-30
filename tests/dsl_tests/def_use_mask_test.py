@@ -1,4 +1,3 @@
-import ast
 import copy
 import sys
 import unittest
@@ -10,7 +9,7 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
+from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
@@ -18,6 +17,7 @@ from tests.utils import (
     cwq,
     expand_with_slow_tests,
     load_annies_compressed_individual_programs,
+    parse_with_hijacking,
     small_set_runnable_code_examples,
 )
 
@@ -525,24 +525,6 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
 
 
 class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
-    def replace_s_expr(self, s_expr):
-        if not isinstance(s_expr, NodeAST):
-            return s_expr
-        if s_expr.typ != ast.Expr:
-            return s_expr
-        [const] = s_expr.children
-        if const.typ != ast.Constant:
-            return s_expr
-        leaf, _ = const.children
-        leaf = leaf.leaf
-        if not leaf.startswith("~"):
-            return s_expr
-        leaf = leaf[1:]
-        return ParsedAST.parse_s_expression(leaf)
-
-    def parse_with_hijacking(self, code):
-        return ParsedAST.parse_python_module(code).map(self.replace_s_expr)
-
     def blank_abstraction(self, name, content):
         return Abstraction.of(name, ParsedAST.parse_python_statements(content), "seqS")
 
@@ -557,7 +539,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[self.blank_abstraction("fn_1", "a = int(input()); z = input()")],
         )
         print(annotated)
@@ -586,7 +568,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 self.blank_abstraction("fn_1", "a = int(input()); z = input()"),
                 self.blank_abstraction("fn_2", "x = 3"),
@@ -617,7 +599,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of(
                     "fn_1",
@@ -650,7 +632,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of(
                     "fn_1",
@@ -683,7 +665,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of(
                     "fn_1",
@@ -717,7 +699,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of(
                     "fn_1",
@@ -750,7 +732,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of(
                     "fn_1",
@@ -785,7 +767,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of(
                     "fn_1",
@@ -820,7 +802,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of(
                     "fn_1",
@@ -854,7 +836,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             a = a
             """
         )
-        program = self.parse_with_hijacking(code)
+        program = parse_with_hijacking(code)
         abstrs = [
             Abstraction.of(
                 "fn_1",
@@ -901,7 +883,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[fn_3],
         )
         print(annotated)
@@ -925,7 +907,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         )
         annotated = self.annotate_program(
             code,
-            parser=self.parse_with_hijacking,
+            parser=parse_with_hijacking,
             abstrs=[
                 Abstraction.of("fn_1", "(Name &b:0 Load)", "E"),
                 Abstraction.of(
