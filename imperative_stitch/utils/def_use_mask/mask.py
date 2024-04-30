@@ -29,7 +29,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         abstrs: The abstractions of the DSL
     """
 
-    def __init__(self, tree_dist, dsl, dfa, abstrs, de_bruijn_limit=None):
+    def __init__(self, tree_dist, dsl, dfa, abstrs):
+        from .canonicalize_de_bruijn import compute_de_bruijn_limit
+
         super().__init__(tree_dist)
         assert isinstance(tree_dist.ordering, PythonNodeOrdering)
         assert isinstance(abstrs, (list, tuple))
@@ -39,7 +41,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         )
         self.handlers = []
         self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
-        self.de_bruijn_limit = de_bruijn_limit  # TODO infer this
+        self.de_bruijn_limit = compute_de_bruijn_limit(tree_dist)
         self.matching_dbvar_level = 0
         self.dbvar_max_value = None
         self.dbvar_under_successor = None

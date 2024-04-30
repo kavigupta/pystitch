@@ -232,9 +232,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         fam = ns.BigramProgramDistributionFamily(
             dsl,
             additional_preorder_masks=[
-                lambda dist, dsl: DefUseChainPreorderMask(
-                    dist, dsl, dfa=dfa, abstrs=(), de_bruijn_limit=2
-                )
+                lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=())
             ],  # note: no need if we are using de bruijn
             include_type_preorder_mask=True,
             node_ordering=lambda dist: PythonNodeOrdering(dist, ()),

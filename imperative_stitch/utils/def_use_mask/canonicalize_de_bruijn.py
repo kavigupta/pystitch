@@ -182,3 +182,14 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         return ns.SExpression(node.symbol, [replace(child) for child in node.children])
 
     return replace(s_exp_de_bruijn)
+
+
+def compute_de_bruijn_limit(tree_dist):
+    dbvars = [
+        x
+        for x, _ in tree_dist.symbols
+        if x.startswith("dbvar-") and x != "dbvar-successor~DBV"
+    ]
+    if not dbvars:
+        return 0
+    return len(dbvars) - 1
