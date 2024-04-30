@@ -14,7 +14,12 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
-from tests.utils import cwq, expand_with_slow_tests, small_set_runnable_code_examples
+from tests.utils import (
+    cwq,
+    expand_with_slow_tests,
+    parse_with_hijacking,
+    small_set_runnable_code_examples,
+)
 
 
 class CanonicalizeDeBruijnTest(unittest.TestCase):
@@ -88,7 +93,7 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
         )
 
         t = DefUseMaskWithAbstractionsTest()
-        program = t.parse_with_hijacking(code)
+        program = parse_with_hijacking(code)
         abstrs = [t.abstr_two_assigns]
         dfa, s_exp = self.run_canonicalize(program, abstrs=abstrs)
         expected = """

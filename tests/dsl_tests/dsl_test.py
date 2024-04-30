@@ -221,29 +221,20 @@ def fit_to(
     smoothing=True,
     include_type_preorder_mask=True,
 ):
-    abstrs_dict = {abstr.name: abstr for abstr in abstrs}
+    """
+    Set include_type_preorder_mask to False to disable the type preorder mask,
+        this is basically only useful in the specific context where we are testing
+        the names mask and want no other masks to be applied.
+    """
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
-    original_programs = programs[:]
-    programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
-    roots = [root] * len(programs)
-    if use_def_use:
-        programs += [a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs]
-        roots += [a.dfa_root for a in abstrs]
-    for x, y in zip(roots, programs):
-        print(x, y)
     dsl = create_dsl(
-        dfa, DSLSubset.from_program(dfa, *programs, root=tuple(roots)), root
+        dfa, DSLSubset.from_program(dfa, *programs, root=root, abstrs=abstrs), root
     )
     dsl_subset = create_dsl(
-        dfa,
-        DSLSubset.from_program(
-            dfa, *original_programs, root=(root,) * len(original_programs)
-        ),
-        root,
+        dfa, DSLSubset.from_program(dfa, *programs, root=root), root
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
-    print(smooth_mask)
     apms = [
         lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
     ]
@@ -259,12 +250,7 @@ def fit_to(
         node_ordering=node_ordering,
     )
     counts = fam.count_programs(
-        [
-            [
-                program.to_type_annotated_ns_s_exp(dfa, root)
-                for program, root in zip(original_programs, roots)
-            ]
-        ]
+        [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
     if smoothing:
@@ -360,6 +346,8 @@ class EnumerateFittedDslTest(unittest.TestCase):
             ],
         )
 
+
+class TestLikelihoodFittedDSL(unittest.TestCase):
     def compute_likelihood(self, corpus, program):
         dfa, _, fam, dist = fit_to(corpus, smoothing=False)
         program = ParsedAST.parse_python_module(program).to_type_annotated_ns_s_exp(
