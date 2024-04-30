@@ -213,19 +213,21 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
 
 
 class LikelihoodDeBruijnTest(unittest.TestCase):
-    def compute_likelihood(self, fit_to, test_program):
+    def compute_likelihood(self, fit_to, test_program, de_bruijn_limit=2):
         dfa = export_dfa()
 
         fit_to_prog = [
             ParsedAST.parse_python_module(program).to_type_annotated_de_bruijn_ns_s_exp(
-                dfa, "M", de_bruijn_limit=2
+                dfa, "M", de_bruijn_limit=de_bruijn_limit
             )
             for program in fit_to
         ]
         print(ns.render_s_expression(fit_to_prog[0]))
         test_program = ParsedAST.parse_python_module(
             test_program
-        ).to_type_annotated_de_bruijn_ns_s_exp(dfa, "M", de_bruijn_limit=2)
+        ).to_type_annotated_de_bruijn_ns_s_exp(
+            dfa, "M", de_bruijn_limit=de_bruijn_limit
+        )
         print(ns.render_s_expression(test_program))
 
         dsl = create_dsl(dfa, DSLSubset.from_type_annotated_s_exps(fit_to_prog), "M")
@@ -309,12 +311,45 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             ],
         )
 
+    def test_likelihood_more_lookback_nonzero_dblimit_0(self):
+        fit_to = ["x = 2; y = 2; y = x; y = x"]
+        test_program = "x = 2; y = x; z = y; z = x"
+        # should be possible, unlike the previous test, because the de bruijn limit is 0
+
+        self.assertEqual(
+            self.compute_likelihood(fit_to, test_program, de_bruijn_limit=0),
+            [
+                ("(dbvar-0~DBV)", Fraction(1, 3)),
+                (
+                    "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-0~DBV))) (Load~Ctx))",
+                    Fraction(1, 2),
+                ),
+                ("(dbvar-0~DBV)", Fraction(2, 3)),
+                ("(dbvar-0~DBV)", Fraction(1, 3)),
+                (
+                    "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-0~DBV))) (Load~Ctx))",
+                    Fraction(1, 2),
+                ),
+                ("(dbvar-0~DBV)", Fraction(2, 3)),
+                ("(dbvar-successor~DBV (dbvar-0~DBV))", Fraction(2, 3)),
+                ("(dbvar-0~DBV)", Fraction(2, 3)),
+                (
+                    "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-0~DBV))))) (Load~Ctx))",
+                    Fraction(1, 2),
+                ),
+                (
+                    "(dbvar-successor~DBV (dbvar-successor~DBV (dbvar-0~DBV)))",
+                    Fraction(1, 3),
+                ),
+                ("(dbvar-successor~DBV (dbvar-0~DBV))", Fraction(1, 3)),
+                ("(dbvar-0~DBV)", Fraction(2, 3)),
+            ],
+        )
+
     def test_likelihood_more_lookback_nonzero(self):
         fit_to = ["x = 2; y = x; z = x; a = x; y = a; x = a"]
-        # this program is $0 = 2; $0 = 2; $1 = $2; $1 = $2
-        test_program = "x = 2; y = x; z = x; a = x; y = a; x = a"
-        # this program is $0 = 2; $0 = $1; $0 = $1; $1 = $3
-        # should have a likelihood of 0 because the successor node doesn't appear in the original
+        test_program = "x = 2; y = x; z = x; a = x; b = x; c = x"
+        # way more variables, and way more lookback
 
         self.assertEqual(
             self.compute_likelihood(fit_to, test_program),
@@ -331,17 +366,31 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                 ),
                 ("(dbvar-successor~DBV (dbvar-2~DBV))", Fraction(3, 7)),
                 ("(dbvar-2~DBV)", Fraction(3, 4)),
-                ("(dbvar-successor~DBV (dbvar-2~DBV))", Fraction(3, 11)),
-                ("(dbvar-2~DBV)", Fraction(3, 4)),
-                ("(Name~E (dbvar~Name (dbvar-1~DBV)) (Load~Ctx))", Fraction(5, 6)),
-                ("(dbvar-1~DBV)", Fraction(3, 7)),
+                ("(dbvar-0~DBV)", Fraction(4, 11)),
+                (
+                    "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-2~DBV)))) (Load~Ctx))",
+                    Fraction(5, 6),
+                ),
                 (
                     "(dbvar-successor~DBV (dbvar-successor~DBV (dbvar-2~DBV)))",
-                    Fraction(3, 11),
+                    Fraction(3, 7),
                 ),
                 ("(dbvar-successor~DBV (dbvar-2~DBV))", Fraction(1, 4)),
                 ("(dbvar-2~DBV)", Fraction(3, 4)),
-                ("(Name~E (dbvar~Name (dbvar-1~DBV)) (Load~Ctx))", Fraction(5, 6)),
-                ("(dbvar-1~DBV)", Fraction(3, 7)),
+                ("(dbvar-0~DBV)", Fraction(4, 11)),
+                (
+                    "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-2~DBV))))) (Load~Ctx))",
+                    Fraction(5, 6),
+                ),
+                (
+                    "(dbvar-successor~DBV (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-2~DBV))))",
+                    Fraction(3, 7),
+                ),
+                (
+                    "(dbvar-successor~DBV (dbvar-successor~DBV (dbvar-2~DBV)))",
+                    Fraction(1, 4),
+                ),
+                ("(dbvar-successor~DBV (dbvar-2~DBV))", Fraction(1, 4)),
+                ("(dbvar-2~DBV)", Fraction(3, 4)),
             ],
         )
