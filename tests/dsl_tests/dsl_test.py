@@ -221,7 +221,6 @@ def fit_to(
     smoothing=True,
     include_type_preorder_mask=True,
 ):
-    abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
     dsl = create_dsl(
