@@ -42,7 +42,11 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         return f"const-&{name}:{scope}~Name"
 
     def annotate_program(
-        self, program, parser=ParsedAST.parse_python_module, abstrs=(), print_stubs=True
+        self,
+        program,
+        parser=ParsedAST.parse_python_module,
+        abstrs=(),
+        convert_to_python=True,
     ):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
@@ -56,7 +60,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
                 )
             )
         )
-        if print_stubs:
+        if convert_to_python:
             annotated = annotated.abstraction_calls_to_stubs(
                 {x.name: x for x in abstrs}
             )
@@ -64,7 +68,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         return annotated
 
     def assertAbstractionAnnotation(
-        self, code, rewritten, abstractions, print_stubs=True
+        self, code, rewritten, abstractions, convert_to_python=True
     ):
         print("*" * 80)
         for abstr in abstractions:
@@ -76,7 +80,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             .to_python()
         )
         print("*" * 80)
-        if print_stubs:
+        if convert_to_python:
             print(
                 ParsedAST.parse_s_expression(rewritten)
                 .abstraction_calls_to_stubs({x.name: x for x in abstractions})
@@ -88,7 +92,6 @@ class DefUseMaskTestGeneric(unittest.TestCase):
                 code,
                 parser=ParsedAST.parse_s_expression,
                 abstrs=abstractions,
-                print_stubs=print_stubs,
             )
         except AssertionError:
             return
@@ -96,7 +99,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             rewritten,
             parser=ParsedAST.parse_s_expression,
             abstrs=abstractions,
-            print_stubs=print_stubs,
+            convert_to_python=convert_to_python,
         )
 
 
