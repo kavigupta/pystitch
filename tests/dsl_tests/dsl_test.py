@@ -224,22 +224,12 @@ def fit_to(
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
-    original_programs = programs[:]
-    programs += [p.abstraction_calls_to_bodies(abstrs_dict) for p in programs]
-    roots = [root] * len(programs)
-    if use_def_use:
-        programs += [a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs]
-        roots += [a.dfa_root for a in abstrs]
-    for x, y in zip(roots, programs):
-        print(x, y)
     dsl = create_dsl(
-        dfa, DSLSubset.from_program(dfa, *programs, root=tuple(roots)), root
+        dfa, DSLSubset.from_program(dfa, *programs, root=root, abstrs=abstrs), root
     )
     dsl_subset = create_dsl(
         dfa,
-        DSLSubset.from_program(
-            dfa, *original_programs, root=(root,) * len(original_programs)
-        ),
+        DSLSubset.from_program(dfa, *programs, root=root),
         root,
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
@@ -259,12 +249,7 @@ def fit_to(
         node_ordering=node_ordering,
     )
     counts = fam.count_programs(
-        [
-            [
-                program.to_type_annotated_ns_s_exp(dfa, root)
-                for program, root in zip(original_programs, roots)
-            ]
-        ]
+        [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
     if smoothing:
