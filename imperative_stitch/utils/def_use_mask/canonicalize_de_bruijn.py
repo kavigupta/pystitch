@@ -178,7 +178,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     id_to_new = {}
 
     def traverse_replacer(node, mask):
-        if node.symbol == "dbvar~Name":
+        if node.symbol == dbvar_wrapper_symbol:
             assert len(node.children) == 1
             new_node = replace_de_brujin(node.children[0], mask)
             id_to_new[id(node)] = new_node
@@ -201,12 +201,15 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     return replace(s_exp_de_bruijn)
 
 
-def compute_de_bruijn_limit(tree_dist):
-    dbvars = [
-        x
-        for x, _ in tree_dist.symbols
-        if x.startswith("dbvar-") and x != "dbvar-successor~DBV"
-    ]
+def compute_de_bruijn_limit(tree_dist: ns.TreeDistribution) -> int:
+    """
+    Compute the de bruijn limit for the given tree distribution.
+    """
+    dbvars = []
+    for x, _ in tree_dist.symbols:
+        mat = dbvar_symbol_regex.match(x)
+        if mat and mat.group(1) != "successor":
+            dbvars.append(x)
     if not dbvars:
         return 0
     return len(dbvars) - 1
