@@ -1,6 +1,6 @@
 import copy
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 from typing import List
 
 import neurosym as ns
