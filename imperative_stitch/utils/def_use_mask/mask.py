@@ -90,7 +90,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
         if self.tree_dist.symbols[symbol][0] == "dbvar~Name":
             assert self.de_bruijn_mask_handler is None
-            self.de_bruijn_mask_handler = DeBruijnMaskHandler.of(
+            self.de_bruijn_mask_handler = DeBruijnMaskHandler(
                 self.tree_dist,
                 self.de_bruijn_limit,
                 len(self.currently_defined_indices()),

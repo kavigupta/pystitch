@@ -201,21 +201,10 @@ def compute_de_bruijn_limit(tree_dist):
 class DeBruijnMaskHandler:
     tree_dist: ns.TreeDistribution
     de_bruijn_limit: int
-    matching_dbvar_level: int
     dbvar_max_value: int
-    dbvar_under_successor: bool
-    dbvar_value: int
-
-    @classmethod
-    def of(cls, tree_dist, de_bruijn_limit, num_currently_defined_indices):
-        return cls(
-            tree_dist=tree_dist,
-            de_bruijn_limit=de_bruijn_limit,
-            matching_dbvar_level=1,
-            dbvar_max_value=num_currently_defined_indices,
-            dbvar_under_successor=False,
-            dbvar_value=0,
-        )
+    matching_dbvar_level: int = 1
+    dbvar_under_successor: bool = False
+    dbvar_value: int = 0
 
     def compute_mask(self, symbols: List[int], is_defn):
         mask = [False] * len(symbols)
