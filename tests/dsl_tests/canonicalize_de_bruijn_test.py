@@ -176,24 +176,10 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
     def test_semantics(self, i):
         eg = small_set_runnable_code_examples()[i]
         from ..extract.rewrite_semantic_test import RewriteSemanticsTest
-        from .def_use_mask_test import DefUseMaskTest
 
         code_original = eg["solution"]
-        try:
-            check_banned_components(ast.parse(code_original))
-        except BannedComponentError:
-            return
-        se = ns.render_s_expression(
-            ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
-                export_dfa(), "M"
-            )
-        )
-        # Ban internal imports
-        if re.search(r"const-&[a-zA-Z0-9_]+:[0-9]+~(Nullable)?NameStr", se):
-            return
-        try:
-            DefUseMaskTest().annotate_program(code_original)
-        except AssertionError:
+        se = parse_and_check(code_original)
+        if se is None:
             return
         print(code_original)
         _, canonicalized = self.python_to_python_via_de_bruijn(code_original)
@@ -394,3 +380,34 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                 ("(dbvar-2~DBV)", Fraction(3, 4)),
             ],
         )
+
+    @expand_with_slow_tests(1000)
+    def test_no_crash(self, i):
+        eg = small_set_runnable_code_examples()[i]
+        code_original = eg["solution"]
+        se = parse_and_check(code_original)
+        if se is None:
+            return
+        self.compute_likelihood([code_original], code_original)
+
+
+def parse_and_check(code_original):
+    from .def_use_mask_test import DefUseMaskTest
+
+    try:
+        check_banned_components(ast.parse(code_original))
+    except BannedComponentError:
+        return None
+    se = ns.render_s_expression(
+        ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
+            export_dfa(), "M"
+        )
+    )
+    # Ban internal imports
+    if re.search(r"const-&[a-zA-Z0-9_]+:[0-9]+~(Nullable)?NameStr", se):
+        return None
+    try:
+        DefUseMaskTest().annotate_program(code_original)
+    except AssertionError:
+        return None
+    return se

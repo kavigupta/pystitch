@@ -207,23 +207,18 @@ class DeBruijnMaskHandler:
     dbvar_value: int = 0
 
     def compute_mask(self, symbols: List[int], is_defn):
-        mask = [False] * len(symbols)
-        rendered_symbols = [self.tree_dist.symbols[sym][0] for sym in symbols]
-        dbvar_symbols = {
-            sym: i for i, sym in enumerate(rendered_symbols) if sym.startswith("dbvar-")
-        }
+        mask = {}
         if self.dbvar_under_successor:
-            mask[dbvar_symbols[f"dbvar-{self.de_bruijn_limit}~DBV"]] = True
-            if "dbvar-successor~DBV" in dbvar_symbols:
-                mask[dbvar_symbols["dbvar-successor~DBV"]] = True
+            mask[f"dbvar-{self.de_bruijn_limit}~DBV"] = True
+            mask["dbvar-successor~DBV"] = True
         else:
             start_at = 0 if is_defn else 1
             for i in range(start_at, self.dbvar_max_value - self.dbvar_value + 1):
                 if i > self.de_bruijn_limit:
-                    if "dbvar-successor~DBV" in dbvar_symbols:
-                        mask[dbvar_symbols["dbvar-successor~DBV"]] = True
+                    mask["dbvar-successor~DBV"] = True
                     break
-                mask[dbvar_symbols[f"dbvar-{i}~DBV"]] = True
+                mask[f"dbvar-{i}~DBV"] = True
+        mask = [mask.get(self.tree_dist.symbols[sym][0], False) for sym in symbols]
         return mask
 
     def on_entry(self, symbol):
@@ -237,7 +232,6 @@ class DeBruijnMaskHandler:
         )
 
     def on_exit(self, symbol, num_currently_defined_indices):
-
         self.matching_dbvar_level -= 1
         if self.matching_dbvar_level > 0:
             return None
