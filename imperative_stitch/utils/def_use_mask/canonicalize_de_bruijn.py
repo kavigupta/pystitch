@@ -37,28 +37,40 @@ def canonicalized_python_name(name):
 
 
 def canonicalized_python_name_as_leaf(name, use_type=False):
+    """
+    Get the canonicalized python name as a leaf node. E.g., __0
+    """
     result = f"const-&{canonicalized_python_name(name)}:0"
     if use_type:
         result += SEPARATOR + wrapper_outside_type
     return result
 
 
-def create_de_brujin_child(idx, num_explicit_vars):
-    if idx <= num_explicit_vars:
+def create_de_brujin_child(idx, de_bruijn_limit):
+    """
+    Create a de bruijn child. to be placed into a wrapper.
+    """
+    if idx <= de_bruijn_limit:
         return ns.SExpression(dbvar_symbol(idx), ())
     return ns.SExpression(
         dbvar_successor_symbol,
-        (create_de_brujin_child(idx - 1, num_explicit_vars),),
+        (create_de_brujin_child(idx - 1, de_bruijn_limit),),
     )
 
 
-def create_de_brujin(idx, num_explicit_vars):
+def create_de_brujin(idx, de_bruijn_limit):
+    """
+    Create a de bruijn name.
+    """
     return ns.SExpression(
-        dbvar_wrapper_symbol, (create_de_brujin_child(idx, num_explicit_vars),)
+        dbvar_wrapper_symbol, (create_de_brujin_child(idx, de_bruijn_limit),)
     )
 
 
 def get_idx(s_exp_de_bruijn):
+    """
+    Get the index of the given de bruijn variable.
+    """
     if s_exp_de_bruijn.symbol == dbvar_wrapper_symbol:
         assert len(s_exp_de_bruijn.children) == 1, s_exp_de_bruijn
         return get_idx(s_exp_de_bruijn.children[0])
@@ -72,7 +84,11 @@ def get_idx(s_exp_de_bruijn):
     return int(after)
 
 
-def canonicalize_de_bruijn(program, dfa, root_node, abstrs, num_explicit_vars):
+def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
+    """
+    Convert the program to a de bruijn representation. Creates a tree distribution
+        and then calls the canonicalize_de_bruijn_from_tree_dist function.
+    """
     s_exp = program.to_type_annotated_ns_s_exp(dfa, root_node)
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     abstr_bodies = [
@@ -94,11 +110,14 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, num_explicit_vars):
         node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
     )
     return canonicalize_de_bruijn_from_tree_dist(
-        fam.tree_distribution_skeleton, s_exp, num_explicit_vars
+        fam.tree_distribution_skeleton, s_exp, de_bruijn_limit
     )
 
 
-def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, num_explicit_vars):
+def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
+    """
+    Convert the program to a de bruijn representation, given the tree distribution.
+    """
     id_to_new = {}
     for node, _, mask in ns.collect_preorder_symbols(s_exp, tree_dist):
         node_sym = tree_dist.symbol_to_index[node.symbol]
@@ -110,7 +129,7 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, num_explicit_vars):
             de_brujin_idx = 0
         else:
             de_brujin_idx = len(currently_defined) - currently_defined.index(node_sym)
-        id_to_new[id(node)] = create_de_brujin(de_brujin_idx, num_explicit_vars)
+        id_to_new[id(node)] = create_de_brujin(de_brujin_idx, de_bruijn_limit)
 
     def replace(node):
         if id(node) in id_to_new:
@@ -121,6 +140,9 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, num_explicit_vars):
 
 
 def get_defined_indices(mask):
+    """
+    Get the set of defined indices for a given mask.
+    """
     assert isinstance(mask, ns.ConjunctionPreorderMask)
     assert len(mask.masks) == 2
     mask = mask.masks[-1]
@@ -130,6 +152,10 @@ def get_defined_indices(mask):
 
 
 def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
+    """
+    Uncanonicalize the de bruijn representation, replacing variables
+        with names __0, __1, etc.
+    """
     if isinstance(s_exp_de_bruijn, str):
         s_exp_de_bruijn = ns.parse_s_expression(s_exp_de_bruijn)
     else:
@@ -162,6 +188,9 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     count_vars = 0
 
     def replace_de_brujin(node, mask):
+        """
+        Compute the replacement for a de bruijn node.
+        """
         nonlocal count_vars
         indices = get_defined_indices(mask)
         idx = get_idx(node)
