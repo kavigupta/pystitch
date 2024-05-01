@@ -1,5 +1,6 @@
 import copy
 from dataclasses import dataclass
+import re
 from typing import List
 
 import neurosym as ns
@@ -14,8 +15,21 @@ from imperative_stitch.utils.export_as_dsl import (
     get_dfa_state,
 )
 
-dbvar_wrapper_symbol = "dbvar~Name"
-dbvar_successor_symbol = "dbvar-successor~DBV"
+wrapper_outside_type = "Name"
+dbv_type = "DBV"
+
+dbvar_wrapper_symbol = f"dbvar{SEPARATOR}{wrapper_outside_type}"
+
+
+def dbvar_symbol(idx):
+    return f"dbvar-{idx}{SEPARATOR}{dbv_type}"
+
+
+dbvar_symbol_regex = re.compile(
+    r"dbvar-(\d+|successor)" + "(" + re.escape(SEPARATOR) + re.escape(dbv_type) + ")?"
+)
+
+dbvar_successor_symbol = dbvar_symbol("successor")
 
 
 def canonicalized_python_name(name):
@@ -25,13 +39,13 @@ def canonicalized_python_name(name):
 def canonicalized_python_name_as_leaf(name, use_type=False):
     result = f"const-&{canonicalized_python_name(name)}:0"
     if use_type:
-        result += SEPARATOR + "Name"
+        result += SEPARATOR + wrapper_outside_type
     return result
 
 
 def create_de_brujin_child(idx, num_explicit_vars):
     if idx <= num_explicit_vars:
-        return ns.SExpression(f"dbvar-{idx}{SEPARATOR}DBV", ())
+        return ns.SExpression(dbvar_symbol(idx), ())
     return ns.SExpression(
         dbvar_successor_symbol,
         (create_de_brujin_child(idx - 1, num_explicit_vars),),
@@ -40,16 +54,17 @@ def create_de_brujin_child(idx, num_explicit_vars):
 
 def create_de_brujin(idx, num_explicit_vars):
     return ns.SExpression(
-        "dbvar~Name", (create_de_brujin_child(idx, num_explicit_vars),)
+        dbvar_wrapper_symbol, (create_de_brujin_child(idx, num_explicit_vars),)
     )
 
 
 def get_idx(s_exp_de_bruijn):
-    if s_exp_de_bruijn.symbol == "dbvar~Name":
+    if s_exp_de_bruijn.symbol == dbvar_wrapper_symbol:
         assert len(s_exp_de_bruijn.children) == 1, s_exp_de_bruijn
         return get_idx(s_exp_de_bruijn.children[0])
-    assert s_exp_de_bruijn.symbol.startswith("dbvar-")
-    after = s_exp_de_bruijn.symbol.split(SEPARATOR)[0][len("dbvar-") :]
+    mat = dbvar_symbol_regex.match(s_exp_de_bruijn.symbol)
+    assert mat, s_exp_de_bruijn.symbol
+    after = mat.group(1)
     if after == "successor":
         assert len(s_exp_de_bruijn.children) == 1
         return get_idx(s_exp_de_bruijn.children[0]) + 1
