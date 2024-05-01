@@ -218,7 +218,7 @@ class DeBruijnMaskHandler:
                 mask[dbvar_symbols["dbvar-successor~DBV"]] = True
         else:
             start_at = 0 if is_defn else 1
-            for i in range(start_at, self.dbvar_max_value + 1):
+            for i in range(start_at, self.dbvar_max_value - self.dbvar_value + 1):
                 if i > self.de_bruijn_limit:
                     if "dbvar-successor~DBV" in dbvar_symbols:
                         mask[dbvar_symbols["dbvar-successor~DBV"]] = True
@@ -231,7 +231,6 @@ class DeBruijnMaskHandler:
         if self.tree_dist.symbols[symbol][0] == "dbvar-successor~DBV":
             self.dbvar_under_successor = True
             self.dbvar_value += 1
-            self.dbvar_max_value -= 1
             return
         self.dbvar_value += int(
             self.tree_dist.symbols[symbol][0].split("-")[-1].split("~")[0]
