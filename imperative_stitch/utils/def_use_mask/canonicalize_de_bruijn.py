@@ -201,7 +201,7 @@ def compute_de_bruijn_limit(tree_dist):
 class DeBruijnMaskHandler:
     tree_dist: ns.TreeDistribution
     de_bruijn_limit: int
-    dbvar_max_value: int
+    num_available_symbols: int
     matching_dbvar_level: int = 1
     dbvar_under_successor: bool = False
     dbvar_value: int = 0
@@ -213,7 +213,7 @@ class DeBruijnMaskHandler:
             mask["dbvar-successor~DBV"] = True
         else:
             start_at = 0 if is_defn else 1
-            for i in range(start_at, self.dbvar_max_value - self.dbvar_value + 1):
+            for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
                 if i > self.de_bruijn_limit:
                     mask["dbvar-successor~DBV"] = True
                     break
@@ -231,14 +231,14 @@ class DeBruijnMaskHandler:
             self.tree_dist.symbols[symbol][0].split("-")[-1].split("~")[0]
         )
 
-    def on_exit(self, symbol, num_currently_defined_indices):
+    def on_exit(self, symbol):
         self.matching_dbvar_level -= 1
         if self.matching_dbvar_level > 0:
             return None
         assert self.tree_dist.symbols[symbol][0] == "dbvar~Name"
         symbol = self.tree_dist.symbol_to_index[
             canonicalized_python_name_as_leaf(
-                num_currently_defined_indices - self.dbvar_value,
+                self.num_available_symbols - self.dbvar_value,
                 use_type=True,
             )
         ]

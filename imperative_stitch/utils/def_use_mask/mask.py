@@ -110,9 +110,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Updates the stack of handlers when exiting a node.
         """
         if self.de_bruijn_mask_handler is not None:
-            symbol = self.de_bruijn_mask_handler.on_exit(
-                symbol, len(self.currently_defined_indices())
-            )
+            symbol = self.de_bruijn_mask_handler.on_exit(symbol)
             if symbol is None:
                 return
             self.de_bruijn_mask_handler = None
