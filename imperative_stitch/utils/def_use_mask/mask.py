@@ -16,6 +16,73 @@ class DefUseMaskConfiguration:
     abstractions: Dict[str, Abstraction]
 
 
+@dataclass
+class DeBruijnMaskHelper:
+    tree_dist: ns.TreeDistribution
+    de_bruijn_limit: int
+    matching_dbvar_level: int
+    dbvar_max_value: int
+    dbvar_under_successor: bool
+    dbvar_value: int
+
+    @classmethod
+    def of(cls, tree_dist, de_bruijn_limit, num_currently_defined_indices):
+        return cls(
+            tree_dist=tree_dist,
+            de_bruijn_limit=de_bruijn_limit,
+            matching_dbvar_level=1,
+            dbvar_max_value=num_currently_defined_indices,
+            dbvar_under_successor=False,
+            dbvar_value=0,
+        )
+
+    def compute_mask(self, symbols: List[int], is_defn):
+        mask = [False] * len(symbols)
+        rendered_symbols = [self.tree_dist.symbols[sym][0] for sym in symbols]
+        dbvar_symbols = {
+            sym: i for i, sym in enumerate(rendered_symbols) if sym.startswith("dbvar-")
+        }
+        if self.dbvar_under_successor:
+            mask[dbvar_symbols[f"dbvar-{self.de_bruijn_limit}~DBV"]] = True
+            if "dbvar-successor~DBV" in dbvar_symbols:
+                mask[dbvar_symbols["dbvar-successor~DBV"]] = True
+        else:
+            start_at = 0 if is_defn else 1
+            for i in range(start_at, self.dbvar_max_value + 1):
+                if i > self.de_bruijn_limit:
+                    if "dbvar-successor~DBV" in dbvar_symbols:
+                        mask[dbvar_symbols["dbvar-successor~DBV"]] = True
+                    break
+                mask[dbvar_symbols[f"dbvar-{i}~DBV"]] = True
+        return mask
+
+    def on_entry(self, symbol):
+        self.matching_dbvar_level += 1
+        if self.tree_dist.symbols[symbol][0] == "dbvar-successor~DBV":
+            self.dbvar_under_successor = True
+            self.dbvar_value += 1
+            self.dbvar_max_value -= 1
+            return
+        self.dbvar_value += int(
+            self.tree_dist.symbols[symbol][0].split("-")[-1].split("~")[0]
+        )
+
+    def on_exit(self, symbol, num_currently_defined_indices):
+        from .canonicalize_de_bruijn import canonicalized_python_name_as_leaf
+
+        self.matching_dbvar_level -= 1
+        if self.matching_dbvar_level > 0:
+            return None
+        assert self.tree_dist.symbols[symbol][0] == "dbvar~Name"
+        symbol = self.tree_dist.symbol_to_index[
+            canonicalized_python_name_as_leaf(
+                num_currently_defined_indices - self.dbvar_value,
+                use_type=True,
+            )
+        ]
+        return symbol
+
+
 class DefUseChainPreorderMask(ns.PreorderMask):
     """
     Preorder mask that filters out symbols that are not defined at a given position.
@@ -43,10 +110,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         self.handlers = []
         self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
         self.de_bruijn_limit = compute_de_bruijn_limit(tree_dist)
-        self.matching_dbvar_level = 0
-        self.dbvar_max_value = None
-        self.dbvar_under_successor = None
-        self.dbvar_value = None
+        self.de_bruijn_mask_helper = None
 
     def _matches(self, names, symbol_id):
         """
@@ -56,7 +120,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         if symbol == "Name~E":
             return self.has_global_available or len(names) > 0
         if symbol == "dbvar~Name":
-            return self.matching_dbvar_level == 0 and len(names) > 0
+            assert self.de_bruijn_mask_helper is None
+            return len(names) > 0
         mat = NAME_REGEX.match(symbol)
         if not mat:
             return True
@@ -76,27 +141,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         handler = self.handlers[-1]
         is_defn = handler.is_defining(position)
-        if self.matching_dbvar_level > 0:
-            mask = [False] * len(symbols)
-            rendered_symbols = [self.tree_dist.symbols[sym][0] for sym in symbols]
-            dbvar_symbols = {
-                sym: i
-                for i, sym in enumerate(rendered_symbols)
-                if sym.startswith("dbvar-")
-            }
-            if self.dbvar_under_successor:
-                mask[dbvar_symbols[f"dbvar-{self.de_bruijn_limit}~DBV"]] = True
-                if "dbvar-successor~DBV" in dbvar_symbols:
-                    mask[dbvar_symbols["dbvar-successor~DBV"]] = True
-            else:
-                start_at = 0 if is_defn else 1
-                for i in range(start_at, self.dbvar_max_value + 1):
-                    if i > self.de_bruijn_limit:
-                        if "dbvar-successor~DBV" in dbvar_symbols:
-                            mask[dbvar_symbols["dbvar-successor~DBV"]] = True
-                        break
-                    mask[dbvar_symbols[f"dbvar-{i}~DBV"]] = True
-            return mask
+        if self.de_bruijn_mask_helper is not None:
+            return self.de_bruijn_mask_helper.compute_mask(symbols, is_defn)
         if is_defn:
             return [True] * len(symbols)
         names = handler.currently_defined_names()
@@ -107,22 +153,15 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Updates the stack of handlers when entering a node.
         """
         if self.tree_dist.symbols[symbol][0] == "dbvar~Name":
-            assert self.matching_dbvar_level == 0
-            self.matching_dbvar_level += 1
-            self.dbvar_max_value = len(self.currently_defined_indices())
-            self.dbvar_under_successor = False
-            self.dbvar_value = 0
-            return
-        if self.matching_dbvar_level > 0:
-            self.matching_dbvar_level += 1
-            if self.tree_dist.symbols[symbol][0] == "dbvar-successor~DBV":
-                self.dbvar_under_successor = True
-                self.dbvar_value += 1
-                self.dbvar_max_value -= 1
-                return
-            self.dbvar_value += int(
-                self.tree_dist.symbols[symbol][0].split("-")[-1].split("~")[0]
+            assert self.de_bruijn_mask_helper is None
+            self.de_bruijn_mask_helper = DeBruijnMaskHelper.of(
+                self.tree_dist,
+                self.de_bruijn_limit,
+                len(self.currently_defined_indices()),
             )
+            return
+        if self.de_bruijn_mask_helper is not None:
+            self.de_bruijn_mask_helper.on_entry(symbol)
             return
         if not self.handlers:
             assert position == symbol == 0
@@ -134,24 +173,14 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Updates the stack of handlers when exiting a node.
         """
-        from .canonicalize_de_bruijn import canonicalized_python_name_as_leaf
-
-        if self.matching_dbvar_level > 0:
-            self.matching_dbvar_level -= 1
-            if self.matching_dbvar_level == 0:
-                assert self.tree_dist.symbols[symbol][0] == "dbvar~Name"
-                symbol = self.tree_dist.symbol_to_index[
-                    canonicalized_python_name_as_leaf(
-                        len(self.currently_defined_indices()) - self.dbvar_value,
-                        use_type=True,
-                    )
-                ]
-                self.dbvar_max_value = None
-                self.dbvar_under_successor = None
-                self.dbvar_value = None
-                self.on_entry(position, symbol)
-            else:
+        if self.de_bruijn_mask_helper is not None:
+            symbol = self.de_bruijn_mask_helper.on_exit(
+                symbol, len(self.currently_defined_indices())
+            )
+            if symbol is None:
                 return
+            self.de_bruijn_mask_helper = None
+            self.on_entry(position, symbol)
         popped = self.handlers.pop()
         if not self.handlers:
             assert position == symbol == 0
