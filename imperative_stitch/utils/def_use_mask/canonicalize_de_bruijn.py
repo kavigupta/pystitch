@@ -217,19 +217,28 @@ def compute_de_bruijn_limit(tree_dist: ns.TreeDistribution) -> int:
 
 @dataclass
 class DeBruijnMaskHandler:
+    """
+    Handles the mask behavior of de bruijin nodes.
+    """
+
     tree_dist: ns.TreeDistribution
     de_bruijn_limit: int
     num_available_symbols: int
-    matching_dbvar_level: int = 1
-    dbvar_under_successor: bool = False
+    level_nesting: int = 1
+    inside_successor: bool = False
     dbvar_value: int = 0
 
     def compute_mask(self, symbols: List[int], is_defn):
+        """
+        Compute the mask for the given symbols.
+        """
         mask = {}
-        if self.dbvar_under_successor:
+        if self.inside_successor:
+            # We are inside a successor, so the de bruijn limit is valid, as is successor
             mask[f"dbvar-{self.de_bruijn_limit}~DBV"] = True
             mask["dbvar-successor~DBV"] = True
         else:
+            # We are not inside a successor, so we need to iterate upwards
             start_at = 0 if is_defn else 1
             for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
                 if i > self.de_bruijn_limit:
@@ -240,9 +249,12 @@ class DeBruijnMaskHandler:
         return mask
 
     def on_entry(self, symbol):
-        self.matching_dbvar_level += 1
+        """
+        Handle the entry of a symbol.
+        """
+        self.level_nesting += 1
         if self.tree_dist.symbols[symbol][0] == "dbvar-successor~DBV":
-            self.dbvar_under_successor = True
+            self.inside_successor = True
             self.dbvar_value += 1
             return
         self.dbvar_value += int(
@@ -250,10 +262,13 @@ class DeBruijnMaskHandler:
         )
 
     def on_exit(self, symbol):
-        self.matching_dbvar_level -= 1
-        if self.matching_dbvar_level > 0:
+        """
+        Handle the exit of a symbol.
+        """
+        self.level_nesting -= 1
+        if self.level_nesting > 0:
             return None
-        assert self.tree_dist.symbols[symbol][0] == "dbvar~Name"
+        assert self.tree_dist.symbols[symbol][0] == dbvar_wrapper_symbol
         symbol = self.tree_dist.symbol_to_index[
             canonicalized_python_name_as_leaf(
                 self.num_available_symbols - self.dbvar_value,
