@@ -49,10 +49,13 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Whether or not the symbol matches the names.
         """
+        # pylint: disable=cyclic-import
+        from .canonicalize_de_bruijn import dbvar_wrapper_symbol
+
         symbol, _ = self.tree_dist.symbols[symbol_id]
         if symbol == "Name~E":
             return self.has_global_available or len(names) > 0
-        if symbol == "dbvar~Name":
+        if symbol == dbvar_wrapper_symbol:
             assert self.de_bruijn_mask_handler is None
             return len(names) > 0
         mat = NAME_REGEX.match(symbol)
@@ -86,9 +89,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Updates the stack of handlers when entering a node.
         """
         # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import DeBruijnMaskHandler
+        from .canonicalize_de_bruijn import DeBruijnMaskHandler, dbvar_wrapper_symbol
 
-        if self.tree_dist.symbols[symbol][0] == "dbvar~Name":
+        if self.tree_dist.symbols[symbol][0] == dbvar_wrapper_symbol:
             assert self.de_bruijn_mask_handler is None
             self.de_bruijn_mask_handler = DeBruijnMaskHandler(
                 self.tree_dist,

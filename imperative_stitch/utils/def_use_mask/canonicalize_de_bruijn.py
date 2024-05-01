@@ -235,16 +235,16 @@ class DeBruijnMaskHandler:
         mask = {}
         if self.inside_successor:
             # We are inside a successor, so the de bruijn limit is valid, as is successor
-            mask[f"dbvar-{self.de_bruijn_limit}~DBV"] = True
-            mask["dbvar-successor~DBV"] = True
+            mask[dbvar_symbol(self.de_bruijn_limit)] = True
+            mask[dbvar_successor_symbol] = True
         else:
             # We are not inside a successor, so we need to iterate upwards
             start_at = 0 if is_defn else 1
             for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
                 if i > self.de_bruijn_limit:
-                    mask["dbvar-successor~DBV"] = True
+                    mask[dbvar_successor_symbol] = True
                     break
-                mask[f"dbvar-{i}~DBV"] = True
+                mask[dbvar_symbol(i)] = True
         mask = [mask.get(self.tree_dist.symbols[sym][0], False) for sym in symbols]
         return mask
 
@@ -253,7 +253,7 @@ class DeBruijnMaskHandler:
         Handle the entry of a symbol.
         """
         self.level_nesting += 1
-        if self.tree_dist.symbols[symbol][0] == "dbvar-successor~DBV":
+        if self.tree_dist.symbols[symbol][0] == dbvar_successor_symbol:
             self.inside_successor = True
             self.dbvar_value += 1
             return
