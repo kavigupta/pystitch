@@ -17,7 +17,7 @@ class DefUseMaskConfiguration:
 
 
 @dataclass
-class DeBruijnMaskHelper:
+class DeBruijnMaskHandler:
     tree_dist: ns.TreeDistribution
     de_bruijn_limit: int
     matching_dbvar_level: int
@@ -110,7 +110,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         self.handlers = []
         self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
         self.de_bruijn_limit = compute_de_bruijn_limit(tree_dist)
-        self.de_bruijn_mask_helper = None
+        self.de_bruijn_mask_handler = None
 
     def _matches(self, names, symbol_id):
         """
@@ -120,7 +120,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         if symbol == "Name~E":
             return self.has_global_available or len(names) > 0
         if symbol == "dbvar~Name":
-            assert self.de_bruijn_mask_helper is None
+            assert self.de_bruijn_mask_handler is None
             return len(names) > 0
         mat = NAME_REGEX.match(symbol)
         if not mat:
@@ -141,8 +141,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         handler = self.handlers[-1]
         is_defn = handler.is_defining(position)
-        if self.de_bruijn_mask_helper is not None:
-            return self.de_bruijn_mask_helper.compute_mask(symbols, is_defn)
+        if self.de_bruijn_mask_handler is not None:
+            return self.de_bruijn_mask_handler.compute_mask(symbols, is_defn)
         if is_defn:
             return [True] * len(symbols)
         names = handler.currently_defined_names()
@@ -153,15 +153,15 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Updates the stack of handlers when entering a node.
         """
         if self.tree_dist.symbols[symbol][0] == "dbvar~Name":
-            assert self.de_bruijn_mask_helper is None
-            self.de_bruijn_mask_helper = DeBruijnMaskHelper.of(
+            assert self.de_bruijn_mask_handler is None
+            self.de_bruijn_mask_handler = DeBruijnMaskHandler.of(
                 self.tree_dist,
                 self.de_bruijn_limit,
                 len(self.currently_defined_indices()),
             )
             return
-        if self.de_bruijn_mask_helper is not None:
-            self.de_bruijn_mask_helper.on_entry(symbol)
+        if self.de_bruijn_mask_handler is not None:
+            self.de_bruijn_mask_handler.on_entry(symbol)
             return
         if not self.handlers:
             assert position == symbol == 0
@@ -173,13 +173,13 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Updates the stack of handlers when exiting a node.
         """
-        if self.de_bruijn_mask_helper is not None:
-            symbol = self.de_bruijn_mask_helper.on_exit(
+        if self.de_bruijn_mask_handler is not None:
+            symbol = self.de_bruijn_mask_handler.on_exit(
                 symbol, len(self.currently_defined_indices())
             )
             if symbol is None:
                 return
-            self.de_bruijn_mask_helper = None
+            self.de_bruijn_mask_handler = None
             self.on_entry(position, symbol)
         popped = self.handlers.pop()
         if not self.handlers:
