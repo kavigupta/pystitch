@@ -48,7 +48,9 @@ def canonicalized_python_name_as_leaf(name, use_type=False):
     """
     result = f"const-&{canonicalized_python_name(name)}:0"
     if use_type:
-        result += SEPARATOR + use_type
+        # TODO - this is a bit of a hack, since we should really be using use_type
+        # however, this would require us to add use_type to the program
+        result += SEPARATOR + "Name"
     return result
 
 
@@ -323,11 +325,12 @@ class DeBruijnMaskHandler:
         self.level_nesting -= 1
         if self.level_nesting > 0:
             return None
-        assert is_dbvar_wrapper_symbol(self.tree_dist.symbols[symbol][0])
+        sym = self.tree_dist.symbols[symbol][0]
+        assert is_dbvar_wrapper_symbol(sym)
         symbol = self.tree_dist.symbol_to_index[
             canonicalized_python_name_as_leaf(
                 self.num_available_symbols - self.dbvar_value,
-                use_type=True,
+                use_type=sym.split(SEPARATOR)[-1],
             )
         ]
         return symbol
