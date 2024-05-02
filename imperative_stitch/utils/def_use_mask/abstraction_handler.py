@@ -192,7 +192,7 @@ class CollectingHandler(Handler):
 
     @property
     def node(self):
-        sym, arity = self.mask.tree_dist.symbols[self.sym]
+        sym, arity = self.mask.id_to_name_and_arity(self.sym)
         assert (
             len(self.children) == arity
         ), f"{sym} expected {arity} children, got {len(self.children)}"

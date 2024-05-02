@@ -15,6 +15,7 @@ SEPARATOR = "~"
 
 MINIMUM_VARIABLES = 100
 
+
 @dataclass
 class DSLSubset:
     """
@@ -34,6 +35,7 @@ class DSLSubset:
         *programs: Tuple[ParsedAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
+        include_variables=False,
     ):
         """
         Construct a DSLSubset from a list of programs. The subset contains all the
@@ -65,10 +67,12 @@ class DSLSubset:
             )
             for a in abstrs
         ]
-        return cls.from_type_annotated_s_exps(programs)
+        return cls.from_type_annotated_s_exps(
+            programs, include_variables=include_variables
+        )
 
     @classmethod
-    def from_type_annotated_s_exps(cls, s_exps):
+    def from_type_annotated_s_exps(cls, s_exps, *, include_variables=False):
         """
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
@@ -94,8 +98,8 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
-        if num_vars > 0:
-            for var in range(max(num_vars, MINIMUM_VARIABLES)):
+        if include_variables:
+            for var in range(num_vars):
                 leaves["Name"].add(canonicalized_python_name_as_leaf(var))
         return cls(
             lengths_by_sequence_type={

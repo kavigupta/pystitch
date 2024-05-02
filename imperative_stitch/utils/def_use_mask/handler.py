@@ -69,7 +69,7 @@ class Handler(ABC):
         """
         names = set()
         for symbol in self.currently_defined_indices():
-            sym, _ = self.mask.tree_dist.symbols[symbol]
+            sym = self.mask.id_to_name(symbol)
             mat = match_either(sym)
             if not mat:
                 assert VARIABLE_REGEX.match(sym), f"Could not match {sym}"
@@ -123,7 +123,7 @@ def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handl
 
     assert isinstance(defined_production_idxs, list)
 
-    symbol, _ = mask.tree_dist.symbols[symbol]
+    symbol = mask.id_to_name(symbol)
     if symbol.startswith("fn_"):
         return AbstractionHandler(mask, defined_production_idxs, config, symbol)
 

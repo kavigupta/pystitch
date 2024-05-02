@@ -5,6 +5,7 @@ from typing import List
 
 import neurosym as ns
 
+from imperative_stitch.utils.def_use_mask.extra_var import ExtraVar
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -198,7 +199,9 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     dsl = create_dsl(
         dfa,
-        DSLSubset.from_type_annotated_s_exps([s_exp_de_bruijn] + abstr_bodies),
+        DSLSubset.from_type_annotated_s_exps(
+            [s_exp_de_bruijn] + abstr_bodies, include_variables=True
+        ),
         get_dfa_state(s_exp_de_bruijn.symbol),
     )
     fam = ns.BigramProgramDistributionFamily(
@@ -327,10 +330,5 @@ class DeBruijnMaskHandler:
             return None
         sym = self.tree_dist.symbols[symbol][0]
         assert is_dbvar_wrapper_symbol(sym)
-        symbol = self.tree_dist.symbol_to_index[
-            canonicalized_python_name_as_leaf(
-                self.num_available_symbols - self.dbvar_value,
-                use_type=sym.split(SEPARATOR)[-1],
-            )
-        ]
+        symbol = ExtraVar(self.num_available_symbols - self.dbvar_value)
         return symbol

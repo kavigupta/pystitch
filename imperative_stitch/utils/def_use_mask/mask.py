@@ -5,6 +5,7 @@ from typing import Dict, List
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.utils.def_use_mask.extra_var import ExtraVar
 from imperative_stitch.utils.def_use_mask.handler import DefaultHandler
 from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -52,7 +53,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import is_dbvar_wrapper_symbol
 
-        symbol, _ = self.tree_dist.symbols[symbol_id]
+        symbol = self.id_to_name(symbol_id)
         if symbol == "Name~E":
             return self.has_global_available or len(names) > 0
         if is_dbvar_wrapper_symbol(symbol):
@@ -91,7 +92,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import DeBruijnMaskHandler, is_dbvar_wrapper_symbol
 
-        if is_dbvar_wrapper_symbol(self.tree_dist.symbols[symbol][0]):
+        if is_dbvar_wrapper_symbol(self.id_to_name(symbol)):
             assert self.de_bruijn_mask_handler is None
             self.de_bruijn_mask_handler = DeBruijnMaskHandler(
                 self.tree_dist,
@@ -129,3 +130,19 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         handler = handler_fn(mask_copy)
         mask_copy.handlers = [handler]
         return mask_copy
+
+    def id_to_name_and_arity(self, symbol_id):
+        """
+        Convert the symbol ID to a string of the symbol name, and the arity of the symbol.
+        """
+        from .canonicalize_de_bruijn import canonicalized_python_name_as_leaf
+
+        if isinstance(symbol_id, ExtraVar):
+            return canonicalized_python_name_as_leaf(symbol_id.id, use_type="Name"), 0
+        return self.tree_dist.symbols[symbol_id]
+
+    def id_to_name(self, symbol_id):
+        """
+        Convert the symbol ID to a string.
+        """
+        return self.id_to_name_and_arity(symbol_id)[0]
