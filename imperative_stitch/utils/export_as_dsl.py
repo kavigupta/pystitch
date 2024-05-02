@@ -13,6 +13,7 @@ from .classify_nodes import BAD_TYPES, classify_nodes_in_program
 
 SEPARATOR = "~"
 
+MINIMUM_VARIABLES = 100
 
 @dataclass
 class DSLSubset:
@@ -84,6 +85,7 @@ class DSLSubset:
         leaves = defaultdict(set)
         for program in s_exps:
             for node in traverse(program):
+                print(node.symbol, de_brujin_new)
                 if node.symbol == de_brujin_new:
                     num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
@@ -93,7 +95,8 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
-        for var in range(num_vars):
+        print(num_vars)
+        for var in range(max(num_vars, MINIMUM_VARIABLES)):
             leaves["Name"].add(canonicalized_python_name_as_leaf(var))
         return cls(
             lengths_by_sequence_type={
