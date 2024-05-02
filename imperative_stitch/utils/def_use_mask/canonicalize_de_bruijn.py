@@ -18,9 +18,6 @@ from imperative_stitch.utils.export_as_dsl import (
 wrapper_outside_type = "Name"
 dbv_type = "DBV"
 
-dbvar_wrapper_symbol = f"dbvar{SEPARATOR}{wrapper_outside_type}"
-
-
 def dbvar_symbol(idx):
     return f"dbvar-{idx}{SEPARATOR}{dbv_type}"
 
@@ -32,7 +29,8 @@ dbvar_symbol_regex = re.compile(
 dbvar_successor_symbol = dbvar_symbol("successor")
 
 dbvar_wrapper_symbol_by_root_type = {
-    "Name": dbvar_wrapper_symbol,
+    root_type: f"dbvar{SEPARATOR}{root_type}"
+    for root_type in ("Name", "NullableName", "NameStr", "NullableNameStr")
 }
 
 
@@ -66,12 +64,13 @@ def create_de_brujin_child(idx, de_bruijn_limit):
     )
 
 
-def create_de_brujin(idx, de_bruijn_limit):
+def create_de_brujin(idx, de_bruijn_limit, dfa_sym):
     """
     Create a de bruijn name.
     """
     return ns.SExpression(
-        dbvar_wrapper_symbol, (create_de_brujin_child(idx, de_bruijn_limit),)
+        dbvar_wrapper_symbol_by_root_type[dfa_sym],
+        (create_de_brujin_child(idx, de_bruijn_limit),),
     )
 
 
@@ -143,7 +142,8 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
     id_to_new = {}
     for node, _, mask in ns.collect_preorder_symbols(s_exp, tree_dist):
         node_sym = tree_dist.symbol_to_index[node.symbol]
-        if not NAME_REGEX.match(node.symbol):
+        mat = NAME_REGEX.match(node.symbol)
+        if not mat:
             continue
         assert not node.children
         currently_defined = get_defined_indices(mask)
@@ -151,7 +151,9 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
             de_brujin_idx = 0
         else:
             de_brujin_idx = len(currently_defined) - currently_defined.index(node_sym)
-        id_to_new[id(node)] = create_de_brujin(de_brujin_idx, de_bruijn_limit)
+        id_to_new[id(node)] = create_de_brujin(
+            de_brujin_idx, de_bruijn_limit, mat.group("dfa_sym")
+        )
 
     def replace(node):
         if id(node) in id_to_new:
