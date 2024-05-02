@@ -75,10 +75,10 @@ class DSLSubset:
         # pylint: disable=cyclic-import
         from .def_use_mask.canonicalize_de_bruijn import (
             canonicalized_python_name_as_leaf,
-            create_de_brujin,
+            create_de_brujin_child,
         )
 
-        de_brujin_new = create_de_brujin(0, 1).symbol
+        de_brujin_new = create_de_brujin_child(0, 1).symbol
         num_vars = 0
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
