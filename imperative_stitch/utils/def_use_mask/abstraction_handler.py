@@ -44,9 +44,11 @@ class AbstractionHandler(Handler):
         handler_fn=default_handler,
     ):
         super().__init__(mask, defined_production_idxs, config)
-        self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
+        ordering = self.mask.tree_dist.ordering.compute_order(
             self.mask.tree_dist.symbol_to_index[head_symbol]
-        )[::-1]
+        )
+        assert ordering is not None, f"No ordering found for {head_symbol}"
+        self._traversal_order_stack = ordering[::-1]
 
         head_symbol = "~".join(head_symbol.split("~")[:-1])
         abstraction = config.abstractions[head_symbol]
