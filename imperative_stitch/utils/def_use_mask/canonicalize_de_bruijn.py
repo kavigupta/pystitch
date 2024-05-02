@@ -15,8 +15,8 @@ from imperative_stitch.utils.export_as_dsl import (
     get_dfa_state,
 )
 
-wrapper_outside_type = "Name"
 dbv_type = "DBV"
+
 
 def dbvar_symbol(idx):
     return f"dbvar-{idx}{SEPARATOR}{dbv_type}"
@@ -48,7 +48,7 @@ def canonicalized_python_name_as_leaf(name, use_type=False):
     """
     result = f"const-&{canonicalized_python_name(name)}:0"
     if use_type:
-        result += SEPARATOR + wrapper_outside_type
+        result += SEPARATOR + use_type
     return result
 
 
@@ -211,7 +211,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     count_vars = 0
 
-    def replace_de_brujin(node, mask):
+    def replace_de_brujin(node, mask, typ):
         """
         Compute the replacement for a de bruijn node.
         """
@@ -220,7 +220,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         idx = get_idx(node)
         if idx == 0:
             result = ns.SExpression(
-                canonicalized_python_name_as_leaf(count_vars, use_type=True), ()
+                canonicalized_python_name_as_leaf(count_vars, use_type=typ), ()
             )
             count_vars += 1
             return result
@@ -233,7 +233,9 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     def traverse_replacer(node, mask):
         if is_dbvar_wrapper_symbol(node.symbol):
             assert len(node.children) == 1
-            new_node = replace_de_brujin(node.children[0], mask)
+            new_node = replace_de_brujin(
+                node.children[0], mask, node.symbol.split(SEPARATOR)[-1]
+            )
             id_to_new[id(node)] = new_node
             return new_node
         return node
