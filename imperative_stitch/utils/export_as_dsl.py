@@ -94,8 +94,9 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
-        for var in range(max(num_vars, MINIMUM_VARIABLES)):
-            leaves["Name"].add(canonicalized_python_name_as_leaf(var))
+        if num_vars > 0:
+            for var in range(max(num_vars, MINIMUM_VARIABLES)):
+                leaves["Name"].add(canonicalized_python_name_as_leaf(var))
         return cls(
             lengths_by_sequence_type={
                 k: sorted(v) for k, v in lengths_by_list_type.items()
