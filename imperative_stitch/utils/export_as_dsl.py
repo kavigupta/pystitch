@@ -33,6 +33,9 @@ class DSLSubset:
         *programs: Tuple[ParsedAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
+        to_s_exp=lambda program, dfa, root_sym: program.to_type_annotated_ns_s_exp(
+            dfa, root_sym
+        ),
         include_variables=False,
     ):
         """
@@ -55,14 +58,12 @@ class DSLSubset:
             assert isinstance(root, str)
             root = (root,) * len(programs)
         programs = [
-            program.to_type_annotated_ns_s_exp(dfa, root_sym)
+            to_s_exp(program, dfa, root_sym)
             for program, root_sym in zip(programs, root)
         ]
         abstrs_dict = {a.name: a for a in abstrs}
         programs += [
-            a.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
-                dfa, a.dfa_root
-            )
+            to_s_exp(a.body.abstraction_calls_to_bodies(abstrs_dict), dfa, a.dfa_root)
             for a in abstrs
         ]
         return cls.from_type_annotated_s_exps(
