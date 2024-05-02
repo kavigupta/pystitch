@@ -13,8 +13,6 @@ from .classify_nodes import BAD_TYPES, classify_nodes_in_program
 
 SEPARATOR = "~"
 
-MINIMUM_VARIABLES = 100
-
 
 @dataclass
 class DSLSubset:
