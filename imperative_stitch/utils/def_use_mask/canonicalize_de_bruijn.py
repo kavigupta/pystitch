@@ -49,7 +49,7 @@ def canonicalized_python_name_as_leaf(name, use_type=False):
     result = f"const-&{canonicalized_python_name(name)}:0"
     if use_type:
         # TODO - this is a bit of a hack, since we should really be using use_type
-        # however, this would require us to add use_type to the program
+        # however, this would require us to add use_type to the tree distribution
         result += SEPARATOR + "Name"
     return result
 
