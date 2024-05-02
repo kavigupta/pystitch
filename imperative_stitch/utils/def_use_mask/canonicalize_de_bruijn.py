@@ -123,7 +123,9 @@ def check_have_all_abstrs(dfa, abstrs):
         for v in vs:
             if not v.startswith("fn_"):
                 continue
-            assert v in abstr_names, f"Missing abstraction {v} in abstrs. Have {sorted(abstr_names)}"
+            assert (
+                v in abstr_names
+            ), f"Missing abstraction {v} in abstrs. Have {sorted(abstr_names)}"
 
 
 def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
