@@ -89,6 +89,9 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
     Convert the program to a de bruijn representation. Creates a tree distribution
         and then calls the canonicalize_de_bruijn_from_tree_dist function.
     """
+
+    check_have_all_abstrs(dfa, abstrs)
+
     s_exp = program.to_type_annotated_ns_s_exp(dfa, root_node)
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     abstr_bodies = [
@@ -112,6 +115,15 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
     return canonicalize_de_bruijn_from_tree_dist(
         fam.tree_distribution_skeleton, s_exp, de_bruijn_limit
     )
+
+
+def check_have_all_abstrs(dfa, abstrs):
+    abstr_names = {abstr.name for abstr in abstrs}
+    for vs in dfa.values():
+        for v in vs:
+            if not v.startswith("fn_"):
+                continue
+            assert v in abstr_names, f"Missing abstraction {v} in abstrs. Have {sorted(abstr_names)}"
 
 
 def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
