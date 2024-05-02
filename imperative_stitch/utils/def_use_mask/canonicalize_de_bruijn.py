@@ -31,6 +31,14 @@ dbvar_symbol_regex = re.compile(
 
 dbvar_successor_symbol = dbvar_symbol("successor")
 
+dbvar_wrapper_symbol_by_root_type = {
+    "Name": dbvar_wrapper_symbol,
+}
+
+
+def is_dbvar_wrapper_symbol(symbol):
+    return symbol in dbvar_wrapper_symbol_by_root_type.values()
+
 
 def canonicalized_python_name(name):
     return f"__{name}"
@@ -71,7 +79,7 @@ def get_idx(s_exp_de_bruijn):
     """
     Get the index of the given de bruijn variable.
     """
-    if s_exp_de_bruijn.symbol == dbvar_wrapper_symbol:
+    if is_dbvar_wrapper_symbol(s_exp_de_bruijn.symbol):
         assert len(s_exp_de_bruijn.children) == 1, s_exp_de_bruijn
         return get_idx(s_exp_de_bruijn.children[0])
     mat = dbvar_symbol_regex.match(s_exp_de_bruijn.symbol)
@@ -221,7 +229,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     id_to_new = {}
 
     def traverse_replacer(node, mask):
-        if node.symbol == dbvar_wrapper_symbol:
+        if is_dbvar_wrapper_symbol(node.symbol):
             assert len(node.children) == 1
             new_node = replace_de_brujin(node.children[0], mask)
             id_to_new[id(node)] = new_node
@@ -311,7 +319,7 @@ class DeBruijnMaskHandler:
         self.level_nesting -= 1
         if self.level_nesting > 0:
             return None
-        assert self.tree_dist.symbols[symbol][0] == dbvar_wrapper_symbol
+        assert is_dbvar_wrapper_symbol(self.tree_dist.symbols[symbol][0])
         symbol = self.tree_dist.symbol_to_index[
             canonicalized_python_name_as_leaf(
                 self.num_available_symbols - self.dbvar_value,

@@ -176,7 +176,7 @@ def unclean_type(x):
 def create_dsl(dfa, dsl_subset, start_state, dslf=None):
     from .def_use_mask.canonicalize_de_bruijn import (
         dbvar_successor_symbol,
-        dbvar_wrapper_symbol,
+        dbvar_wrapper_symbol_by_root_type,
     )
 
     if dslf is None:
@@ -209,7 +209,8 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
             dslf.concrete(constant + SEPARATOR + target, ns.render_type(typ), None)
     if dsl_subset.include_dbvars:
         dslf.concrete(dbvar_successor_symbol, "DBV -> DBV", None)
-        dslf.concrete(dbvar_wrapper_symbol, "DBV -> Name", None)
+        for root_type, sym in dbvar_wrapper_symbol_by_root_type.items():
+            dslf.concrete(sym, f"DBV -> {root_type}", None)
     dslf.prune_to(start_state, tolerate_pruning_entire_productions=True)
     return dslf.finalize()
 
