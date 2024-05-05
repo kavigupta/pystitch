@@ -1,0 +1,87 @@
+[
+    {
+        "body": "(Call (Attribute (Call (Name g_input Load) nil nil) s_strip Load) nil nil)",
+        "sym_arity": 0,
+        "dfa_symvars": [],
+        "dfa_metavars": [],
+        "dfa_choicevars": [],
+        "choice_arity": 0,
+        "arity": 0,
+        "dfa_root": "E",
+        "name": "fn_1"
+    },
+    {
+        "body": "(Assign (list (Name %1 Store)) (Call (Name g_int Load) (list (_starred_content (fn_1))) nil) None)",
+        "sym_arity": 1,
+        "dfa_symvars": [
+            "Name"
+        ],
+        "dfa_metavars": [],
+        "dfa_choicevars": [],
+        "choice_arity": 0,
+        "arity": 0,
+        "dfa_root": "S",
+        "name": "fn_2"
+    },
+    {
+        "body": "(/seq (Return (Constant s_impossible None)))",
+        "sym_arity": 0,
+        "dfa_symvars": [],
+        "dfa_metavars": [],
+        "dfa_choicevars": [],
+        "choice_arity": 0,
+        "arity": 0,
+        "dfa_root": "seqS",
+        "name": "fn_3"
+    },
+    {
+        "body": "(If (Compare (Call (Name g_len Load) (list (_starred_content (Name %1 Load))) nil) (list Eq) (list #0)) (/seq (Return (Constant s_unique None))) (/seq (Return (Constant s_ambiguous None))))",
+        "sym_arity": 1,
+        "dfa_symvars": [
+            "Name"
+        ],
+        "dfa_metavars": [
+            "E"
+        ],
+        "dfa_choicevars": [],
+        "choice_arity": 0,
+        "arity": 1,
+        "dfa_root": "S",
+        "name": "fn_4"
+    },
+    {
+        "body": "(UnaryOp USub (Constant i1 None))",
+        "sym_arity": 0,
+        "dfa_symvars": [],
+        "dfa_metavars": [],
+        "dfa_choicevars": [],
+        "choice_arity": 0,
+        "arity": 0,
+        "dfa_root": "E",
+        "name": "fn_5"
+    },
+    {
+        "body": "(Compare (Call (Name g_len Load) (list (_starred_content (Name %1 Load))) nil) (list Eq) (list (Constant i1 None)))",
+        "sym_arity": 1,
+        "dfa_symvars": [
+            "Name"
+        ],
+        "dfa_metavars": [],
+        "dfa_choicevars": [],
+        "choice_arity": 0,
+        "arity": 0,
+        "dfa_root": "E",
+        "name": "fn_6"
+    },
+    {
+        "body": "(Call (Attribute (fn_1) s_split Load) nil nil)",
+        "sym_arity": 0,
+        "dfa_symvars": [],
+        "dfa_metavars": [],
+        "dfa_choicevars": [],
+        "choice_arity": 0,
+        "arity": 0,
+        "dfa_root": "E",
+        "name": "fn_7"
+    }
+]
