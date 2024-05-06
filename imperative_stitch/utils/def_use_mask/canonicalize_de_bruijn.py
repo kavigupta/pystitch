@@ -24,7 +24,11 @@ def dbvar_symbol(idx):
 
 
 dbvar_symbol_regex = re.compile(
-    r"dbvar-(\d+|successor)" + "(" + re.escape(SEPARATOR) + re.escape(dbv_type) + ")?"
+    r"dbvar-(?P<which>\d+|successor)"
+    + "("
+    + re.escape(SEPARATOR)
+    + re.escape(dbv_type)
+    + ")?"
 )
 
 canonicalized_python_name_leaf_regex = re.compile(
@@ -273,10 +277,10 @@ def compute_de_bruijn_limit(tree_dist: ns.TreeDistribution) -> int:
     for x, _ in tree_dist.symbols:
         mat = dbvar_symbol_regex.match(x)
         if mat and mat.group(1) != "successor":
-            dbvars.append(x)
+            dbvars.append(int(mat.group("which")))
     if not dbvars:
         return 0
-    return len(dbvars) - 1
+    return max(dbvars)
 
 
 @dataclass
