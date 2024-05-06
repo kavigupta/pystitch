@@ -153,6 +153,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         from .canonicalize_de_bruijn import canonicalized_python_name_leaf_regex
 
+        # TODO this is a bit of a hack
         mat = canonicalized_python_name_leaf_regex.match(name)
         if name not in self.tree_dist.symbol_to_index and mat:
             return ExtraVar(int(mat.group("var")))

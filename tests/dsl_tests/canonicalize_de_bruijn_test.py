@@ -407,6 +407,38 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             ],
         )
 
+    def test_abstraction_variable_reuse(self):
+        fit_to = [
+            """
+            (Module
+                (/seq
+                    (Assign (list (Name &x:1 Store)) (Constant i2 None) None)
+                    (Assign (list (Name &y:1 Store)) (Constant i2 None) None)
+                    (fn_1 &x:1)
+                )
+                nil)
+            """
+        ]
+        [test_program] = fit_to
+        absts = [
+            {
+                "body": "(Expr (BinOp (Name %1 Load) Mod (Name %1 Load)))",
+                "dfa_symvars": ["Name"],
+                "dfa_root": "S",
+                "name": "fn_1",
+            },
+        ]
+
+        absts = [Abstraction.of(**entry) for entry in absts]
+
+        res = self.compute_likelihood(
+            fit_to,
+            test_program,
+            abstrs=absts,
+            parser=ParsedAST.parse_s_expression,
+        )
+        self.assertEqual(res, [])
+
     @expand_with_slow_tests(1000)
     def test_no_crash(self, i):
         eg = small_set_runnable_code_examples()[i]
