@@ -10,6 +10,7 @@ from imperative_stitch.analyze_program.ssa.banned_component import (
     BannedComponentError,
     check_banned_components,
 )
+from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
@@ -199,31 +200,56 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
 
 
 class LikelihoodDeBruijnTest(unittest.TestCase):
-    def compute_likelihood(self, fit_to, test_program, de_bruijn_limit=2):
-        dfa = export_dfa()
 
+    def compute_likelihood(
+        self,
+        fit_to,
+        test_program,
+        de_bruijn_limit=2,
+        abstrs=(),
+        parser=ParsedAST.parse_python_module,
+    ):
+        dfa = export_dfa(abstrs=abstrs)
+
+        fit_to_prog = [parser(program) for program in fit_to]
         fit_to_prog = [
-            ParsedAST.parse_python_module(program).to_type_annotated_de_bruijn_ns_s_exp(
-                dfa, "M", de_bruijn_limit=de_bruijn_limit
+            x.to_type_annotated_de_bruijn_ns_s_exp(
+                dfa, "M", de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
             )
-            for program in fit_to
+            for x in fit_to_prog
         ]
         print(ns.render_s_expression(fit_to_prog[0]))
-        test_program = ParsedAST.parse_python_module(
-            test_program
-        ).to_type_annotated_de_bruijn_ns_s_exp(
-            dfa, "M", de_bruijn_limit=de_bruijn_limit
+        test_program = parser(test_program).to_type_annotated_de_bruijn_ns_s_exp(
+            dfa, "M", de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
         )
         print(ns.render_s_expression(test_program))
 
-        dsl = create_dsl(dfa, DSLSubset.from_type_annotated_s_exps(fit_to_prog), "M")
+        dsl = create_dsl(
+            dfa,
+            DSLSubset.from_program(
+                dfa,
+                *fit_to_prog,
+                root="M",
+                abstrs=abstrs,
+                to_s_exp=lambda program, dfa, root_sym: (
+                    program.to_type_annotated_de_bruijn_ns_s_exp(
+                        dfa, root_sym, de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
+                    )
+                    if not isinstance(program, ns.SExpression)
+                    else program
+                ),
+            ),
+            "M",
+        )
         fam = ns.BigramProgramDistributionFamily(
             dsl,
             additional_preorder_masks=[
-                lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=())
+                lambda dist, dsl: DefUseChainPreorderMask(
+                    dist, dsl, dfa=dfa, abstrs=abstrs
+                )
             ],  # note: no need if we are using de bruijn
             include_type_preorder_mask=True,
-            node_ordering=lambda dist: PythonNodeOrdering(dist, ()),
+            node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
         )
         counts = fam.count_programs([fit_to_prog])
         dist = fam.counts_to_distribution(counts)[0]
