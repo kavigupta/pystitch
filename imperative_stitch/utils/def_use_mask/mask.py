@@ -146,3 +146,15 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Convert the symbol ID to a string.
         """
         return self.id_to_name_and_arity(symbol_id)[0]
+
+    def name_to_id(self, name: str):
+        """
+        Convert the string to a symbol ID.
+        """
+        from .canonicalize_de_bruijn import canonicalized_python_name_leaf_regex
+
+        mat = canonicalized_python_name_leaf_regex.match(name)
+        if mat:
+            return ExtraVar(int(mat.group("var")))
+
+        return self.tree_dist.symbol_to_index[name]
