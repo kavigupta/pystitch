@@ -446,7 +446,9 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         se = parse_and_check(code_original)
         if se is None:
             return
-        self.compute_likelihood([code_original], code_original)
+        res = self.compute_likelihood([code_original], code_original)
+        for x, y in res:
+            self.assertTrue(y != 0, (x, y))
 
 
 def parse_and_check(code_original):
