@@ -47,28 +47,43 @@ class DSLSubset:
             programs: the programs to extract the subset from
             root: the root symbol of the DSL. If a tuple is passed, it must
                 be the same length as the programs, providing a root symbol for each program.
+            abstrs: abstractions: their bodies will be added to the list of programs
+            to_s_exp: a function that converts a program to a type-annotated s-expression. By
+                default it uses the ParsedAST.to_type_annotated_ns_s_exp method.
         """
+        programs, root = cls.create_program_list(*programs, root=root, abstrs=abstrs)
+        programs = [
+            to_s_exp(program, dfa, root_sym)
+            for program, root_sym in zip(programs, root)
+        ]
+
+        return cls.from_type_annotated_s_exps(
+            programs, include_variables=include_variables
+        )
+
+    @classmethod
+    def create_program_list(
+        cls,
+        *programs: Tuple[ParsedAST, ...],
+        root: Union[str, Tuple[str, ...]],
+        abstrs: Tuple[Abstraction] = (),
+    ):
         if isinstance(root, tuple):
             if len(root) != len(programs):
                 raise ValueError(
                     "The length of the root should be the same as the number of programs, but was"
                     f" {len(root)} and {len(programs)} respectively."
                 )
+            root = list(root)
         else:
             assert isinstance(root, str)
-            root = (root,) * len(programs)
-        programs = [
-            to_s_exp(program, dfa, root_sym)
-            for program, root_sym in zip(programs, root)
-        ]
+            root = [root] * len(programs)
         abstrs_dict = {a.name: a for a in abstrs}
-        programs += [
-            to_s_exp(a.body.abstraction_calls_to_bodies(abstrs_dict), dfa, a.dfa_root)
-            for a in abstrs
+        programs = list(programs) + [
+            a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs
         ]
-        return cls.from_type_annotated_s_exps(
-            programs, include_variables=include_variables
-        )
+        root += [a.dfa_root for a in abstrs]
+        return programs, root
 
     @classmethod
     def from_type_annotated_s_exps(cls, s_exps, *, include_variables=False):

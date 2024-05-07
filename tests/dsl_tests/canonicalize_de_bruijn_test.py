@@ -1,10 +1,12 @@
 import ast
 import re
+import time
 import unittest
 from fractions import Fraction
 
 import neurosym as ns
 import numpy as np
+import pytest
 
 from imperative_stitch.analyze_program.ssa.banned_component import (
     BannedComponentError,
@@ -200,7 +202,6 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
 
 
 class LikelihoodDeBruijnTest(unittest.TestCase):
-
     def compute_likelihood(
         self,
         fit_to,
@@ -212,35 +213,14 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         dfa = export_dfa(abstrs=abstrs)
 
         fit_to_prog = [parser(program) for program in fit_to]
-        fit_to_prog = [
-            x.to_type_annotated_de_bruijn_ns_s_exp(
-                dfa, "M", de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
-            )
-            for x in fit_to_prog
-        ]
-        print(ns.render_s_expression(fit_to_prog[0]))
+        fit_to_prog, dsl = self.fit_dsl(
+            *fit_to_prog, abstrs=abstrs, dfa=dfa, de_bruijn_limit=de_bruijn_limit
+        )
         test_program = parser(test_program).to_type_annotated_de_bruijn_ns_s_exp(
             dfa, "M", de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
         )
+        print(ns.render_s_expression(fit_to_prog[0]))
         print(ns.render_s_expression(test_program))
-
-        dsl = create_dsl(
-            dfa,
-            DSLSubset.from_program(
-                dfa,
-                *fit_to_prog,
-                root="M",
-                abstrs=abstrs,
-                to_s_exp=lambda program, dfa, root_sym: (
-                    program.to_type_annotated_de_bruijn_ns_s_exp(
-                        dfa, root_sym, de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
-                    )
-                    if not isinstance(program, ns.SExpression)
-                    else program
-                ),
-            ),
-            "M",
-        )
         fam = ns.BigramProgramDistributionFamily(
             dsl,
             additional_preorder_masks=[
@@ -268,6 +248,24 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         print(results)
 
         return results
+
+    def fit_dsl(self, *programs, de_bruijn_limit, abstrs, dfa):
+        programs_all, roots_all = DSLSubset.create_program_list(
+            *programs, root="M", abstrs=abstrs
+        )
+        programs_all = [
+            x.to_type_annotated_de_bruijn_ns_s_exp(
+                dfa, root, de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
+            )
+            for x, root in zip(programs_all, roots_all)
+        ]
+        dsl = create_dsl(
+            dfa,
+            DSLSubset.from_type_annotated_s_exps(programs_all),
+            "M",
+        )
+
+        return programs_all[: len(programs)], dsl
 
     def test_likelihood_more_variables(self):
         fit_to = ["x = 2; y = x; y = x"]
@@ -449,6 +447,22 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         res = self.compute_likelihood([code_original], code_original)
         for x, y in res:
             self.assertTrue(y != 0, (x, y))
+
+    @pytest.mark.slow_test
+    def test_dsl_timing(self):
+        programs = [
+            ParsedAST.parse_python_module(x["solution"])
+            for x in small_set_runnable_code_examples()[:100]
+        ]
+        start = time.time()
+        self.fit_dsl(
+            *programs,
+            de_bruijn_limit=2,
+            abstrs=(),
+            dfa=export_dfa(),
+        )
+        end = time.time()
+        self.assertLess(end - start, 0)
 
 
 def parse_and_check(code_original):
