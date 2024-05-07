@@ -250,22 +250,12 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         return results
 
     def fit_dsl(self, *programs, de_bruijn_limit, abstrs, dfa):
-        programs_all, roots_all = DSLSubset.create_program_list(
-            *programs, root="M", abstrs=abstrs
+        programs, subset = DSLSubset.from_programs_de_bruijn(
+            *programs, root="M", dfa=dfa, abstrs=abstrs, de_bruijn_limit=de_bruijn_limit
         )
-        programs_all = [
-            x.to_type_annotated_de_bruijn_ns_s_exp(
-                dfa, root, de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
-            )
-            for x, root in zip(programs_all, roots_all)
-        ]
-        dsl = create_dsl(
-            dfa,
-            DSLSubset.from_type_annotated_s_exps(programs_all),
-            "M",
-        )
+        dsl = create_dsl(dfa, subset, "M")
 
-        return programs_all[: len(programs)], dsl
+        return programs, dsl
 
     def test_likelihood_more_variables(self):
         fit_to = ["x = 2; y = x; y = x"]

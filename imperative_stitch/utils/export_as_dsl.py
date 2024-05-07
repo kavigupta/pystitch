@@ -123,6 +123,20 @@ class DSLSubset:
             include_dbvars=num_vars > 0,
         )
 
+    @classmethod
+    def from_programs_de_bruijn(cls, *programs, root, dfa, abstrs, de_bruijn_limit):
+        programs_all, roots_all = cls.create_program_list(
+            *programs, root=root, abstrs=abstrs
+        )
+        programs_all = [
+            x.to_type_annotated_de_bruijn_ns_s_exp(
+                dfa, root, de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
+            )
+            for x, root in zip(programs_all, roots_all)
+        ]
+        subset = cls.from_type_annotated_s_exps(programs_all)
+        return programs_all[: len(programs)], subset
+
     def fill_in_missing_lengths(self):
         """
         Fill in "missing lengths" for each sequence type. E.g., if the lengths
