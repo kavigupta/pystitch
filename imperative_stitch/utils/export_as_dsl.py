@@ -125,15 +125,20 @@ class DSLSubset:
 
     @classmethod
     def from_programs_de_bruijn(cls, *programs, root, dfa, abstrs, de_bruijn_limit):
+        from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
+            canonicalize_de_bruijn,
+        )
+
         programs_all, roots_all = cls.create_program_list(
             *programs, root=root, abstrs=abstrs
         )
-        programs_all = [
-            x.to_type_annotated_de_bruijn_ns_s_exp(
-                dfa, root, de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
-            )
-            for x, root in zip(programs_all, roots_all)
-        ]
+        programs_all = canonicalize_de_bruijn(
+            programs_all, roots_all, dfa, abstrs, de_bruijn_limit
+        )
+        # programs_all = [
+        #     canonicalize_de_bruijn([x], [root], dfa, abstrs, de_bruijn_limit)[0]
+        #     for x, root in zip(programs_all, roots_all)
+        # ]
         subset = cls.from_type_annotated_s_exps(programs_all)
         return programs_all[: len(programs)], subset
 

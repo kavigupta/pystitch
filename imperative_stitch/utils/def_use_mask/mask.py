@@ -34,6 +34,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import compute_de_bruijn_limit
 
+        # pylint: disable=cyclic-import
+        from .canonicalize_de_bruijn import is_dbvar_wrapper_symbol
+
         super().__init__(tree_dist)
         assert isinstance(tree_dist.ordering, PythonNodeOrdering)
         assert isinstance(abstrs, (list, tuple))
@@ -41,6 +44,16 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         self.has_global_available = any(
             GLOBAL_REGEX.match(x) for x, _ in self.tree_dist.symbols
         )
+        self.idx_to_name = []
+        for x, _ in self.tree_dist.symbols:
+            mat = NAME_REGEX.match(x)
+            self.idx_to_name.append(mat.group("name") if mat else None)
+
+        self.name_e = self.tree_dist.symbol_to_index.get("Name~E", -1)
+        self.dbvars = [
+            is_dbvar_wrapper_symbol(symbol) for symbol, _ in self.tree_dist.symbols
+        ]
+
         self.handlers = []
         self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
         self.de_bruijn_limit = compute_de_bruijn_limit(tree_dist)
@@ -50,19 +63,15 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Whether or not the symbol matches the names.
         """
-        # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import is_dbvar_wrapper_symbol
 
-        symbol = self.id_to_name(symbol_id)
-        if symbol == "Name~E":
+        if symbol_id == self.name_e:
             return self.has_global_available or len(names) > 0
-        if is_dbvar_wrapper_symbol(symbol):
+        if self.dbvars[symbol_id]:
             assert self.de_bruijn_mask_handler is None
             return len(names) > 0
-        mat = NAME_REGEX.match(symbol)
-        if not mat:
+        if self.idx_to_name[symbol_id] is None:
             return True
-        return mat.group("name") in names
+        return self.idx_to_name[symbol_id] in names
 
     def currently_defined_indices(self):
         """
@@ -82,7 +91,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             return self.de_bruijn_mask_handler.compute_mask(symbols, is_defn)
         if is_defn:
             return [True] * len(symbols)
-        names = handler.currently_defined_names()
+        names = set(handler.currently_defined_names())
         return [self._matches(names, symbol) for symbol in symbols]
 
     def on_entry(self, position: int, symbol: int):

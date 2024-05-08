@@ -102,15 +102,18 @@ def get_idx(s_exp_de_bruijn):
     return int(after)
 
 
-def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
+def canonicalize_de_bruijn(programs, root_states, dfa, abstrs, de_bruijn_limit):
     """
-    Convert the program to a de bruijn representation. Creates a tree distribution
+    Convert the programs to a de bruijn representation. Creates a tree distribution
         and then calls the canonicalize_de_bruijn_from_tree_dist function.
     """
 
     check_have_all_abstrs(dfa, abstrs)
 
-    s_exp = program.to_type_annotated_ns_s_exp(dfa, root_node)
+    s_exps = [
+        program.to_type_annotated_ns_s_exp(dfa, root_node)
+        for program, root_node in zip(programs, root_states)
+    ]
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     abstr_bodies = [
         abstr.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
@@ -119,20 +122,34 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
         for abstr in abstrs
     ]
 
-    dsl = create_dsl(
-        dfa, DSLSubset.from_type_annotated_s_exps([s_exp] + abstr_bodies), root_node
-    )
-    fam = ns.BigramProgramDistributionFamily(
-        dsl,
-        additional_preorder_masks=[
-            lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
-        ],
-        include_type_preorder_mask=True,
-        node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
-    )
-    return canonicalize_de_bruijn_from_tree_dist(
-        fam.tree_distribution_skeleton, s_exp, de_bruijn_limit
-    )
+    subset = DSLSubset.from_type_annotated_s_exps(s_exps + abstr_bodies)
+
+    dsl_by_root = {
+        root: create_dsl(
+            dfa,
+            subset,
+            root,
+        )
+        for root in set(root_states)
+    }
+    print(list(dsl_by_root.keys()))
+    fam = {
+        root: ns.BigramProgramDistributionFamily(
+            dsl,
+            additional_preorder_masks=[
+                lambda dist, dsl: DefUseChainPreorderMask(
+                    dist, dsl, dfa=dfa, abstrs=abstrs
+                )
+            ],
+            include_type_preorder_mask=True,
+            node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
+        ).tree_distribution_skeleton
+        for root, dsl in dsl_by_root.items()
+    }
+    return [
+        canonicalize_de_bruijn_from_tree_dist(fam[root], s_exp, de_bruijn_limit)
+        for s_exp, root in zip(s_exps, root_states)
+    ]
 
 
 def check_have_all_abstrs(dfa, abstrs):
