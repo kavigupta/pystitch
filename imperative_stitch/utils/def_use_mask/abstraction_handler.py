@@ -39,7 +39,7 @@ class AbstractionHandler(Handler):
     ):
         super().__init__(mask, defined_production_idxs, config)
         ordering = self.mask.tree_dist.ordering.compute_order(
-            self.mask.tree_dist.symbol_to_index[head_symbol]
+            self.mask.name_to_id(head_symbol)
         )
         assert ordering is not None, f"No ordering found for {head_symbol}"
         self._traversal_order_stack = ordering[::-1]
