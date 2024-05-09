@@ -135,10 +135,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Convert the symbol ID to a string of the symbol name, and the arity of the symbol.
         """
-        from .canonicalize_de_bruijn import canonicalized_python_name_as_leaf
 
         if isinstance(symbol_id, ExtraVar):
-            return canonicalized_python_name_as_leaf(symbol_id.id, use_type="Name"), 0
+            return symbol_id.leaf_name(), 0
         return self.tree_dist.symbols[symbol_id]
 
     def id_to_name(self, symbol_id):

@@ -8,10 +8,12 @@ import numpy as np
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.utils.def_use_mask.extra_var import (
+    canonicalized_python_name_as_leaf,
+)
+from imperative_stitch.utils.types import SEPARATOR
 
 from .classify_nodes import BAD_TYPES, classify_nodes_in_program
-
-SEPARATOR = "~"
 
 
 @dataclass
@@ -92,10 +94,7 @@ class DSLSubset:
             DSLSubset.from_program.
         """
         # pylint: disable=cyclic-import
-        from .def_use_mask.canonicalize_de_bruijn import (
-            canonicalized_python_name_as_leaf,
-            create_de_brujin_child,
-        )
+        from .def_use_mask.canonicalize_de_bruijn import create_de_brujin_child
 
         de_brujin_new = create_de_brujin_child(0, 1).symbol
         num_vars = 0
@@ -151,10 +150,6 @@ class DSLSubset:
             leaves=self.leaves,
             include_dbvars=self.include_dbvars,
         )
-
-
-def get_dfa_state(sym):
-    return sym.split(SEPARATOR)[1]
 
 
 def traverse(s_exp):

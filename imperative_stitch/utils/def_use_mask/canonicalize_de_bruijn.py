@@ -5,16 +5,15 @@ from typing import List
 
 import neurosym as ns
 
-from imperative_stitch.utils.def_use_mask.extra_var import ExtraVar
+from imperative_stitch.utils.def_use_mask.extra_var import (
+    ExtraVar,
+    canonicalized_python_name_as_leaf,
+)
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import (
-    SEPARATOR,
-    DSLSubset,
-    create_dsl,
-    get_dfa_state,
-)
+from imperative_stitch.utils.export_as_dsl import SEPARATOR, DSLSubset, create_dsl
+from imperative_stitch.utils.types import get_dfa_state
 
 dbv_type = "DBV"
 
@@ -45,22 +44,6 @@ dbvar_wrapper_symbol_by_root_type = {
 
 def is_dbvar_wrapper_symbol(symbol):
     return symbol in dbvar_wrapper_symbol_by_root_type.values()
-
-
-def canonicalized_python_name(name):
-    return f"__{name}"
-
-
-def canonicalized_python_name_as_leaf(name, use_type=False):
-    """
-    Get the canonicalized python name as a leaf node. E.g., __0
-    """
-    result = f"const-&{canonicalized_python_name(name)}:0"
-    if use_type:
-        # TODO - this is a bit of a hack, since we should really be using use_type
-        # however, this would require us to add use_type to the tree distribution
-        result += SEPARATOR + "Name"
-    return result
 
 
 def create_de_brujin_child(idx, de_bruijn_limit):

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from imperative_stitch.utils.types import SEPARATOR
+
 
 @dataclass(frozen=True, eq=True, order=True)
 class ExtraVar:
@@ -10,3 +12,23 @@ class ExtraVar:
     """
 
     id: int
+
+    def leaf_name(self):
+        return canonicalized_python_name_as_leaf(self.id, "Name")
+
+
+def canonicalized_python_name_as_leaf(name, use_type=False):
+    """
+    Get the canonicalized python name as a leaf node. E.g., __0
+    """
+    result = f"const-&{canonicalized_python_name(name)}:0"
+    if use_type:
+        # This is a bit of a hack, since we should really be using use_type
+        # however, this would require us to add a leaf for every version of
+        # use_type to the tree distribution
+        result += SEPARATOR + "Name"
+    return result
+
+
+def canonicalized_python_name(name):
+    return f"__{name}"
