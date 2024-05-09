@@ -6,6 +6,7 @@ NAME_REGEX = re.compile(
 GLOBAL_REGEX = re.compile(
     r"const-(?P<typ>g)_(?P<name>\w+|\*)~(Name|NullableName|NameStr|NullableNameStr)"
 )
+VARIABLE_REGEX = re.compile(r"var-.*")
 
 
 def match_either(s):

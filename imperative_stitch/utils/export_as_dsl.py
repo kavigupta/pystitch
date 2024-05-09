@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple, Union
 import neurosym as ns
 import numpy as np
 
+from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
 
 from .classify_nodes import BAD_TYPES, classify_nodes_in_program
@@ -26,7 +27,11 @@ class DSLSubset:
 
     @classmethod
     def from_program(
-        cls, dfa, *programs: Tuple[ParsedAST, ...], root: Union[str, Tuple[str, ...]]
+        cls,
+        dfa,
+        *programs: Tuple[ParsedAST, ...],
+        root: Union[str, Tuple[str, ...]],
+        abstrs: Tuple[Abstraction] = (),
     ):
         """
         Construct a DSLSubset from a list of programs. The subset contains all the
@@ -50,6 +55,13 @@ class DSLSubset:
         programs = [
             program.to_type_annotated_ns_s_exp(dfa, root_sym)
             for program, root_sym in zip(programs, root)
+        ]
+        abstrs_dict = {a.name: a for a in abstrs}
+        programs += [
+            a.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
+                dfa, a.dfa_root
+            )
+            for a in abstrs
         ]
         return cls.from_type_annotated_s_exps(programs)
 

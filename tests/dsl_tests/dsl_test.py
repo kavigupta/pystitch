@@ -215,6 +215,7 @@ def fit_to(
     programs,
     parser=ParsedAST.parse_python_module,
     root="M",
+    abstrs=(),
     use_def_use=True,
     use_node_ordering=True,
     smoothing=True,
@@ -225,15 +226,23 @@ def fit_to(
         this is basically only useful in the specific context where we are testing
         the names mask and want no other masks to be applied.
     """
-    dfa = export_dfa()
+    dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
-    dsl = create_dsl(dfa, DSLSubset.from_program(dfa, *programs, root=root), root)
+    dsl = create_dsl(
+        dfa, DSLSubset.from_program(dfa, *programs, root=root, abstrs=abstrs), root
+    )
     dsl_subset = create_dsl(
         dfa, DSLSubset.from_program(dfa, *programs, root=root), root
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
-    apms = [DefUseChainPreorderMask]
-    node_ordering = PythonNodeOrdering if use_node_ordering else ns.DefaultNodeOrdering
+    apms = [
+        lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
+    ]
+    node_ordering = (
+        (lambda dist: PythonNodeOrdering(dist, abstrs))
+        if use_node_ordering
+        else ns.DefaultNodeOrdering
+    )
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=apms if use_def_use else [],

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from imperative_stitch.parser.parse_python import fields_for_node
-from imperative_stitch.utils.def_use_mask.names import match_either
+from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX, match_either
 
 
 class Handler(ABC):
@@ -72,7 +72,8 @@ class Handler(ABC):
             sym, _ = self.mask.tree_dist.symbols[symbol]
             mat = match_either(sym)
             if not mat:
-                raise ValueError(f"Expected name but received {sym}")
+                assert VARIABLE_REGEX.match(sym), f"Could not match {sym}"
+                continue
             names.add(mat.group("name"))
         return names
 
@@ -116,11 +117,16 @@ class DefaultHandler(Handler):
 
 
 def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handler:
+    # pylint: disable=cyclic-import
+    from .abstraction_handler import AbstractionHandler
     from .defining_statement_handler import defining_statement_handlers
 
     assert isinstance(defined_production_idxs, list)
 
     symbol, _ = mask.tree_dist.symbols[symbol]
+    if symbol.startswith("fn_"):
+        return AbstractionHandler(mask, defined_production_idxs, config, symbol)
+
     return defining_statement_handlers().get(symbol, DefaultHandler)(
         mask, defined_production_idxs, config
     )

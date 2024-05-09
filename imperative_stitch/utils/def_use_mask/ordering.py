@@ -39,9 +39,9 @@ class PythonNodeOrdering(ns.DictionaryNodeOrdering):
     Orders the subnodes of a node according to a dictionary.
     """
 
-    def __init__(self, dist):
+    def __init__(self, dist, abstrs):
         super().__init__(
             dist,
-            python_node_ordering_with_abstractions([]),
+            python_node_ordering_with_abstractions(abstrs),
             tolerate_missing=True,
         )
