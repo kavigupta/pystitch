@@ -5,8 +5,12 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.stitch_output_set import load_stitch_output_set
+from imperative_stitch.data.stitch_output_set import (
+    load_stitch_output_set,
+    load_stitch_output_set_no_dfa,
+)
 from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
 from tests.utils import (
@@ -38,7 +42,11 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         return f"const-&{name}:{scope}~Name"
 
     def annotate_program(
-        self, program, parser=ParsedAST.parse_python_module, abstrs=()
+        self,
+        program,
+        parser=ParsedAST.parse_python_module,
+        abstrs=(),
+        convert_to_python=True,
     ):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
@@ -52,10 +60,16 @@ class DefUseMaskTestGeneric(unittest.TestCase):
                 )
             )
         )
-        annotated = annotated.abstraction_calls_to_stubs({x.name: x for x in abstrs})
-        return annotated.to_python()
+        if convert_to_python:
+            annotated = annotated.abstraction_calls_to_stubs(
+                {x.name: x for x in abstrs}
+            )
+            return annotated.to_python()
+        return annotated
 
-    def assertAbstractionAnnotation(self, code, rewritten, abstractions):
+    def assertAbstractionAnnotation(
+        self, code, rewritten, abstractions, convert_to_python=True
+    ):
         print("*" * 80)
         for abstr in abstractions:
             print(abstr.body.to_s_exp())
@@ -66,11 +80,12 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             .to_python()
         )
         print("*" * 80)
-        print(
-            ParsedAST.parse_s_expression(rewritten)
-            .abstraction_calls_to_stubs({x.name: x for x in abstractions})
-            .to_python()
-        )
+        if convert_to_python:
+            print(
+                ParsedAST.parse_s_expression(rewritten)
+                .abstraction_calls_to_stubs({x.name: x for x in abstractions})
+                .to_python()
+            )
         print("*" * 80)
         try:
             self.annotate_program(
@@ -84,6 +99,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             rewritten,
             parser=ParsedAST.parse_s_expression,
             abstrs=abstractions,
+            convert_to_python=convert_to_python,
         )
 
 
@@ -917,17 +933,89 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
             ).strip(),
         )
 
+    def test_targets_containing_abstraction(self):
+        self.maxDiff = None
+        code = ParsedAST.parse_s_expression(
+            """
+            (Module~M
+                (/seq~seqS~2
+                    (Assign~S
+                        (fn_1)
+                        (Tuple~E
+                            (list~_StarredRoot_~2
+                                (_starred_content~StarredRoot (Constant~E (const-i2~Const) (const-None~ConstKind)))
+                                (_starred_content~StarredRoot (Constant~E (const-i3~Const) (const-None~ConstKind))))
+                            (Load~Ctx))
+                        (const-None~TC))
+                    (Assign~S
+                        (list~_L_~1 (Name~L (const-&x:0~Name) (Store~Ctx)))
+                        (Name~E (const-&a:0~Name) (Load~Ctx)) (const-None~TC)))
+                (list~_TI_~0))
+            """
+        )
+
+        abstrs = [
+            Abstraction.of(
+                "fn_1",
+                """
+                (list~_L_~1
+                    (Tuple~L
+                        (list~_L_~2
+                            (_starred_content~L (Name~L (const-&a:0~Name) (Store~Ctx)))
+                            (_starred_content~L (Name~L (const-&b:0~Name) (Store~Ctx))))
+                        (Store~Ctx)))
+                """,
+                "[L]",
+            )
+        ]
+        annotated = self.annotate_program(
+            code,
+            parser=lambda x: x,
+            abstrs=abstrs,
+            convert_to_python=False,
+        )
+        expected = """
+        (Module~M
+            (/seq~seqS~2
+                (Assign~S
+                    (fn_1~_L_)
+                    (Tuple~E
+                        (list~_StarredRoot_~2
+                            (_starred_content~StarredRoot (Constant~E (const-i2~Const) (const-None~ConstKind)))
+                            (_starred_content~StarredRoot (Constant~E (const-i3~Const) (const-None~ConstKind))))
+                        (Load~Ctx))
+                    (const-None~TC))
+                (Assign~S
+                    (list~_L_~1 (Name~L (const-&x?a$b:0~Name) (Store~Ctx)))
+                    (Name~E (const-&a?b:0~Name) (Load~Ctx)) (const-None~TC)))
+            (list~_TI_~0))
+        """
+        expected = ns.render_s_expression(ns.parse_s_expression(expected))
+        self.assertEqual(
+            ns.render_s_expression(
+                annotated.to_type_annotated_ns_s_exp(export_dfa(), "M")
+            ),
+            expected,
+        )
+
 
 class DefUseMaskWithAbstractionsRealisticTest(DefUseMaskTestGeneric):
-    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
-    def test_realistic_with_abstractions(self, i):
-        x = copy.deepcopy(load_stitch_output_set()[i])
+    def check_use_mask(self, x, **kwargs):
+        x = copy.deepcopy(x)
         abstractions = [
             Abstraction.of(name=f"fn_{it + 1}", **abstr)
             for it, abstr in enumerate(x["abstractions"])
         ]
         for code, rewritten in zip(x["code"], x["rewritten"]):
-            self.assertAbstractionAnnotation(code, rewritten, abstractions)
+            self.assertAbstractionAnnotation(code, rewritten, abstractions, **kwargs)
+
+    @expand_with_slow_tests(len(load_stitch_output_set()), 10)
+    def test_realistic_with_abstractions(self, i):
+        self.check_use_mask(load_stitch_output_set()[i])
+
+    @expand_with_slow_tests(len(load_stitch_output_set_no_dfa()), 10)
+    def test_realistic_with_abstractions_no_dfa(self, i):
+        self.check_use_mask(load_stitch_output_set_no_dfa()[i], convert_to_python=False)
 
 
 class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
