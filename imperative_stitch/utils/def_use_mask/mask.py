@@ -44,7 +44,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Whether or not the symbol matches the names.
         """
-        symbol, _ = self.tree_dist.symbols[symbol_id]
+        symbol = self.id_to_name(symbol_id)
         if symbol == "Name~E":
             return self.has_global_available or len(names) > 0
         mat = NAME_REGEX.match(symbol)
@@ -95,3 +95,21 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         handler = handler_fn(mask_copy)
         mask_copy.handlers = [handler]
         return mask_copy
+
+    def id_to_name_and_arity(self, symbol_id):
+        """
+        Convert the symbol ID to a string of the symbol name, and the arity of the symbol.
+        """
+        return self.tree_dist.symbols[symbol_id]
+
+    def id_to_name(self, symbol_id):
+        """
+        Convert the symbol ID to a string.
+        """
+        return self.id_to_name_and_arity(symbol_id)[0]
+
+    def name_to_id(self, name: str):
+        """
+        Convert the string to a symbol ID.
+        """
+        return self.tree_dist.symbol_to_index[name]

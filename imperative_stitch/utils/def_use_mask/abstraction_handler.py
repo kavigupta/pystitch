@@ -136,7 +136,7 @@ class AbstractionBodyTraverser:
             ), "We do not support the identity abstraction"
             yield from self.handle_variable(node, position)
             return
-        sym = self.mask.tree_dist.symbol_to_index[node.symbol]
+        sym = self.mask.name_to_id(node.symbol)
         root = self._mask_copy is None
         if root:
             self._mask_copy = self.mask.with_handler(
@@ -193,7 +193,7 @@ class CollectingHandler(Handler):
 
     @property
     def node(self):
-        sym, arity = self.mask.tree_dist.symbols[self.sym]
+        sym, arity = self.mask.id_to_name_and_arity(self.sym)
         assert (
             len(self.children) == arity
         ), f"{sym} expected {arity} children, got {len(self.children)}"
