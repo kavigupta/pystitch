@@ -39,7 +39,7 @@ class AbstractionHandler(Handler):
     ):
         super().__init__(mask, defined_production_idxs, config)
         self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
-            self.mask.tree_dist.symbol_to_index[head_symbol]
+            self.mask.name_to_id(head_symbol)
         )[::-1]
 
         head_symbol = "~".join(head_symbol.split("~")[:-1])
