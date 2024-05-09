@@ -19,15 +19,9 @@ class AbstractionHandler(Handler):
             of the arguments' appearances in the body], and continue traversing,
             substituting &x:0 for the passed in node.
 
-    The way this is accomplished is via the _body_handler coroutine, which yields
-        a boolean value indicating whether the current argument is defining a variable,
-        and is sent the next node in the tree to process. This is done via a coroutine
-        because that is the simplest way to have a recursive function that can pause.
-
-    The coroutine iterates on a copy of the def-use mask, which is important because
-        the original mask used to create the AbstractionHandler will be modified
-        as the arguments to the abstraction are processed. The copy is created with
-        a single handler, which is a default handler for the body.
+    The way this is accomplished is via the traverser field, which performs the
+        traversal over the body of the abstraction. See AbstractionBodyTraverser
+        for more information.
 
     handler_fn is used to create the default handler fn in the mask copy used to
         absorb the body of the abstraction. This is necessary because the handler
@@ -98,7 +92,16 @@ class AbstractionHandler(Handler):
 
 class AbstractionBodyTraverser:
     """
-    Actually performs the traversal.
+    This class is a coroutine that traverses the body of an abstraction.
+        It does so via the ._body_handler coroutine, which is a generator that yields a
+        boolean value indicating whether the current argument is defining a variable,
+        and is sent the next node in the tree to process. This is done via a coroutine
+        because that is the simplest way to have a recursive function that can pause.
+
+    The coroutine iterates on a copy of the def-use mask, which is important because
+        the original mask used to create the AbstractionHandler will be modified
+        as the arguments to the abstraction are processed. The copy is created with
+        a single handler, which is a default handler for the body.
     """
 
     def __init__(self, mask, config, body, create_handler):
