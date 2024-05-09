@@ -28,7 +28,10 @@ class DefiningStatementHandler(ConstructHandler):
         if position in self._targeted_positions:
             self.defined_symbols += child.defined_symbols
         if position == self.child_fields[self.define_symbols_on_exit]:
-            self.defined_production_idxs += self.defined_symbols
+            current = set(self.defined_production_idxs)
+            self.defined_production_idxs += [
+                x for x in self.defined_symbols if x not in current
+            ]
         super().on_child_exit(position, symbol, child)
 
     def is_defining(self, position: int) -> bool:
