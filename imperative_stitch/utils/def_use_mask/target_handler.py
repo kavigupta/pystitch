@@ -23,7 +23,7 @@ def create_target_handler(root_symbol: int, mask, defined_production_idxs, confi
     }
 
     symbol = root_symbol
-    symbol, _ = mask.tree_dist.symbols[symbol]
+    symbol = mask.id_to_name(symbol)
     if symbol.startswith("fn"):
         return AbstractionHandler(
             mask,
@@ -127,7 +127,7 @@ class NameTargetHandler(TargetConstructHandler):
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if self.is_defining(position):
             # for alias, we don't want to keep None
-            if self.mask.tree_dist.symbols[symbol][0] != "const-None~NullableNameStr":
+            if self.mask.id_to_name(symbol) != "const-None~NullableNameStr":
                 self.defined_symbols = [symbol]
         return super().on_child_enter(position, symbol)
 

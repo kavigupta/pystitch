@@ -39,7 +39,7 @@ class AbstractionHandler(Handler):
     ):
         super().__init__(mask, defined_production_idxs, config)
         self._traversal_order_stack = self.mask.tree_dist.ordering.compute_order(
-            self.mask.tree_dist.symbol_to_index[head_symbol]
+            self.mask.name_to_id(head_symbol)
         )[::-1]
 
         head_symbol = "~".join(head_symbol.split("~")[:-1])
@@ -136,7 +136,7 @@ class AbstractionBodyTraverser:
             ), "We do not support the identity abstraction"
             yield from self.handle_variable(node, position)
             return
-        sym = self.mask.tree_dist.symbol_to_index[node.symbol]
+        sym = self.mask.name_to_id(node.symbol)
         root = self._mask_copy is None
         if root:
             self._mask_copy = self.mask.with_handler(
@@ -193,7 +193,7 @@ class CollectingHandler(Handler):
 
     @property
     def node(self):
-        sym, arity = self.mask.tree_dist.symbols[self.sym]
+        sym, arity = self.mask.id_to_name_and_arity(self.sym)
         assert (
             len(self.children) == arity
         ), f"{sym} expected {arity} children, got {len(self.children)}"
