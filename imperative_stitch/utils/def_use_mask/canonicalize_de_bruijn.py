@@ -94,16 +94,11 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
     check_have_all_abstrs(dfa, abstrs)
 
     s_exp = program.to_type_annotated_ns_s_exp(dfa, root_node)
-    abstrs_dict = {abstr.name: abstr for abstr in abstrs}
-    abstr_bodies = [
-        abstr.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
-            dfa, abstr.dfa_root
-        )
-        for abstr in abstrs
-    ]
 
     dsl = create_dsl(
-        dfa, DSLSubset.from_type_annotated_s_exps([s_exp] + abstr_bodies), root_node
+        dfa,
+        DSLSubset.from_program(dfa, program, root=root_node, abstrs=abstrs),
+        root_node,
     )
     fam = ns.BigramProgramDistributionFamily(
         dsl,
