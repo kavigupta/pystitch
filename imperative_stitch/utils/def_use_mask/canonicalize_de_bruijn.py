@@ -45,6 +45,11 @@ def is_dbvar_wrapper_symbol(symbol):
 def create_de_brujin_child(idx, max_explicit_dbvar_index):
     """
     Create a de bruijn child. to be placed into a wrapper.
+
+    Series, starting at (dbvar-0~DBV) and continuing to (dbvar-N~DBV),
+        where N is the max_explicit_dbvar_index, then continuing
+        with (dbvar-successor~DBV (dbvar-N~DBV)),
+        (dbvar-successor (dbvar-successor~DBV (dbvar-N~DBV))), etc.
     """
     if idx <= max_explicit_dbvar_index:
         return ns.SExpression(dbvar_symbol(idx), ())
@@ -56,7 +61,10 @@ def create_de_brujin_child(idx, max_explicit_dbvar_index):
 
 def create_de_brujin(idx, max_explicit_dbvar_index, dfa_sym):
     """
-    Create a de bruijn name.
+    Create a de bruijn name. This is a wrapper around a de bruijn child, and looks e.g., like
+        (dbvar~Name (dbvar-0~DBV)).
+
+    The root type is given by dfa_sym.
     """
     return ns.SExpression(
         dbvar_wrapper_symbol_by_root_type[dfa_sym],
