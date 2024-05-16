@@ -8,10 +8,12 @@ import numpy as np
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.utils.def_use_mask.extra_var import (
+    canonicalized_python_name_as_leaf,
+)
+from imperative_stitch.utils.types import SEPARATOR
 
 from .classify_nodes import BAD_TYPES, classify_nodes_in_program
-
-SEPARATOR = "~"
 
 
 @dataclass
@@ -24,6 +26,7 @@ class DSLSubset:
 
     lengths_by_sequence_type: Dict[str, List[int]]
     leaves: Dict[str, List[str]]
+    include_dbvars: bool
 
     @classmethod
     def from_program(
@@ -35,6 +38,7 @@ class DSLSubset:
         to_s_exp=lambda program, dfa, root_sym: program.to_type_annotated_ns_s_exp(
             dfa, root_sym
         ),
+        include_variables=False,
     ):
         """
         Construct a DSLSubset from a list of programs. The subset contains all the
@@ -55,7 +59,9 @@ class DSLSubset:
             for program, root_sym in zip(programs, root)
         ]
 
-        return cls.from_type_annotated_s_exps(programs)
+        return cls.from_type_annotated_s_exps(
+            programs, include_variables=include_variables
+        )
 
     @classmethod
     def create_program_list(
@@ -82,15 +88,22 @@ class DSLSubset:
         return programs, root
 
     @classmethod
-    def from_type_annotated_s_exps(cls, s_exps):
+    def from_type_annotated_s_exps(cls, s_exps, *, include_variables=False):
         """
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
         """
+        # pylint: disable=cyclic-import
+        from .def_use_mask.canonicalize_de_bruijn import create_de_bruijn_child
+
+        de_bruijn_new = create_de_bruijn_child(0, 1).symbol
+        num_vars = 0
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
         for program in s_exps:
             for node in traverse(program):
+                if node.symbol == de_bruijn_new:
+                    num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = unclean_type(state)
                 assert isinstance(node, ns.SExpression)
@@ -98,12 +111,35 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
+        if include_variables:
+            for var in range(num_vars):
+                leaves["Name"].add(canonicalized_python_name_as_leaf(var))
         return cls(
             lengths_by_sequence_type={
                 k: sorted(v) for k, v in lengths_by_list_type.items()
             },
             leaves={k: sorted(v) for k, v in leaves.items()},
+            include_dbvars=num_vars > 0,
         )
+
+    @classmethod
+    def from_programs_de_bruijn(
+        cls, *programs, root, dfa, abstrs, max_explicit_dbvar_index
+    ):
+        programs_all, roots_all = cls.create_program_list(
+            *programs, root=root, abstrs=abstrs
+        )
+        programs_all = [
+            x.to_type_annotated_de_bruijn_ns_s_exp(
+                dfa,
+                root,
+                max_explicit_dbvar_index=max_explicit_dbvar_index,
+                abstrs=abstrs,
+            )
+            for x, root in zip(programs_all, roots_all)
+        ]
+        subset = cls.from_type_annotated_s_exps(programs_all)
+        return programs_all[: len(programs)], subset
 
     def fill_in_missing_lengths(self):
         """
@@ -114,7 +150,11 @@ class DSLSubset:
             seq_type: list(range(min(lengths), max(lengths) + 1))
             for seq_type, lengths in self.lengths_by_sequence_type.items()
         }
-        return DSLSubset(lengths_by_sequence_type=lengths_new, leaves=self.leaves)
+        return DSLSubset(
+            lengths_by_sequence_type=lengths_new,
+            leaves=self.leaves,
+            include_dbvars=self.include_dbvars,
+        )
 
 
 def traverse(s_exp):
@@ -168,6 +208,11 @@ def unclean_type(x):
 
 
 def create_dsl(dfa, dsl_subset, start_state, dslf=None):
+    from .def_use_mask.canonicalize_de_bruijn import (
+        dbvar_successor_symbol,
+        dbvar_wrapper_symbol_by_root_type,
+    )
+
     if dslf is None:
         dslf = ns.DSLFactory()
     for target in dfa:
@@ -196,6 +241,10 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
         for constant in leaves:
             typ = ns.ArrowType((), ns.parse_type(target))
             dslf.concrete(constant + SEPARATOR + target, ns.render_type(typ), None)
+    if dsl_subset.include_dbvars:
+        dslf.concrete(dbvar_successor_symbol, "DBV -> DBV", None)
+        for root_type, sym in dbvar_wrapper_symbol_by_root_type.items():
+            dslf.concrete(sym, f"DBV -> {root_type}", None)
     dslf.prune_to(start_state, tolerate_pruning_entire_productions=True)
     return dslf.finalize()
 
@@ -222,4 +271,13 @@ def replace_symbols(program, id_to_sym):
     return ns.SExpression(
         id_to_sym[id(program)],
         tuple(replace_symbols(c, id_to_sym) for c in program.children),
+    )
+
+
+def replace_nodes(program, id_to_node):
+    if id(program) in id_to_node:
+        return id_to_node[id(program)]
+    return ns.SExpression(
+        program.symbol,
+        tuple(replace_nodes(c, id_to_node) for c in program.children),
     )

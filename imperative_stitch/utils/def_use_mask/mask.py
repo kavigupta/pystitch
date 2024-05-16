@@ -5,6 +5,7 @@ from typing import Dict, List
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.utils.def_use_mask.extra_var import ExtraVar
 from imperative_stitch.utils.def_use_mask.handler import DefaultHandler
 from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -30,6 +31,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     """
 
     def __init__(self, tree_dist, dsl, dfa, abstrs):
+        # pylint: disable=cyclic-import
+        from .canonicalize_de_bruijn import compute_de_bruijn_limit
+
         super().__init__(tree_dist)
         assert isinstance(tree_dist.ordering, PythonNodeOrdering)
         assert isinstance(abstrs, (list, tuple))
@@ -39,14 +43,22 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         )
         self.handlers = []
         self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
+        self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
+        self.de_bruijn_mask_handler = None
 
     def _matches(self, names, symbol_id):
         """
         Whether or not the symbol matches the names.
         """
+        # pylint: disable=cyclic-import
+        from .canonicalize_de_bruijn import is_dbvar_wrapper_symbol
+
         symbol = self.id_to_name(symbol_id)
         if symbol == "Name~E":
             return self.has_global_available or len(names) > 0
+        if is_dbvar_wrapper_symbol(symbol):
+            assert self.de_bruijn_mask_handler is None
+            return len(names) > 0
         mat = NAME_REGEX.match(symbol)
         if not mat:
             return True
@@ -65,7 +77,10 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             match the handler's names are valid.
         """
         handler = self.handlers[-1]
-        if handler.is_defining(position):
+        is_defn = handler.is_defining(position)
+        if self.de_bruijn_mask_handler is not None:
+            return self.de_bruijn_mask_handler.compute_mask(symbols, is_defn)
+        if is_defn:
             return [True] * len(symbols)
         names = handler.currently_defined_names()
         return [self._matches(names, symbol) for symbol in symbols]
@@ -74,6 +89,20 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Updates the stack of handlers when entering a node.
         """
+        # pylint: disable=cyclic-import
+        from .canonicalize_de_bruijn import DeBruijnMaskHandler, is_dbvar_wrapper_symbol
+
+        if is_dbvar_wrapper_symbol(self.id_to_name(symbol)):
+            assert self.de_bruijn_mask_handler is None
+            self.de_bruijn_mask_handler = DeBruijnMaskHandler(
+                self.tree_dist,
+                self.max_explicit_dbvar_index,
+                len(self.currently_defined_indices()),
+            )
+            return
+        if self.de_bruijn_mask_handler is not None:
+            self.de_bruijn_mask_handler.on_entry(symbol)
+            return
         if not self.handlers:
             assert position == symbol == 0
             self.handlers.append(DefaultHandler(self, [], self.config))
@@ -84,6 +113,12 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Updates the stack of handlers when exiting a node.
         """
+        if self.de_bruijn_mask_handler is not None:
+            symbol = self.de_bruijn_mask_handler.on_exit(symbol)
+            if symbol is None:
+                return
+            self.de_bruijn_mask_handler = None
+            self.on_entry(position, symbol)
         popped = self.handlers.pop()
         if not self.handlers:
             assert position == symbol == 0
@@ -100,6 +135,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Convert the symbol ID to a string of the symbol name, and the arity of the symbol.
         """
+
+        if isinstance(symbol_id, ExtraVar):
+            return symbol_id.leaf_name(), 0
         return self.tree_dist.symbols[symbol_id]
 
     def id_to_name(self, symbol_id):
@@ -112,4 +150,11 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Convert the string to a symbol ID.
         """
+
+        # TODO this is a bit of a hack; we shouldn't need to check the tree distrubiton
+        # here, there should not be an overlap.
+        if name not in self.tree_dist.symbol_to_index:
+            evar = ExtraVar.from_name(name)
+            if evar is not None:
+                return evar
         return self.tree_dist.symbol_to_index[name]
