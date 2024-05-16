@@ -150,11 +150,11 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Convert the string to a symbol ID.
         """
-        from .canonicalize_de_bruijn import canonicalized_python_name_leaf_regex
 
-        # TODO this is a bit of a hack
-        mat = canonicalized_python_name_leaf_regex.match(name)
-        if name not in self.tree_dist.symbol_to_index and mat:
-            return ExtraVar(int(mat.group("var")))
-
+        # TODO this is a bit of a hack; we shouldn't need to check the tree distrubiton
+        # here, there should not be an overlap.
+        if name not in self.tree_dist.symbol_to_index:
+            evar = ExtraVar.from_name(name)
+            if evar is not None:
+                return evar
         return self.tree_dist.symbol_to_index[name]

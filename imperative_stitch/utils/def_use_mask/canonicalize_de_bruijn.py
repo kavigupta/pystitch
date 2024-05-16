@@ -30,10 +30,6 @@ dbvar_symbol_regex = re.compile(
     + ")?"
 )
 
-canonicalized_python_name_leaf_regex = re.compile(
-    r"const-&(__(?P<var>\d+)):[0-9]+(" + re.escape(SEPARATOR) + r"[A-Za-z])?"
-)
-
 dbvar_successor_symbol = dbvar_symbol("successor")
 
 dbvar_wrapper_symbol_by_root_type = {

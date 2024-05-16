@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 
 from imperative_stitch.utils.types import SEPARATOR
@@ -13,8 +14,20 @@ class ExtraVar:
 
     id: int
 
+    @classmethod
+    def from_name(cls, name):
+        mat = canonicalized_python_name_leaf_regex.match(name)
+        if mat:
+            return cls(int(mat.group("var")))
+        return None
+
     def leaf_name(self):
         return canonicalized_python_name_as_leaf(self.id, "Name")
+
+
+canonicalized_python_name_leaf_regex = re.compile(
+    r"const-&(__(?P<var>\d+)):[0-9]+(" + re.escape(SEPARATOR) + r"[A-Za-z])?"
+)
 
 
 def canonicalized_python_name_as_leaf(name, use_type=False):
