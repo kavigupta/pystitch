@@ -12,7 +12,12 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import SEPARATOR, DSLSubset, create_dsl
+from imperative_stitch.utils.export_as_dsl import (
+    SEPARATOR,
+    DSLSubset,
+    create_dsl,
+    replace_nodes,
+)
 from imperative_stitch.utils.types import get_dfa_state
 
 dbv_type = "DBV"
@@ -118,6 +123,9 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, max_explicit_dbvar_i
 
 
 def check_have_all_abstrs(dfa, abstrs):
+    """
+    Check that all abstractions are present in the given DFA.
+    """
     abstr_names = {abstr.name for abstr in abstrs}
     for vs in dfa.values():
         for v in vs:
@@ -243,12 +251,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         )
     )
 
-    def replace(node):
-        if id(node) in id_to_new:
-            return id_to_new[id(node)]
-        return ns.SExpression(node.symbol, [replace(child) for child in node.children])
-
-    return replace(s_exp_de_bruijn)
+    return replace_nodes(s_exp_de_bruijn, id_to_new)
 
 
 def compute_de_bruijn_limit(tree_dist: ns.TreeDistribution) -> int:
