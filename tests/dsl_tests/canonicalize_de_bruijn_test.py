@@ -39,7 +39,7 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
     def run_canonicalize(self, program, abstrs=()):
         dfa = export_dfa(abstrs=abstrs)
         s_exp = program.to_type_annotated_de_bruijn_ns_s_exp(
-            dfa, "M", de_bruijn_limit=2, abstrs=abstrs
+            dfa, "M", max_explicit_dbvar_index=2, abstrs=abstrs
         )
         return dfa, s_exp
 
@@ -206,7 +206,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         self,
         fit_to,
         test_program,
-        de_bruijn_limit=2,
+        max_explicit_dbvar_index=2,
         abstrs=(),
         parser=ParsedAST.parse_python_module,
     ):
@@ -214,10 +214,13 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
 
         fit_to_prog = [parser(program) for program in fit_to]
         fit_to_prog, dsl = self.fit_dsl(
-            *fit_to_prog, abstrs=abstrs, dfa=dfa, de_bruijn_limit=de_bruijn_limit
+            *fit_to_prog,
+            abstrs=abstrs,
+            dfa=dfa,
+            max_explicit_dbvar_index=max_explicit_dbvar_index,
         )
         test_program = parser(test_program).to_type_annotated_de_bruijn_ns_s_exp(
-            dfa, "M", de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
+            dfa, "M", max_explicit_dbvar_index=max_explicit_dbvar_index, abstrs=abstrs
         )
         print(ns.render_s_expression(fit_to_prog[0]))
         print(ns.render_s_expression(test_program))
@@ -249,9 +252,13 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
 
         return results
 
-    def fit_dsl(self, *programs, de_bruijn_limit, abstrs, dfa):
+    def fit_dsl(self, *programs, max_explicit_dbvar_index, abstrs, dfa):
         programs, subset = DSLSubset.from_programs_de_bruijn(
-            *programs, root="M", dfa=dfa, abstrs=abstrs, de_bruijn_limit=de_bruijn_limit
+            *programs,
+            root="M",
+            dfa=dfa,
+            abstrs=abstrs,
+            max_explicit_dbvar_index=max_explicit_dbvar_index,
         )
         dsl = create_dsl(dfa, subset, "M")
 
@@ -317,7 +324,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         # should be possible, unlike the previous test, because the de bruijn limit is 0
 
         self.assertEqual(
-            self.compute_likelihood(fit_to, test_program, de_bruijn_limit=0),
+            self.compute_likelihood(fit_to, test_program, max_explicit_dbvar_index=0),
             [
                 ("(dbvar-0~DBV)", Fraction(1, 3)),
                 (
@@ -447,7 +454,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         start = time.time()
         self.fit_dsl(
             *programs,
-            de_bruijn_limit=2,
+            max_explicit_dbvar_index=2,
             abstrs=(),
             dfa=export_dfa(),
         )

@@ -123,13 +123,18 @@ class DSLSubset:
         )
 
     @classmethod
-    def from_programs_de_bruijn(cls, *programs, root, dfa, abstrs, de_bruijn_limit):
+    def from_programs_de_bruijn(
+        cls, *programs, root, dfa, abstrs, max_explicit_dbvar_index
+    ):
         programs_all, roots_all = cls.create_program_list(
             *programs, root=root, abstrs=abstrs
         )
         programs_all = [
             x.to_type_annotated_de_bruijn_ns_s_exp(
-                dfa, root, de_bruijn_limit=de_bruijn_limit, abstrs=abstrs
+                dfa,
+                root,
+                max_explicit_dbvar_index=max_explicit_dbvar_index,
+                abstrs=abstrs,
             )
             for x, root in zip(programs_all, roots_all)
         ]

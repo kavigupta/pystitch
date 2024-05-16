@@ -42,25 +42,25 @@ def is_dbvar_wrapper_symbol(symbol):
     return symbol in dbvar_wrapper_symbol_by_root_type.values()
 
 
-def create_de_brujin_child(idx, de_bruijn_limit):
+def create_de_brujin_child(idx, max_explicit_dbvar_index):
     """
     Create a de bruijn child. to be placed into a wrapper.
     """
-    if idx <= de_bruijn_limit:
+    if idx <= max_explicit_dbvar_index:
         return ns.SExpression(dbvar_symbol(idx), ())
     return ns.SExpression(
         dbvar_successor_symbol,
-        (create_de_brujin_child(idx - 1, de_bruijn_limit),),
+        (create_de_brujin_child(idx - 1, max_explicit_dbvar_index),),
     )
 
 
-def create_de_brujin(idx, de_bruijn_limit, dfa_sym):
+def create_de_brujin(idx, max_explicit_dbvar_index, dfa_sym):
     """
     Create a de bruijn name.
     """
     return ns.SExpression(
         dbvar_wrapper_symbol_by_root_type[dfa_sym],
-        (create_de_brujin_child(idx, de_bruijn_limit),),
+        (create_de_brujin_child(idx, max_explicit_dbvar_index),),
     )
 
 
@@ -81,7 +81,7 @@ def get_idx(s_exp_de_bruijn):
     return int(after)
 
 
-def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
+def canonicalize_de_bruijn(program, dfa, root_node, abstrs, max_explicit_dbvar_index):
     """
     Convert the program to a de bruijn representation. Creates a tree distribution
         and then calls the canonicalize_de_bruijn_from_tree_dist function.
@@ -105,7 +105,7 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, de_bruijn_limit):
         node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
     )
     return canonicalize_de_bruijn_from_tree_dist(
-        fam.tree_distribution_skeleton, s_exp, de_bruijn_limit
+        fam.tree_distribution_skeleton, s_exp, max_explicit_dbvar_index
     )
 
 
@@ -120,7 +120,7 @@ def check_have_all_abstrs(dfa, abstrs):
             ), f"Missing abstraction {v} in abstrs. Have {sorted(abstr_names)}"
 
 
-def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
+def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, max_explicit_dbvar_index):
     """
     Convert the program to a de bruijn representation, given the tree distribution.
     """
@@ -137,7 +137,7 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
         else:
             de_brujin_idx = len(currently_defined) - currently_defined.index(node_sym)
         id_to_new[id(node)] = create_de_brujin(
-            de_brujin_idx, de_bruijn_limit, mat.group("dfa_sym")
+            de_brujin_idx, max_explicit_dbvar_index, mat.group("dfa_sym")
         )
 
     def replace(node):
@@ -264,7 +264,7 @@ class DeBruijnMaskHandler:
     """
 
     tree_dist: ns.TreeDistribution
-    de_bruijn_limit: int
+    max_explicit_dbvar_index: int
     num_available_symbols: int
     level_nesting: int = 1
     inside_successor: bool = False
@@ -277,13 +277,13 @@ class DeBruijnMaskHandler:
         mask = {}
         if self.inside_successor:
             # We are inside a successor, so the de bruijn limit is valid, as is successor
-            mask[dbvar_symbol(self.de_bruijn_limit)] = True
+            mask[dbvar_symbol(self.max_explicit_dbvar_index)] = True
             mask[dbvar_successor_symbol] = True
         else:
             # We are not inside a successor, so we need to iterate upwards
             start_at = 0 if is_defn else 1
             for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
-                if i > self.de_bruijn_limit:
+                if i > self.max_explicit_dbvar_index:
                     mask[dbvar_successor_symbol] = True
                     break
                 mask[dbvar_symbol(i)] = True

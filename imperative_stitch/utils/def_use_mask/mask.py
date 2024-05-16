@@ -43,7 +43,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         )
         self.handlers = []
         self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
-        self.de_bruijn_limit = compute_de_bruijn_limit(tree_dist)
+        self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
         self.de_bruijn_mask_handler = None
 
     def _matches(self, names, symbol_id):
@@ -96,7 +96,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             assert self.de_bruijn_mask_handler is None
             self.de_bruijn_mask_handler = DeBruijnMaskHandler(
                 self.tree_dist,
-                self.de_bruijn_limit,
+                self.max_explicit_dbvar_index,
                 len(self.currently_defined_indices()),
             )
             return
