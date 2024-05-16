@@ -156,12 +156,7 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, max_explicit_dbvar_i
             de_bruijn_idx, max_explicit_dbvar_index, mat.group("dfa_sym")
         )
 
-    def replace(node):
-        if id(node) in id_to_new:
-            return id_to_new[id(node)]
-        return ns.SExpression(node.symbol, [replace(child) for child in node.children])
-
-    return replace(s_exp)
+    return replace_nodes(s_exp, id_to_new)
 
 
 def get_defined_indices(mask):
