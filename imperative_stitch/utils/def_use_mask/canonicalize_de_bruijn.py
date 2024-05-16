@@ -42,7 +42,7 @@ def is_dbvar_wrapper_symbol(symbol):
     return symbol in dbvar_wrapper_symbol_by_root_type.values()
 
 
-def create_de_brujin_child(idx, max_explicit_dbvar_index):
+def create_de_bruijn_child(idx, max_explicit_dbvar_index):
     """
     Create a de bruijn child. to be placed into a wrapper.
 
@@ -55,11 +55,11 @@ def create_de_brujin_child(idx, max_explicit_dbvar_index):
         return ns.SExpression(dbvar_symbol(idx), ())
     return ns.SExpression(
         dbvar_successor_symbol,
-        (create_de_brujin_child(idx - 1, max_explicit_dbvar_index),),
+        (create_de_bruijn_child(idx - 1, max_explicit_dbvar_index),),
     )
 
 
-def create_de_brujin(idx, max_explicit_dbvar_index, dfa_sym):
+def create_de_bruijn(idx, max_explicit_dbvar_index, dfa_sym):
     """
     Create a de bruijn name. This is a wrapper around a de bruijn child, and looks e.g., like
         (dbvar~Name (dbvar-0~DBV)).
@@ -68,7 +68,7 @@ def create_de_brujin(idx, max_explicit_dbvar_index, dfa_sym):
     """
     return ns.SExpression(
         dbvar_wrapper_symbol_by_root_type[dfa_sym],
-        (create_de_brujin_child(idx, max_explicit_dbvar_index),),
+        (create_de_bruijn_child(idx, max_explicit_dbvar_index),),
     )
 
 
@@ -141,11 +141,11 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, max_explicit_dbvar_i
         assert not node.children
         currently_defined = get_defined_indices(mask)
         if node_sym not in currently_defined:
-            de_brujin_idx = 0
+            de_bruijn_idx = 0
         else:
-            de_brujin_idx = len(currently_defined) - currently_defined.index(node_sym)
-        id_to_new[id(node)] = create_de_brujin(
-            de_brujin_idx, max_explicit_dbvar_index, mat.group("dfa_sym")
+            de_bruijn_idx = len(currently_defined) - currently_defined.index(node_sym)
+        id_to_new[id(node)] = create_de_bruijn(
+            de_bruijn_idx, max_explicit_dbvar_index, mat.group("dfa_sym")
         )
 
     def replace(node):
@@ -206,7 +206,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     count_vars = 0
 
-    def replace_de_brujin(node, mask, typ):
+    def replace_de_bruijn(node, mask, typ):
         """
         Compute the replacement for a de bruijn node.
         """
@@ -228,7 +228,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     def traverse_replacer(node, mask):
         if is_dbvar_wrapper_symbol(node.symbol):
             assert len(node.children) == 1
-            new_node = replace_de_brujin(
+            new_node = replace_de_bruijn(
                 node.children[0], mask, node.symbol.split(SEPARATOR)[-1]
             )
             id_to_new[id(node)] = new_node

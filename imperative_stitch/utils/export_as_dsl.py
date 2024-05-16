@@ -94,15 +94,15 @@ class DSLSubset:
             DSLSubset.from_program.
         """
         # pylint: disable=cyclic-import
-        from .def_use_mask.canonicalize_de_bruijn import create_de_brujin_child
+        from .def_use_mask.canonicalize_de_bruijn import create_de_bruijn_child
 
-        de_brujin_new = create_de_brujin_child(0, 1).symbol
+        de_bruijn_new = create_de_bruijn_child(0, 1).symbol
         num_vars = 0
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
         for program in s_exps:
             for node in traverse(program):
-                if node.symbol == de_brujin_new:
+                if node.symbol == de_bruijn_new:
                     num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = unclean_type(state)
