@@ -56,7 +56,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
         self.handlers = []
         self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
-        self.de_bruijn_limit = compute_de_bruijn_limit(tree_dist)
+        self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
         self.de_bruijn_mask_handler = None
 
     def _matches(self, names, symbol_id):
@@ -105,7 +105,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             assert self.de_bruijn_mask_handler is None
             self.de_bruijn_mask_handler = DeBruijnMaskHandler(
                 self.tree_dist,
-                self.de_bruijn_limit,
+                self.max_explicit_dbvar_index,
                 len(self.currently_defined_indices()),
             )
             return
@@ -144,10 +144,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Convert the symbol ID to a string of the symbol name, and the arity of the symbol.
         """
-        from .canonicalize_de_bruijn import canonicalized_python_name_as_leaf
 
         if isinstance(symbol_id, ExtraVar):
-            return canonicalized_python_name_as_leaf(symbol_id.id, use_type="Name"), 0
+            return symbol_id.leaf_name(), 0
         return self.tree_dist.symbols[symbol_id]
 
     def id_to_name(self, symbol_id):
@@ -160,11 +159,11 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Convert the string to a symbol ID.
         """
-        from .canonicalize_de_bruijn import canonicalized_python_name_leaf_regex
 
-        # TODO this is a bit of a hack
-        mat = canonicalized_python_name_leaf_regex.match(name)
-        if name not in self.tree_dist.symbol_to_index and mat:
-            return ExtraVar(int(mat.group("var")))
-
+        # TODO this is a bit of a hack; we shouldn't need to check the tree distrubiton
+        # here, there should not be an overlap.
+        if name not in self.tree_dist.symbol_to_index:
+            evar = ExtraVar.from_name(name)
+            if evar is not None:
+                return evar
         return self.tree_dist.symbol_to_index[name]

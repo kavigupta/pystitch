@@ -8,10 +8,12 @@ import numpy as np
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.utils.def_use_mask.extra_var import (
+    canonicalized_python_name_as_leaf,
+)
+from imperative_stitch.utils.types import SEPARATOR
 
 from .classify_nodes import BAD_TYPES, classify_nodes_in_program
-
-SEPARATOR = "~"
 
 
 @dataclass
@@ -92,18 +94,15 @@ class DSLSubset:
             DSLSubset.from_program.
         """
         # pylint: disable=cyclic-import
-        from .def_use_mask.canonicalize_de_bruijn import (
-            canonicalized_python_name_as_leaf,
-            create_de_brujin_child,
-        )
+        from .def_use_mask.canonicalize_de_bruijn import create_de_bruijn_child
 
-        de_brujin_new = create_de_brujin_child(0, 1).symbol
+        de_bruijn_new = create_de_bruijn_child(0, 1).symbol
         num_vars = 0
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
         for program in s_exps:
             for node in traverse(program):
-                if node.symbol == de_brujin_new:
+                if node.symbol == de_bruijn_new:
                     num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = unclean_type(state)
@@ -156,10 +155,6 @@ class DSLSubset:
             leaves=self.leaves,
             include_dbvars=self.include_dbvars,
         )
-
-
-def get_dfa_state(sym):
-    return sym.split(SEPARATOR)[1]
 
 
 def traverse(s_exp):
@@ -276,4 +271,13 @@ def replace_symbols(program, id_to_sym):
     return ns.SExpression(
         id_to_sym[id(program)],
         tuple(replace_symbols(c, id_to_sym) for c in program.children),
+    )
+
+
+def replace_nodes(program, id_to_node):
+    if id(program) in id_to_node:
+        return id_to_node[id(program)]
+    return ns.SExpression(
+        program.symbol,
+        tuple(replace_nodes(c, id_to_node) for c in program.children),
     )

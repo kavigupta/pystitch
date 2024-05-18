@@ -5,7 +5,10 @@ from typing import List
 
 import neurosym as ns
 
-from imperative_stitch.utils.def_use_mask.extra_var import ExtraVar
+from imperative_stitch.utils.def_use_mask.extra_var import (
+    ExtraVar,
+    canonicalized_python_name_as_leaf,
+)
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -13,8 +16,9 @@ from imperative_stitch.utils.export_as_dsl import (
     SEPARATOR,
     DSLSubset,
     create_dsl,
-    get_dfa_state,
+    replace_nodes,
 )
+from imperative_stitch.utils.types import get_dfa_state
 
 dbv_type = "DBV"
 
@@ -31,10 +35,6 @@ dbvar_symbol_regex = re.compile(
     + ")?"
 )
 
-canonicalized_python_name_leaf_regex = re.compile(
-    r"const-&(__(?P<var>\d+)):[0-9]+(" + re.escape(SEPARATOR) + r"[A-Za-z])?"
-)
-
 dbvar_successor_symbol = dbvar_symbol("successor")
 
 dbvar_wrapper_symbol_by_root_type = {
@@ -47,41 +47,33 @@ def is_dbvar_wrapper_symbol(symbol):
     return symbol in dbvar_wrapper_symbol_by_root_type.values()
 
 
-def canonicalized_python_name(name):
-    return f"__{name}"
-
-
-def canonicalized_python_name_as_leaf(name, use_type=False):
-    """
-    Get the canonicalized python name as a leaf node. E.g., __0
-    """
-    result = f"const-&{canonicalized_python_name(name)}:0"
-    if use_type:
-        # TODO - this is a bit of a hack, since we should really be using use_type
-        # however, this would require us to add use_type to the tree distribution
-        result += SEPARATOR + "Name"
-    return result
-
-
-def create_de_brujin_child(idx, de_bruijn_limit):
+def create_de_bruijn_child(idx, max_explicit_dbvar_index):
     """
     Create a de bruijn child. to be placed into a wrapper.
+
+    Series, starting at (dbvar-0~DBV) and continuing to (dbvar-N~DBV),
+        where N is the max_explicit_dbvar_index, then continuing
+        with (dbvar-successor~DBV (dbvar-N~DBV)),
+        (dbvar-successor (dbvar-successor~DBV (dbvar-N~DBV))), etc.
     """
-    if idx <= de_bruijn_limit:
+    if idx <= max_explicit_dbvar_index:
         return ns.SExpression(dbvar_symbol(idx), ())
     return ns.SExpression(
         dbvar_successor_symbol,
-        (create_de_brujin_child(idx - 1, de_bruijn_limit),),
+        (create_de_bruijn_child(idx - 1, max_explicit_dbvar_index),),
     )
 
 
-def create_de_brujin(idx, de_bruijn_limit, dfa_sym):
+def create_de_bruijn(idx, max_explicit_dbvar_index, dfa_sym):
     """
-    Create a de bruijn name.
+    Create a de bruijn name. This is a wrapper around a de bruijn child, and looks e.g., like
+        (dbvar~Name (dbvar-0~DBV)).
+
+    The root type is given by dfa_sym.
     """
     return ns.SExpression(
         dbvar_wrapper_symbol_by_root_type[dfa_sym],
-        (create_de_brujin_child(idx, de_bruijn_limit),),
+        (create_de_bruijn_child(idx, max_explicit_dbvar_index),),
     )
 
 
@@ -153,6 +145,9 @@ def canonicalize_de_bruijn(programs, root_states, dfa, abstrs, de_bruijn_limit):
 
 
 def check_have_all_abstrs(dfa, abstrs):
+    """
+    Check that all abstractions are present in the given DFA.
+    """
     abstr_names = {abstr.name for abstr in abstrs}
     for vs in dfa.values():
         for v in vs:
@@ -163,7 +158,7 @@ def check_have_all_abstrs(dfa, abstrs):
             ), f"Missing abstraction {v} in abstrs. Have {sorted(abstr_names)}"
 
 
-def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
+def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, max_explicit_dbvar_index):
     """
     Convert the program to a de bruijn representation, given the tree distribution.
     """
@@ -176,19 +171,14 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, de_bruijn_limit):
         assert not node.children
         currently_defined = get_defined_indices(mask)
         if node_sym not in currently_defined:
-            de_brujin_idx = 0
+            de_bruijn_idx = 0
         else:
-            de_brujin_idx = len(currently_defined) - currently_defined.index(node_sym)
-        id_to_new[id(node)] = create_de_brujin(
-            de_brujin_idx, de_bruijn_limit, mat.group("dfa_sym")
+            de_bruijn_idx = len(currently_defined) - currently_defined.index(node_sym)
+        id_to_new[id(node)] = create_de_bruijn(
+            de_bruijn_idx, max_explicit_dbvar_index, mat.group("dfa_sym")
         )
 
-    def replace(node):
-        if id(node) in id_to_new:
-            return id_to_new[id(node)]
-        return ns.SExpression(node.symbol, [replace(child) for child in node.children])
-
-    return replace(s_exp)
+    return replace_nodes(s_exp, id_to_new)
 
 
 def get_defined_indices(mask):
@@ -241,7 +231,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     count_vars = 0
 
-    def replace_de_brujin(node, mask, typ):
+    def replace_de_bruijn(node, mask, typ):
         """
         Compute the replacement for a de bruijn node.
         """
@@ -263,7 +253,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     def traverse_replacer(node, mask):
         if is_dbvar_wrapper_symbol(node.symbol):
             assert len(node.children) == 1
-            new_node = replace_de_brujin(
+            new_node = replace_de_bruijn(
                 node.children[0], mask, node.symbol.split(SEPARATOR)[-1]
             )
             id_to_new[id(node)] = new_node
@@ -278,12 +268,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         )
     )
 
-    def replace(node):
-        if id(node) in id_to_new:
-            return id_to_new[id(node)]
-        return ns.SExpression(node.symbol, [replace(child) for child in node.children])
-
-    return replace(s_exp_de_bruijn)
+    return replace_nodes(s_exp_de_bruijn, id_to_new)
 
 
 def compute_de_bruijn_limit(tree_dist: ns.TreeDistribution) -> int:
@@ -307,7 +292,7 @@ class DeBruijnMaskHandler:
     """
 
     tree_dist: ns.TreeDistribution
-    de_bruijn_limit: int
+    max_explicit_dbvar_index: int
     num_available_symbols: int
     level_nesting: int = 1
     inside_successor: bool = False
@@ -320,13 +305,13 @@ class DeBruijnMaskHandler:
         mask = {}
         if self.inside_successor:
             # We are inside a successor, so the de bruijn limit is valid, as is successor
-            mask[dbvar_symbol(self.de_bruijn_limit)] = True
+            mask[dbvar_symbol(self.max_explicit_dbvar_index)] = True
             mask[dbvar_successor_symbol] = True
         else:
             # We are not inside a successor, so we need to iterate upwards
             start_at = 0 if is_defn else 1
             for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
-                if i > self.de_bruijn_limit:
+                if i > self.max_explicit_dbvar_index:
                     mask[dbvar_successor_symbol] = True
                     break
                 mask[dbvar_symbol(i)] = True

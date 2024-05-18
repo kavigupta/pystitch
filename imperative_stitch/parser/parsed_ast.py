@@ -99,7 +99,7 @@ class ParsedAST(ABC):
         )
 
     def to_type_annotated_de_bruijn_ns_s_exp(
-        self, dfa, start_state, *, abstrs=(), de_bruijn_limit
+        self, dfa, start_state, *, abstrs=(), max_explicit_dbvar_index
     ):
         # pylint: disable=cyclic-import
         from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
@@ -107,7 +107,7 @@ class ParsedAST(ABC):
         )
 
         [result] = canonicalize_de_bruijn(
-            [self], [start_state], dfa, abstrs, de_bruijn_limit
+            [self], [start_state], dfa, abstrs, max_explicit_dbvar_index
         )
         return result
 
