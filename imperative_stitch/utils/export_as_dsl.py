@@ -29,6 +29,33 @@ class DSLSubset:
     include_dbvars: bool
 
     @classmethod
+    def fit_dsl_to_programs_and_output_s_exps(
+        cls,
+        dfa,
+        *programs: Tuple[ParsedAST, ...],
+        root: Union[str, Tuple[str, ...]],
+        abstrs: Tuple[Abstraction] = (),
+        to_s_exp=lambda program, dfa, root_sym: program.to_type_annotated_ns_s_exp(
+            dfa, root_sym
+        ),
+        include_variables=False,
+    ):
+        """
+        See from_program for details. This function returns both the programs and the subset.
+        """
+        num_programs = len(programs)
+        programs, root = cls.create_program_list(*programs, root=root, abstrs=abstrs)
+        programs = [
+            to_s_exp(program, dfa, root_sym)
+            for program, root_sym in zip(programs, root)
+        ]
+
+        subset = cls.from_type_annotated_s_exps(
+            programs, include_variables=include_variables
+        )
+        return programs[:num_programs], subset
+
+    @classmethod
     def from_program(
         cls,
         dfa,
@@ -53,15 +80,15 @@ class DSLSubset:
             to_s_exp: a function that converts a program to a type-annotated s-expression. By
                 default it uses the ParsedAST.to_type_annotated_ns_s_exp method.
         """
-        programs, root = cls.create_program_list(*programs, root=root, abstrs=abstrs)
-        programs = [
-            to_s_exp(program, dfa, root_sym)
-            for program, root_sym in zip(programs, root)
-        ]
-
-        return cls.from_type_annotated_s_exps(
-            programs, include_variables=include_variables
+        _, subset = cls.fit_dsl_to_programs_and_output_s_exps(
+            dfa,
+            *programs,
+            root=root,
+            abstrs=abstrs,
+            to_s_exp=to_s_exp,
+            include_variables=include_variables,
         )
+        return subset
 
     @classmethod
     def create_program_list(
@@ -136,10 +163,6 @@ class DSLSubset:
         programs_all = canonicalize_de_bruijn(
             programs_all, roots_all, dfa, abstrs, max_explicit_dbvar_index
         )
-        # programs_all = [
-        #     canonicalize_de_bruijn([x], [root], dfa, abstrs, max_explicit_dbvar_index)[0]
-        #     for x, root in zip(programs_all, roots_all)
-        # ]
         subset = cls.from_type_annotated_s_exps(programs_all)
         return programs_all[: len(programs)], subset
 
