@@ -475,7 +475,9 @@ def parse_and_check(code_original, do_actual_check=True):
     pa = ParsedAST.parse_python_module(code_original)
     se = ns.render_s_expression(pa.to_type_annotated_ns_s_exp(export_dfa(), "M"))
     # Ban internal imports
-    if re.search(r"const-(&[a-zA-Z0-9_]+:[0-9]+|g_[A-Za-z0-9\.]*)~(Nullable)?NameStr", se):
+    if re.search(
+        r"const-(&[a-zA-Z0-9_]+:[0-9]+|g_[A-Za-z0-9\.]*)~(Nullable)?NameStr", se
+    ):
         return None, None
     if do_actual_check:
         try:
