@@ -181,7 +181,7 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
         from ..extract.rewrite_semantic_test import RewriteSemanticsTest
 
         code_original = eg["solution"]
-        se = parse_and_check(code_original)
+        _, se = parse_and_check(code_original)
         if se is None:
             return
         print(code_original)
@@ -438,7 +438,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
     def test_no_crash(self, i):
         eg = small_set_runnable_code_examples()[i]
         code_original = eg["solution"]
-        se = parse_and_check(code_original)
+        _, se = parse_and_check(code_original)
         if se is None:
             return
         res = self.compute_likelihood([code_original], code_original)
@@ -447,10 +447,13 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
 
     @pytest.mark.slow_test
     def test_dsl_timing(self):
-        programs = [
-            ParsedAST.parse_python_module(x["solution"])
-            for x in small_set_runnable_code_examples()[:100]
-        ]
+        programs = []
+        for x in small_set_runnable_code_examples():
+            pa, se = parse_and_check(x["solution"], do_actual_check=False)
+            if se is not None:
+                programs.append(pa)
+                if len(programs) == 200:
+                    break
         start = time.time()
         self.fit_dsl(
             *programs,
@@ -462,23 +465,21 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         self.assertLess(end - start, 0)
 
 
-def parse_and_check(code_original):
+def parse_and_check(code_original, do_actual_check=True):
     from .def_use_mask_test import DefUseMaskTest
 
     try:
         check_banned_components(ast.parse(code_original))
     except BannedComponentError:
-        return None
-    se = ns.render_s_expression(
-        ParsedAST.parse_python_module(code_original).to_type_annotated_ns_s_exp(
-            export_dfa(), "M"
-        )
-    )
+        return None, None
+    pa = ParsedAST.parse_python_module(code_original)
+    se = ns.render_s_expression(pa.to_type_annotated_ns_s_exp(export_dfa(), "M"))
     # Ban internal imports
-    if re.search(r"const-&[a-zA-Z0-9_]+:[0-9]+~(Nullable)?NameStr", se):
-        return None
-    try:
-        DefUseMaskTest().annotate_program(code_original)
-    except AssertionError:
-        return None
-    return se
+    if re.search(r"const-(&[a-zA-Z0-9_]+:[0-9]+|g_[A-Za-z0-9\.]*)~(Nullable)?NameStr", se):
+        return None, None
+    if do_actual_check:
+        try:
+            DefUseMaskTest().annotate_program(code_original)
+        except AssertionError:
+            return None, None
+    return pa, se
