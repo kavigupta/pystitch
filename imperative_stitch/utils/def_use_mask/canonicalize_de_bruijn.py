@@ -94,7 +94,9 @@ def get_idx(s_exp_de_bruijn):
     return int(after)
 
 
-def canonicalize_de_bruijn(programs, root_states, dfa, abstrs, de_bruijn_limit):
+def canonicalize_de_bruijn(
+    programs, root_states, dfa, abstrs, max_explicit_dbvar_index
+):
     """
     Convert the programs to a de bruijn representation. Creates a tree distribution
         and then calls the canonicalize_de_bruijn_from_tree_dist function.
@@ -139,7 +141,9 @@ def canonicalize_de_bruijn(programs, root_states, dfa, abstrs, de_bruijn_limit):
         for root, dsl in dsl_by_root.items()
     }
     return [
-        canonicalize_de_bruijn_from_tree_dist(fam[root], s_exp, de_bruijn_limit)
+        canonicalize_de_bruijn_from_tree_dist(
+            fam[root], s_exp, max_explicit_dbvar_index
+        )
         for s_exp, root in zip(s_exps, root_states)
     ]
 

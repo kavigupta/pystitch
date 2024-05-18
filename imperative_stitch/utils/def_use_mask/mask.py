@@ -32,10 +32,11 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
     def __init__(self, tree_dist, dsl, dfa, abstrs):
         # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import compute_de_bruijn_limit
-
         # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import is_dbvar_wrapper_symbol
+        from .canonicalize_de_bruijn import (
+            compute_de_bruijn_limit,
+            is_dbvar_wrapper_symbol,
+        )
 
         super().__init__(tree_dist)
         assert isinstance(tree_dist.ordering, PythonNodeOrdering)
