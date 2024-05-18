@@ -106,9 +106,10 @@ class ParsedAST(ABC):
             canonicalize_de_bruijn,
         )
 
-        return canonicalize_de_bruijn(
-            self, dfa, start_state, abstrs, max_explicit_dbvar_index
+        [result] = canonicalize_de_bruijn(
+            [self], [start_state], dfa, abstrs, max_explicit_dbvar_index
         )
+        return result
 
     @classmethod
     def from_type_annotated_de_bruijn_ns_s_exp(cls, s_exp, dfa, abstrs=()):
