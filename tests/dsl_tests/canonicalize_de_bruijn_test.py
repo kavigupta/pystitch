@@ -452,7 +452,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             pa, se = parse_and_check(x["solution"], do_actual_check=False)
             if se is not None:
                 programs.append(pa)
-                if len(programs) == 200:
+                if len(programs) == 500:
                     break
         start = time.time()
         self.fit_dsl(
