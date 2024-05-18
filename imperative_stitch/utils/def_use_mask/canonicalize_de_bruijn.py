@@ -114,7 +114,7 @@ def canonicalize_de_bruijn(program, dfa, root_node, abstrs, max_explicit_dbvar_i
         additional_preorder_masks=[
             lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
         ],
-        include_type_preorder_mask=False,
+        include_type_preorder_mask=True,
         node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
     )
     return canonicalize_de_bruijn_from_tree_dist(
@@ -164,7 +164,7 @@ def get_defined_indices(mask):
     Get the set of defined indices for a given mask.
     """
     assert isinstance(mask, ns.ConjunctionPreorderMask)
-    assert len(mask.masks) == 1
+    assert len(mask.masks) == 2
     mask = mask.masks[-1]
     assert isinstance(mask, DefUseChainPreorderMask)
     currently_defined = mask.currently_defined_indices()
@@ -202,7 +202,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         additional_preorder_masks=[
             lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
         ],
-        include_type_preorder_mask=False,
+        include_type_preorder_mask=True,
         node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
     )
     tree_dist = fam.tree_distribution_skeleton
