@@ -104,28 +104,11 @@ def canonicalize_de_bruijn(
 
     check_have_all_abstrs(dfa, abstrs)
 
-    s_exps = [
-        program.to_type_annotated_ns_s_exp(dfa, root_node)
-        for program, root_node in zip(programs, root_states)
-    ]
-    abstrs_dict = {abstr.name: abstr for abstr in abstrs}
-    abstr_bodies = [
-        abstr.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
-            dfa, abstr.dfa_root
-        )
-        for abstr in abstrs
-    ]
+    s_exps, subset = DSLSubset.fit_dsl_to_programs_and_output_s_exps(
+        dfa, *programs, root=tuple(root_states), abstrs=abstrs
+    )
 
-    subset = DSLSubset.from_type_annotated_s_exps(s_exps + abstr_bodies)
-
-    dsl_by_root = {
-        root: create_dsl(
-            dfa,
-            subset,
-            root,
-        )
-        for root in set(root_states)
-    }
+    dsl_by_root = {root: create_dsl(dfa, subset, root) for root in set(root_states)}
     fam = {
         root: ns.BigramProgramDistributionFamily(
             dsl,
