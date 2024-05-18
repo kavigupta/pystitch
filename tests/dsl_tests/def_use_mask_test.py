@@ -192,6 +192,7 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
                 from collections import defaultdict as z
                 x = os
                 x = os
+                defaultdict, os, y, z
                 """
             )
         )
@@ -201,12 +202,13 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
             cwq(
                 """
                 2
-                import os?defaultdict$x$y$z
-                import sys as y?defaultdict$os$x$z
-                from collections import defaultdict?os$x$y$z
-                from collections import defaultdict as z?defaultdict$os$x$y
+                import os?defaultdict
+                import sys as y?z
+                from collections import defaultdict?os
+                from collections import defaultdict as z?y
                 x?defaultdict$os$y$z = os?defaultdict$y$z
                 x?defaultdict$os$y$z = os?defaultdict$x$y$z
+                (defaultdict?os$x$y$z, os?defaultdict$x$y$z, y?defaultdict$os$x$z, z?defaultdict$os$x$y)
                 """
             ).strip(),
         )
@@ -356,16 +358,17 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
 
     def test_import_at_top_level(self):
         # imports at top are global so not alternated
-        code = self.annotate_program("import os; import sys as y; x = os; x = os")
+        code = self.annotate_program("import os; import sys as y; x = os; x = os; x, y")
         print(code)
         self.assertEqual(
             code.strip(),
             cwq(
                 """
-                import os?x$y
-                import sys as y?os$x
+                import os
+                import sys as y
                 x?os$y = os?y
                 x?os$y = os?x$y
+                (x?os$y, y?os$x)
                 """
             ).strip(),
         )
@@ -408,7 +411,7 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
             cwq(
                 """
                 def f?defaultdict():
-                    from collections import defaultdict?f
+                    from collections import defaultdict
                     return defaultdict?f
                 """
             ).strip(),
@@ -459,7 +462,7 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
                 """
                 try:
                     x?Exception$e = 2
-                except Exception?x as e?Exception$x:
+                except Exception?x as e:
                     x?Exception$e = e?Exception$x
                 """
             ).strip(),
