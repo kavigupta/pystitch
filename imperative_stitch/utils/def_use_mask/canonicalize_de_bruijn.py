@@ -118,15 +118,7 @@ def canonicalize_de_bruijn(
 
     subset = DSLSubset.from_type_annotated_s_exps(s_exps + abstr_bodies)
 
-    dsl_by_root = {
-        root: create_dsl(
-            dfa,
-            subset,
-            root,
-        )
-        for root in set(root_states)
-    }
-    print(list(dsl_by_root.keys()))
+    dsl_by_root = {root: create_dsl(dfa, subset, root) for root in set(root_states)}
     fam = {
         root: ns.BigramProgramDistributionFamily(
             dsl,
