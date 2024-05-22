@@ -94,32 +94,40 @@ def get_idx(s_exp_de_bruijn):
     return int(after)
 
 
-def canonicalize_de_bruijn(program, dfa, root_node, abstrs, max_explicit_dbvar_index):
+def canonicalize_de_bruijn(
+    programs, root_states, dfa, abstrs, max_explicit_dbvar_index
+):
     """
-    Convert the program to a de bruijn representation. Creates a tree distribution
+    Convert the programs to a de bruijn representation. Creates a tree distribution
         and then calls the canonicalize_de_bruijn_from_tree_dist function.
     """
 
     check_have_all_abstrs(dfa, abstrs)
 
-    s_exp = program.to_type_annotated_ns_s_exp(dfa, root_node)
+    s_exps, subset = DSLSubset.fit_dsl_to_programs_and_output_s_exps(
+        dfa, *programs, root=tuple(root_states), abstrs=abstrs
+    )
 
-    dsl = create_dsl(
-        dfa,
-        DSLSubset.from_program(dfa, program, root=root_node, abstrs=abstrs),
-        root_node,
-    )
-    fam = ns.BigramProgramDistributionFamily(
-        dsl,
-        additional_preorder_masks=[
-            lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
-        ],
-        include_type_preorder_mask=False,
-        node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
-    )
-    return canonicalize_de_bruijn_from_tree_dist(
-        fam.tree_distribution_skeleton, s_exp, max_explicit_dbvar_index
-    )
+    dsl_by_root = {root: create_dsl(dfa, subset, root) for root in set(root_states)}
+    fam = {
+        root: ns.BigramProgramDistributionFamily(
+            dsl,
+            additional_preorder_masks=[
+                lambda dist, dsl: DefUseChainPreorderMask(
+                    dist, dsl, dfa=dfa, abstrs=abstrs
+                )
+            ],
+            include_type_preorder_mask=False,
+            node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
+        ).tree_distribution_skeleton
+        for root, dsl in dsl_by_root.items()
+    }
+    return [
+        canonicalize_de_bruijn_from_tree_dist(
+            fam[root], s_exp, max_explicit_dbvar_index
+        )
+        for s_exp, root in zip(s_exps, root_states)
+    ]
 
 
 def check_have_all_abstrs(dfa, abstrs):
