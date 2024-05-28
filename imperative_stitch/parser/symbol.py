@@ -1,10 +1,9 @@
 import ast
-import copy
 from dataclasses import dataclass
 
 import ast_scope
 
-from imperative_stitch.utils.ast_utils import name_field, true_globals
+from imperative_stitch.utils.ast_utils import true_globals
 
 
 @dataclass(frozen=True)
