@@ -114,53 +114,33 @@ class PythonAST(ABC):
             i.e., run on all the children and then on the new object.
         """
 
-    def _replace_with_substitute(self, arguments):
-        """
-        Replace this PythonAST with the corresponding argument from the given arguments.
-        """
-        del arguments
-        # by default, do nothing
-        return self
-
-    def substitute(self, arguments):
-        """
-        Substitute the given arguments into this PythonAST.
-        """
-        # pylint: disable=protected-access
-        return self.map(lambda x: x._replace_with_substitute(arguments))
-
-    def _collect_abstraction_calls(self, result):
-        """
-        Collect all abstraction calls in this PythonAST. Adds them to the given
-            dictionary from handle to abstraction call object.
-        """
-        del result
-        # by default, do nothing
-        return self
-
     def abstraction_calls(self):
         """
         Collect all abstraction calls in this PythonAST. Returns a dictionary
             from handle to abstraction call object.
         """
         result = {}
-        # pylint: disable=protected-access
-        self.map(lambda x: x._collect_abstraction_calls(result))
-        return result
 
-    def _replace_abstraction_calls(self, handle_to_replacement):
-        """
-        Replace the abstraction call with the given handle with the given replacement.
-        """
-        del handle_to_replacement
-        return self
+        def collect(x):
+            if isinstance(x, AbstractionCallAST):
+                result[x.handle] = x
+            return x
+
+        self.map(collect)
+        return result
 
     def replace_abstraction_calls(self, handle_to_replacement):
         """
         Replace the abstraction call with the given handle with the given replacement.
         """
         # pylint: disable=protected-access
-        return self.map(lambda x: x._replace_abstraction_calls(handle_to_replacement))
+        return self.map(
+            lambda x: (
+                handle_to_replacement.get(x.handle, x)
+                if isinstance(x, AbstractionCallAST)
+                else x
+            )
+        )
 
     def map_abstraction_calls(self, replace_fn):
         """
@@ -207,99 +187,6 @@ class PythonAST(ABC):
             result = result.abstraction_calls_to_bodies(abstractions, pragmas=pragmas)
             if not result.abstraction_calls():
                 return result
-
-    @classmethod
-    def constant(cls, leaf):
-        """
-        Create a constant PythonAST from the given leaf value (which must be a python constant).
-        """
-        assert not isinstance(leaf, PythonAST), leaf
-        return NodeAST(
-            typ=ast.Constant, children=[LeafAST(leaf=leaf), LeafAST(leaf=None)]
-        )
-
-    @classmethod
-    def name(cls, name_node):
-        """
-        Create a name PythonAST from the given name node containing a symbol.
-        """
-        assert isinstance(name_node, LeafAST) and isinstance(
-            name_node.leaf, PythonSymbol
-        ), name_node
-        return NodeAST(
-            typ=ast.Name,
-            children=[
-                name_node,
-                NodeAST(typ=ast.Load, children=[]),
-            ],
-        )
-
-    @classmethod
-    def call(cls, name_sym, *arguments):
-        """
-        Create a call PythonAST from the given symbol and arguments.
-
-        In this case, the symbol must be a symbol representing a name.
-        """
-        assert isinstance(name_sym, PythonSymbol), name_sym
-        return NodeAST(
-            typ=ast.Call,
-            children=[
-                cls.name(LeafAST(name_sym)),
-                ListAST(children=arguments),
-                ListAST(children=[]),
-            ],
-        )
-
-    @classmethod
-    def expr_stmt(cls, expr):
-        """
-        Create an expression statement PythonAST from the given expression.
-        """
-        return NodeAST(typ=ast.Expr, children=[expr])
-
-    def render_symvar(self):
-        """
-        Render this PythonAST as a __ref__ variable for stub display, i.e.,
-            `a` -> `__ref__(a)`
-        """
-        return PythonAST.call(
-            PythonSymbol(name="__ref__", scope=None), PythonAST.name(self)
-        )
-
-    def render_codevar(self):
-        """
-        Render this PythonAST as a __code__ variable for stub display, i.e.,
-            `a` -> `__code__("a")`
-        """
-        return PythonAST.call(
-            PythonSymbol(name="__code__", scope=None),
-            PythonAST.constant(self.to_python()),
-        )
-
-    def wrap_in_metavariable(self, name):
-        return NodeAST(
-            ast.Set,
-            [
-                ListAST(
-                    [
-                        PythonAST.name(LeafAST(PythonSymbol("__metavariable__", None))),
-                        PythonAST.name(LeafAST(PythonSymbol(name, None))),
-                        self,
-                    ]
-                )
-            ],
-        )
-
-    def wrap_in_choicevar(self):
-        return SequenceAST(
-            "/seq",
-            [
-                PythonAST.parse_python_statement("__start_choice__"),
-                self,
-                PythonAST.parse_python_statement("__end_choice__"),
-            ],
-        )
 
 
 @dataclass
@@ -482,22 +369,6 @@ class AbstractionCallAST(PythonAST):
             AbstractionCallAST(self.tag, [x.map(fn) for x in self.args], self.handle)
         )
 
-    def _collect_abstraction_calls(self, result):
-        result[self.handle] = self
-        return super()._collect_abstraction_calls(result)
-
-    def _replace_abstraction_calls(self, handle_to_replacement):
-        if self.handle in handle_to_replacement:
-            return handle_to_replacement[self.handle]
-        # pylint: disable=protected-access
-        return self.map(
-            lambda x: (
-                x
-                if isinstance(x, AbstractionCallAST) and x.tag == self.tag
-                else x._replace_abstraction_calls(handle_to_replacement)
-            )
-        )
-
 
 @dataclass
 class SliceElementAST(PythonAST):
@@ -537,9 +408,6 @@ class SliceElementAST(PythonAST):
     def to_python_ast(self):
         return self.content.to_python_ast()
 
-    def substitute(self, arguments):
-        return SliceElementAST(self.content.substitute(arguments))
-
     def map(self, fn):
         return fn(SliceElementAST(self.content.map(fn)))
 
@@ -561,9 +429,6 @@ class StarrableElementAST(PythonAST):
 
     def to_python_ast(self):
         return self.content.to_python_ast()
-
-    def substitute(self, arguments):
-        return StarrableElementAST(self.content.substitute(arguments))
 
     def map(self, fn):
         return fn(StarrableElementAST(self.content.map(fn)))

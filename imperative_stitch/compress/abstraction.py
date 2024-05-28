@@ -1,6 +1,15 @@
 from dataclasses import dataclass
 from typing import List
 
+from imperative_stitch.compress.manipulate_python_ast import (
+    make_call,
+    make_expr_stmt,
+    make_name,
+    render_codevar,
+    render_symvar,
+    wrap_in_choicevar,
+    wrap_in_metavariable,
+)
 from imperative_stitch.parser import PythonAST
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.python_ast import (
@@ -45,9 +54,9 @@ class Arguments:
 
     def render_list(self):
         return (
-            [x.render_codevar() for x in self.metavars]
-            + [x.render_symvar() for x in self.symvars]
-            + [x.render_codevar() for x in self.choicevars]
+            [render_codevar(x) for x in self.metavars]
+            + [render_symvar(x) for x in self.symvars]
+            + [render_codevar(x) for x in self.choicevars]
         )
 
 
@@ -126,13 +135,13 @@ class Abstraction:
         """
         arguments = self.process_arguments(arguments)
         args_list = arguments.render_list()
-        e_stub = PythonAST.call(
+        e_stub = make_call(
             PythonSymbol(name=self.name, scope=None),
             *args_list,
         )
         if self.dfa_root == "E":
             return e_stub
-        s_stub = PythonAST.expr_stmt(e_stub)
+        s_stub = make_expr_stmt(e_stub)
         if self.dfa_root == "S":
             return s_stub
         seq_stub = SequenceAST("/seq", [s_stub])
@@ -166,14 +175,21 @@ class Abstraction:
                 )
             arguments = Arguments(
                 [
-                    x.wrap_in_metavariable(f"__m{i}")
+                    wrap_in_metavariable(x, f"__m{i}")
                     for i, x in enumerate(arguments.metavars)
                 ],
                 arguments.symvars,
-                [x.wrap_in_choicevar() for x in arguments.choicevars],
+                [wrap_in_choicevar(x) for x in arguments.choicevars],
             )
         body = self.body
-        body = body.substitute(arguments)
+        body = body.map(
+            lambda x: (
+                # pylint: disable=protected-access
+                x._replace_with_substitute(arguments)
+                if hasattr(x, "_replace_with_substitute")
+                else x
+            )
+        )
         if pragmas:
             body = self._add_extract_pragmas(body)
         return body
@@ -184,18 +200,14 @@ class Abstraction:
         """
         arguments = Arguments(
             [
-                PythonAST.name(LeafAST(PythonSymbol(f"#{i}", None)))
+                make_name(LeafAST(PythonSymbol(f"#{i}", None)))
                 for i in range(self.arity)
             ],
             [LeafAST(PythonSymbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
             [
                 SequenceAST(
                     "/seq",
-                    [
-                        PythonAST.expr_stmt(
-                            PythonAST.name(LeafAST(PythonSymbol(f"?{i}", None)))
-                        )
-                    ],
+                    [make_expr_stmt(make_name(LeafAST(PythonSymbol(f"?{i}", None))))],
                 )
                 for i in range(self.choice_arity)
             ],

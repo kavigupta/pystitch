@@ -11,7 +11,7 @@ from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
 )
-from imperative_stitch.utils.types import SEPARATOR
+from imperative_stitch.utils.types import SEPARATOR, clean_type, unclean_type
 
 from .classify_nodes import classify_nodes_in_program
 
@@ -213,23 +213,6 @@ def is_sequence(type_name, head_symbol):
         head_symbol,
     )
     return seq_type or seq_symbol
-
-
-def clean_type(x):
-    """
-    Replace [] with __ in the type name
-    """
-    return x.replace("[", "_").replace("]", "_")
-
-
-def unclean_type(x):
-    """
-    Replace __ with [] in the type name
-    """
-    if "_" not in x:
-        return x
-    assert x.count("_") == 2, x
-    return x.replace("_", "[", 1).replace("_", "]", 1)
 
 
 def create_dsl(dfa, dsl_subset, start_state, dslf=None):
