@@ -11,7 +11,6 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
 )
-from imperative_stitch.utils.python_dfa import BAD_TYPES
 from imperative_stitch.utils.types import SEPARATOR
 
 from .classify_nodes import classify_nodes_in_program
@@ -207,7 +206,7 @@ def is_sequence(type_name, head_symbol):
         return False
     seq_type = is_sequence_type(type_name)
     seq_symbol = is_sequence_symbol(head_symbol)
-    assert seq_type == seq_symbol or type_name in BAD_TYPES, (
+    assert seq_type == seq_symbol or type_name in ns.pruned_python_dfa_states, (
         seq_type,
         seq_symbol,
         type_name,

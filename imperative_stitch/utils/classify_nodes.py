@@ -3,8 +3,6 @@ import json
 import neurosym as ns
 from frozendict import frozendict
 
-from imperative_stitch.utils.python_dfa import export_dfa_with_no_abstractions
-
 
 def export_dfa(*, abstrs=frozendict({})):
     """
@@ -18,7 +16,7 @@ def export_dfa(*, abstrs=frozendict({})):
 
     assert isinstance(abstrs, (dict, frozendict)), f"expected dict, got {abstrs}"
 
-    result = export_dfa_with_no_abstractions()
+    result = ns.python_dfa()
 
     for k, abstr in abstrs.items():
         assert k == abstr.name, (k, abstr.name)
