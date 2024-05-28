@@ -90,6 +90,7 @@ class SequenceTest(unittest.TestCase):
     def test_stub_insertion_rooted_substitute_variables(self):
         parsed = PythonAST.parse_s_expression(self.ctx_rooted)
         abstracts = collect_abstraction_calls(parsed)
+        # pylint: disable=unbalanced-tuple-unpacking
         [handle] = abstracts.keys()
         ac = abstracts[handle]
         new_abstraction_call = AbstractionCallAST(
