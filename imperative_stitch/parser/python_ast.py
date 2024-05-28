@@ -294,7 +294,9 @@ class PythonAST(ABC):
         Render this PythonAST as a __ref__ variable for stub display, i.e.,
             `a` -> `__ref__(a)`
         """
-        return PythonAST.call(PythonSymbol(name="__ref__", scope=None), PythonAST.name(self))
+        return PythonAST.call(
+            PythonSymbol(name="__ref__", scope=None), PythonAST.name(self)
+        )
 
     def render_codevar(self):
         """

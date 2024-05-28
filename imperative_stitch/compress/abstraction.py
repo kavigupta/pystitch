@@ -183,7 +183,10 @@ class Abstraction:
         Render the body but with the #0, %0, ?0, kept as placeholders.
         """
         arguments = Arguments(
-            [PythonAST.name(LeafAST(PythonSymbol(f"#{i}", None))) for i in range(self.arity)],
+            [
+                PythonAST.name(LeafAST(PythonSymbol(f"#{i}", None)))
+                for i in range(self.arity)
+            ],
             [LeafAST(PythonSymbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
             [
                 SequenceAST(
