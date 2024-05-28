@@ -10,6 +10,8 @@ from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
     abstraction_calls_to_bodies_recursively,
     abstraction_calls_to_stubs,
+    collect_abstraction_calls,
+    replace_abstraction_calls,
 )
 from imperative_stitch.compress.run_extraction import convert_output
 from imperative_stitch.data.stitch_output_set import (
@@ -87,7 +89,7 @@ class SequenceTest(unittest.TestCase):
 
     def test_stub_insertion_rooted_substitute_variables(self):
         parsed = PythonAST.parse_s_expression(self.ctx_rooted)
-        abstracts = parsed.abstraction_calls()
+        abstracts = collect_abstraction_calls(parsed)
         [handle] = abstracts.keys()
         ac = abstracts[handle]
         new_abstraction_call = AbstractionCallAST(
@@ -101,7 +103,7 @@ class SequenceTest(unittest.TestCase):
                 ]
             ],
         )
-        parsed = parsed.replace_abstraction_calls({handle: new_abstraction_call})
+        parsed = replace_abstraction_calls(parsed, {handle: new_abstraction_call})
         assertSameCode(
             self,
             abstraction_calls_to_stubs(parsed, self.abtractions).to_python(),

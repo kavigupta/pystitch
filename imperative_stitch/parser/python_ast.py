@@ -114,44 +114,6 @@ class PythonAST(ABC):
             i.e., run on all the children and then on the new object.
         """
 
-    def abstraction_calls(self):
-        """
-        Collect all abstraction calls in this PythonAST. Returns a dictionary
-            from handle to abstraction call object.
-        """
-        result = {}
-
-        def collect(x):
-            if isinstance(x, AbstractionCallAST):
-                result[x.handle] = x
-            return x
-
-        self.map(collect)
-        return result
-
-    def replace_abstraction_calls(self, handle_to_replacement):
-        """
-        Replace the abstraction call with the given handle with the given replacement.
-        """
-        # pylint: disable=protected-access
-        return self.map(
-            lambda x: (
-                handle_to_replacement.get(x.handle, x)
-                if isinstance(x, AbstractionCallAST)
-                else x
-            )
-        )
-
-    def map_abstraction_calls(self, replace_fn):
-        """
-        Map each abstraction call through the given function.
-        """
-        handle_to_replacement = self.abstraction_calls()
-        handle_to_replacement = {
-            handle: replace_fn(call) for handle, call in handle_to_replacement.items()
-        }
-        return self.replace_abstraction_calls(handle_to_replacement)
-
 
 @dataclass
 class SequenceAST(PythonAST):

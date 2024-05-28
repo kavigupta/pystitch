@@ -9,6 +9,8 @@ from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
     abstraction_calls_to_bodies_recursively,
+    collect_abstraction_calls,
+    replace_abstraction_calls,
 )
 from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
@@ -225,8 +227,9 @@ class AbstractionRenderingTest(unittest.TestCase):
 
     def test_body_rendering_with_choiceseq_abstraction(self):
         element = fn_2.substitute_body(fn_2_args_with_stub)
-        stub = element.replace_abstraction_calls(
-            {k: fn_3.create_stub([]) for k in element.abstraction_calls()}
+        stub = replace_abstraction_calls(
+            element,
+            {k: fn_3.create_stub([]) for k in collect_abstraction_calls(element)},
         )
         assertSameCode(
             self,

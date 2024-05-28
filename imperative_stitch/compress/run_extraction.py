@@ -10,6 +10,8 @@ from imperative_stitch.analyze_program.extract.extract_configuration import (
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
+    collect_abstraction_calls,
+    replace_abstraction_calls,
 )
 from imperative_stitch.data.parse_extract import parse_extract_pragma
 from imperative_stitch.parser.python_ast import PythonAST
@@ -33,11 +35,11 @@ def add_pragmas_around_single_abstraction_call(parsed, abstr):
     Returns:
         str, python code with pragmas added around the first abstraction call
     """
-    ac = parsed.abstraction_calls()
+    ac = collect_abstraction_calls(parsed)
     key = next(iter(ac))
     call = ac[key]
     ac[key] = abstr[call.tag].substitute_body(call.args, pragmas=True)
-    parsed = parsed.replace_abstraction_calls(ac)
+    parsed = replace_abstraction_calls(parsed, ac)
     parsed = abstraction_calls_to_bodies(parsed, abstr)
     return parsed.to_python()
 
@@ -67,7 +69,7 @@ def convert_output(abstractions, rewritten):
 
     for i, code in enumerate(rewritten):
         parsed = PythonAST.parse_s_expression(code)
-        if not parsed.abstraction_calls():
+        if not collect_abstraction_calls(parsed):
             unchanged[i] = parsed.to_python()
             continue
 
