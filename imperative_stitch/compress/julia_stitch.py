@@ -3,7 +3,11 @@ import os
 import shlex
 import subprocess
 
+import appdirs
+
 from imperative_stitch.utils.classify_nodes import export_dfa
+
+cache_dir = appdirs.user_cache_dir("imperative_stitch")
 
 # a, b = f(c, d)
 # (Assign
@@ -78,7 +82,12 @@ def run_julia_stitch_generic(
         "_starred_content": 0.0,
         "_starred_starred": 0.0,
     }
-    with open("data/dfa.json", "w") as f:
+    try:
+        os.makedirs(cache_dir)
+    except FileExistsError:
+        pass
+    dfa_file = cache_dir + "/dfa.json"
+    with open(dfa_file, "w") as f:
         json.dump(export_dfa(), f, indent=2)
     cmd = [
         "julia",
@@ -86,7 +95,7 @@ def run_julia_stitch_generic(
         os.path.join(stitch_jl_dir, path),
         f"--corpus={json.dumps(code)}",
         f"--max-arity={max_arity}",
-        *([f"--dfa={os.path.abspath('data/dfa.json')}"] if include_dfa else []),
+        *([f"--dfa={dfa_file}"] if include_dfa else []),
         f"--size-by-symbol={json.dumps(size_by_symbol)}",
         f"--application-utility-fixed={application_utility_fixed}",
         f"--application-utility-metavar={application_utility_metavar}",
