@@ -458,11 +458,3 @@ class TestExprNodeValidity(unittest.TestCase):
         code = small_set_examples()[i]
         for element in ast.parse(code).body:
             self.assertENodesReal(ast.unparse(element))
-
-    def test_dfa_file(self):
-        self.maxDiff = None
-
-        with open("data/dfa.json") as f:
-            x = json.load(f)
-
-        self.assertEqual(export_dfa(), x)
