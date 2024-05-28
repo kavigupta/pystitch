@@ -1,4 +1,5 @@
 import ast
+from types import NoneType
 from typing import Union
 
 import neurosym as ns
@@ -54,12 +55,18 @@ def python_statements_to_python_ast(code: Union[str, ast.AST]) -> SequenceAST:
     return code
 
 
-def python_to_python_ast(code: Union[str, ast.AST]) -> PythonAST:
+def python_to_python_ast(
+    code: Union[str, ast.AST], descoper: Union[NoneType, dict] = None
+) -> PythonAST:
     """
     Parse the given python code into a PythonAST.
     """
 
     with increase_recursionlimit():
-        code = ast.parse(code)
-        code = python_ast_to_parsed_ast(code, create_descoper(code))
+        if isinstance(code, str):
+            code = ast.parse(code)
+        code = python_ast_to_parsed_ast(
+            code,
+            descoper if descoper is not None else create_descoper(code),
+        )
         return code

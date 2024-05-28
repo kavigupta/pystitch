@@ -10,27 +10,13 @@ from frozendict import frozendict
 from increase_recursionlimit import increase_recursionlimit
 
 from .splice import Splice
-from .symbol import PythonSymbol, create_descoper
+from .symbol import PythonSymbol
 
 
 class PythonAST(ABC):
     """
     Represents a Parsed AST.
     """
-
-    @classmethod
-    def from_python_ast(cls, ast_node, descoper=None):
-        """
-        Convert the given python AST into a PythonAST.
-        """
-        # pylint: disable=R0401
-        from .parse_python import python_ast_to_parsed_ast
-
-        with increase_recursionlimit():
-            return python_ast_to_parsed_ast(
-                ast_node,
-                descoper if descoper is not None else create_descoper(ast_node),
-            )
 
     @abstractmethod
     def to_ns_s_exp(self, config=frozendict()):
