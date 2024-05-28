@@ -182,7 +182,14 @@ class Abstraction:
                 [wrap_in_choicevar(x) for x in arguments.choicevars],
             )
         body = self.body
-        body = body.substitute(arguments)
+        body = body.map(
+            lambda x: (
+                # pylint: disable=protected-access
+                x._replace_with_substitute(arguments)
+                if hasattr(x, "_replace_with_substitute")
+                else x
+            )
+        )
         if pragmas:
             body = self._add_extract_pragmas(body)
         return body

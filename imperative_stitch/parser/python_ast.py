@@ -114,21 +114,6 @@ class PythonAST(ABC):
             i.e., run on all the children and then on the new object.
         """
 
-    def _replace_with_substitute(self, arguments):
-        """
-        Replace this PythonAST with the corresponding argument from the given arguments.
-        """
-        del arguments
-        # by default, do nothing
-        return self
-
-    def substitute(self, arguments):
-        """
-        Substitute the given arguments into this PythonAST.
-        """
-        # pylint: disable=protected-access
-        return self.map(lambda x: x._replace_with_substitute(arguments))
-
     def _collect_abstraction_calls(self, result):
         """
         Collect all abstraction calls in this PythonAST. Adds them to the given
