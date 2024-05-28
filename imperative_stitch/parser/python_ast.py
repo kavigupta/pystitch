@@ -208,6 +208,7 @@ class PythonAST(ABC):
             if not result.abstraction_calls():
                 return result
 
+
 @dataclass
 class SequenceAST(PythonAST):
     head: str

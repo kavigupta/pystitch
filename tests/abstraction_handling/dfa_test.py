@@ -419,9 +419,7 @@ class TestExprNodeValidity(unittest.TestCase):
         print(node)
         code = PythonAST.parse_s_expression(node)
         print(code)
-        code_in_function_call = make_call(
-            PythonSymbol(name="hi", scope=None), code
-        )
+        code_in_function_call = make_call(PythonSymbol(name="hi", scope=None), code)
         code_in_function_call = code_in_function_call.to_python()
         print(code_in_function_call)
         code_in_function_call = PythonAST.parse_python_statement(code_in_function_call)

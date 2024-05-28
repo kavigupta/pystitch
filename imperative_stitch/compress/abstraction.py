@@ -200,11 +200,7 @@ class Abstraction:
             [
                 SequenceAST(
                     "/seq",
-                    [
-                        make_expr_stmt(
-                            make_name(LeafAST(PythonSymbol(f"?{i}", None)))
-                        )
-                    ],
+                    [make_expr_stmt(make_name(LeafAST(PythonSymbol(f"?{i}", None))))],
                 )
                 for i in range(self.choice_arity)
             ],
