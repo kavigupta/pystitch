@@ -1,16 +1,16 @@
 from dataclasses import dataclass
 from typing import List
 
-from imperative_stitch.parser import ParsedAST
-from imperative_stitch.parser.parsed_ast import (
+from imperative_stitch.parser import PythonAST
+from imperative_stitch.parser.patterns import VARIABLE_PATTERN
+from imperative_stitch.parser.python_ast import (
     AbstractionCallAST,
     LeafAST,
     SequenceAST,
     SpliceAST,
     Variable,
 )
-from imperative_stitch.parser.patterns import VARIABLE_PATTERN
-from imperative_stitch.parser.symbol import Symbol
+from imperative_stitch.parser.symbol import PythonSymbol
 from imperative_stitch.utils.classify_nodes import export_dfa
 
 
@@ -21,13 +21,13 @@ class Arguments:
         symbol variables, and choice variables.
     """
 
-    metavars: list[ParsedAST]
-    symvars: list[ParsedAST]
+    metavars: list[PythonAST]
+    symvars: list[PythonAST]
     choicevars: list[SequenceAST]
 
     def __post_init__(self):
-        assert all(isinstance(x, ParsedAST) for x in self.metavars), self.metavars
-        assert all(isinstance(x, ParsedAST) for x in self.symvars), self.symvars
+        assert all(isinstance(x, PythonAST) for x in self.metavars), self.metavars
+        assert all(isinstance(x, PythonAST) for x in self.symvars), self.symvars
         assert all(
             isinstance(x, (SequenceAST, Variable, AbstractionCallAST))
             for x in self.choicevars
@@ -54,7 +54,7 @@ class Arguments:
 @dataclass
 class Abstraction:
     name: str
-    body: ParsedAST
+    body: PythonAST
     arity: int
 
     sym_arity: int
@@ -80,7 +80,7 @@ class Abstraction:
         choice_arity=None,
     ):
         if isinstance(body, str):
-            body = ParsedAST.parse_s_expression(body)
+            body = PythonAST.parse_s_expression(body)
         if arity is not None:
             assert arity == len(dfa_metavars)
         if sym_arity is not None:
@@ -107,7 +107,7 @@ class Abstraction:
         assert self.sym_arity == len(self.dfa_symvars)
         assert self.choice_arity == len(self.dfa_choicevars)
 
-        assert isinstance(self.body, ParsedAST), self.body
+        assert isinstance(self.body, PythonAST), self.body
 
     def process_arguments(self, arguments):
         """
@@ -126,13 +126,13 @@ class Abstraction:
         """
         arguments = self.process_arguments(arguments)
         args_list = arguments.render_list()
-        e_stub = ParsedAST.call(
-            Symbol(name=self.name, scope=None),
+        e_stub = PythonAST.call(
+            PythonSymbol(name=self.name, scope=None),
             *args_list,
         )
         if self.dfa_root == "E":
             return e_stub
-        s_stub = ParsedAST.expr_stmt(e_stub)
+        s_stub = PythonAST.expr_stmt(e_stub)
         if self.dfa_root == "S":
             return s_stub
         seq_stub = SequenceAST("/seq", [s_stub])
@@ -142,8 +142,8 @@ class Abstraction:
     def _add_extract_pragmas(self, body):
         if self.dfa_root == "E":
             raise ValueError("Cannot add extract pragmas to an expression")
-        start_pragma = ParsedAST.parse_python_statement("__start_extract__")
-        end_pragma = ParsedAST.parse_python_statement("__end_extract__")
+        start_pragma = PythonAST.parse_python_statement("__start_extract__")
+        end_pragma = PythonAST.parse_python_statement("__end_extract__")
         if self.dfa_root == "S":
             return SpliceAST(SequenceAST("/seq", [start_pragma, body, end_pragma]))
         assert self.dfa_root == "seqS"
@@ -183,14 +183,17 @@ class Abstraction:
         Render the body but with the #0, %0, ?0, kept as placeholders.
         """
         arguments = Arguments(
-            [ParsedAST.name(LeafAST(Symbol(f"#{i}", None))) for i in range(self.arity)],
-            [LeafAST(Symbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
+            [
+                PythonAST.name(LeafAST(PythonSymbol(f"#{i}", None)))
+                for i in range(self.arity)
+            ],
+            [LeafAST(PythonSymbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
             [
                 SequenceAST(
                     "/seq",
                     [
-                        ParsedAST.expr_stmt(
-                            ParsedAST.name(LeafAST(Symbol(f"?{i}", None)))
+                        PythonAST.expr_stmt(
+                            PythonAST.name(LeafAST(PythonSymbol(f"?{i}", None)))
                         )
                     ],
                 )
@@ -246,7 +249,7 @@ class Abstraction:
 def handle_abstractions(name_to_abstr):
     """
     Given a dictionary mapping abstraction names to Abstraction objects, return a function
-        that can be used to inject abstractions into a ParsedAST.
+        that can be used to inject abstractions into a PythonAST.
     """
 
     def inject(abstr_name, abstr_args, pair_to_s_exp):

@@ -6,8 +6,8 @@ from textwrap import dedent
 import neurosym as ns
 from increase_recursionlimit import increase_recursionlimit
 
-from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.parser.symbol import Symbol
+from imperative_stitch.parser.python_ast import PythonAST
+from imperative_stitch.parser.symbol import PythonSymbol
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
 
 from ..utils import expand_with_slow_tests, small_set_examples
@@ -193,7 +193,7 @@ class TestClassifications(unittest.TestCase):
 
     def test_module_classify(self):
         self.assertEqual(
-            self.classify_in_code(ParsedAST.parse_python_module("x = 2"), "M"),
+            self.classify_in_code(PythonAST.parse_python_module("x = 2"), "M"),
             [
                 (
                     "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)",
@@ -212,7 +212,7 @@ class TestClassifications(unittest.TestCase):
 
     def test_statement_classify(self):
         self.assertEqual(
-            self.classify_in_code(ParsedAST.parse_python_statement("x = 2"), "S"),
+            self.classify_in_code(PythonAST.parse_python_statement("x = 2"), "S"),
             [
                 (
                     "(Assign (list (Name &x:0 Store)) (Constant i2 None) None)",
@@ -237,7 +237,7 @@ class DFATest(unittest.TestCase):
         with increase_recursionlimit():
             print("#" * 80)
             print(code)
-            code = ParsedAST.parse_python_module(code).to_ns_s_exp(kwargs)
+            code = PythonAST.parse_python_module(code).to_ns_s_exp(kwargs)
             print(ns.render_s_expression(code))
             classified = classify_nodes_in_program(dfa, code, "M")
             result = sorted(
@@ -404,7 +404,7 @@ class TestExprNodeValidity(unittest.TestCase):
         with increase_recursionlimit():
             print("#" * 80)
             print(code)
-            code = ParsedAST.parse_python_module(code)
+            code = PythonAST.parse_python_module(code)
             e_nodes = [
                 ns.render_s_expression(x)
                 for x, state in classify_nodes_in_program(
@@ -416,12 +416,14 @@ class TestExprNodeValidity(unittest.TestCase):
 
     def assertENodeReal(self, node):
         print(node)
-        code = ParsedAST.parse_s_expression(node)
+        code = PythonAST.parse_s_expression(node)
         print(code)
-        code_in_function_call = ParsedAST.call(Symbol(name="hi", scope=None), code)
+        code_in_function_call = PythonAST.call(
+            PythonSymbol(name="hi", scope=None), code
+        )
         code_in_function_call = code_in_function_call.to_python()
         print(code_in_function_call)
-        code_in_function_call = ParsedAST.parse_python_statement(code_in_function_call)
+        code_in_function_call = PythonAST.parse_python_statement(code_in_function_call)
         assert code_in_function_call.typ == ast.Expr
         code_in_function_call = code_in_function_call.children[0]
         assert code_in_function_call.typ == ast.Call

@@ -9,10 +9,10 @@ import neurosym as ns
 from increase_recursionlimit import increase_recursionlimit
 
 from .splice import Splice
-from .symbol import Symbol, create_descoper
+from .symbol import PythonSymbol, create_descoper
 
 
-class ParsedAST(ABC):
+class PythonAST(ABC):
     """
     Represents a Parsed AST.
     """
@@ -20,7 +20,7 @@ class ParsedAST(ABC):
     @classmethod
     def from_python_ast(cls, ast_node, descoper=None):
         """
-        Convert the given python AST into a ParsedAST.
+        Convert the given python AST into a PythonAST.
         """
         # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
@@ -34,7 +34,7 @@ class ParsedAST(ABC):
     @classmethod
     def parse_python_module(cls, code):
         """
-        Parse the given python code into a ParsedAST.
+        Parse the given python code into a PythonAST.
         """
         # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
@@ -65,7 +65,7 @@ class ParsedAST(ABC):
     @classmethod
     def parse_s_expression(cls, code):
         """
-        Parse the given s-expression into a ParsedAST.
+        Parse the given s-expression into a PythonAST.
         """
         # pylint: disable=R0401
         with increase_recursionlimit():
@@ -77,7 +77,7 @@ class ParsedAST(ABC):
 
     def to_s_exp(self, *, renderer_kwargs=None, no_leaves=False) -> ns.SExpression:
         """
-        Convert this ParsedAST into an s-expression.
+        Convert this PythonAST into an s-expression.
         """
         if renderer_kwargs is None:
             renderer_kwargs = {}
@@ -87,7 +87,7 @@ class ParsedAST(ABC):
     @abstractmethod
     def to_ns_s_exp(self, config):
         """
-        Convert this ParsedAST into a pair s-expression.
+        Convert this PythonAST into a pair s-expression.
         """
 
     def to_type_annotated_ns_s_exp(self, dfa, start_state):
@@ -124,7 +124,7 @@ class ParsedAST(ABC):
 
     def to_python(self):
         """
-        Convert this ParsedAST into python code.
+        Convert this PythonAST into python code.
         """
         with increase_recursionlimit():
             code = self.to_python_ast()
@@ -135,19 +135,19 @@ class ParsedAST(ABC):
     @abstractmethod
     def to_python_ast(self):
         """
-        Convert this ParsedAST into a python AST.
+        Convert this PythonAST into a python AST.
         """
 
     @abstractmethod
     def map(self, fn):
         """
-        Map the given function over this ParsedAST. fn is run in post-order,
+        Map the given function over this PythonAST. fn is run in post-order,
             i.e., run on all the children and then on the new object.
         """
 
     def _replace_with_substitute(self, arguments):
         """
-        Replace this ParsedAST with the corresponding argument from the given arguments.
+        Replace this PythonAST with the corresponding argument from the given arguments.
         """
         del arguments
         # by default, do nothing
@@ -155,14 +155,14 @@ class ParsedAST(ABC):
 
     def substitute(self, arguments):
         """
-        Substitute the given arguments into this ParsedAST.
+        Substitute the given arguments into this PythonAST.
         """
         # pylint: disable=protected-access
         return self.map(lambda x: x._replace_with_substitute(arguments))
 
     def _collect_abstraction_calls(self, result):
         """
-        Collect all abstraction calls in this ParsedAST. Adds them to the given
+        Collect all abstraction calls in this PythonAST. Adds them to the given
             dictionary from handle to abstraction call object.
         """
         del result
@@ -171,7 +171,7 @@ class ParsedAST(ABC):
 
     def abstraction_calls(self):
         """
-        Collect all abstraction calls in this ParsedAST. Returns a dictionary
+        Collect all abstraction calls in this PythonAST. Returns a dictionary
             from handle to abstraction call object.
         """
         result = {}
@@ -242,9 +242,9 @@ class ParsedAST(ABC):
     @classmethod
     def constant(cls, leaf):
         """
-        Create a constant ParsedAST from the given leaf value (which must be a python constant).
+        Create a constant PythonAST from the given leaf value (which must be a python constant).
         """
-        assert not isinstance(leaf, ParsedAST), leaf
+        assert not isinstance(leaf, PythonAST), leaf
         return NodeAST(
             typ=ast.Constant, children=[LeafAST(leaf=leaf), LeafAST(leaf=None)]
         )
@@ -252,10 +252,10 @@ class ParsedAST(ABC):
     @classmethod
     def name(cls, name_node):
         """
-        Create a name ParsedAST from the given name node containing a symbol.
+        Create a name PythonAST from the given name node containing a symbol.
         """
         assert isinstance(name_node, LeafAST) and isinstance(
-            name_node.leaf, Symbol
+            name_node.leaf, PythonSymbol
         ), name_node
         return NodeAST(
             typ=ast.Name,
@@ -268,11 +268,11 @@ class ParsedAST(ABC):
     @classmethod
     def call(cls, name_sym, *arguments):
         """
-        Create a call ParsedAST from the given symbol and arguments.
+        Create a call PythonAST from the given symbol and arguments.
 
         In this case, the symbol must be a symbol representing a name.
         """
-        assert isinstance(name_sym, Symbol), name_sym
+        assert isinstance(name_sym, PythonSymbol), name_sym
         return NodeAST(
             typ=ast.Call,
             children=[
@@ -285,25 +285,27 @@ class ParsedAST(ABC):
     @classmethod
     def expr_stmt(cls, expr):
         """
-        Create an expression statement ParsedAST from the given expression.
+        Create an expression statement PythonAST from the given expression.
         """
         return NodeAST(typ=ast.Expr, children=[expr])
 
     def render_symvar(self):
         """
-        Render this ParsedAST as a __ref__ variable for stub display, i.e.,
+        Render this PythonAST as a __ref__ variable for stub display, i.e.,
             `a` -> `__ref__(a)`
         """
-        return ParsedAST.call(Symbol(name="__ref__", scope=None), ParsedAST.name(self))
+        return PythonAST.call(
+            PythonSymbol(name="__ref__", scope=None), PythonAST.name(self)
+        )
 
     def render_codevar(self):
         """
-        Render this ParsedAST as a __code__ variable for stub display, i.e.,
+        Render this PythonAST as a __code__ variable for stub display, i.e.,
             `a` -> `__code__("a")`
         """
-        return ParsedAST.call(
-            Symbol(name="__code__", scope=None),
-            ParsedAST.constant(self.to_python()),
+        return PythonAST.call(
+            PythonSymbol(name="__code__", scope=None),
+            PythonAST.constant(self.to_python()),
         )
 
     def wrap_in_metavariable(self, name):
@@ -312,8 +314,8 @@ class ParsedAST(ABC):
             [
                 ListAST(
                     [
-                        ParsedAST.name(LeafAST(Symbol("__metavariable__", None))),
-                        ParsedAST.name(LeafAST(Symbol(name, None))),
+                        PythonAST.name(LeafAST(PythonSymbol("__metavariable__", None))),
+                        PythonAST.name(LeafAST(PythonSymbol(name, None))),
                         self,
                     ]
                 )
@@ -324,21 +326,21 @@ class ParsedAST(ABC):
         return SequenceAST(
             "/seq",
             [
-                ParsedAST.parse_python_statement("__start_choice__"),
+                PythonAST.parse_python_statement("__start_choice__"),
                 self,
-                ParsedAST.parse_python_statement("__end_choice__"),
+                PythonAST.parse_python_statement("__end_choice__"),
             ],
         )
 
 
 @dataclass
-class SequenceAST(ParsedAST):
+class SequenceAST(PythonAST):
     head: str
-    elements: List[ParsedAST]
+    elements: List[PythonAST]
 
     def __post_init__(self):
         assert isinstance(self.head, str), self.head
-        assert all(isinstance(x, ParsedAST) for x in self.elements), self.elements
+        assert all(isinstance(x, PythonAST) for x in self.elements), self.elements
 
     def to_ns_s_exp(self, config):
         return ns.SExpression(self.head, [x.to_ns_s_exp(config) for x in self.elements])
@@ -358,9 +360,9 @@ class SequenceAST(ParsedAST):
 
 
 @dataclass
-class NodeAST(ParsedAST):
+class NodeAST(PythonAST):
     typ: type
-    children: List[ParsedAST]
+    children: List[PythonAST]
 
     def to_ns_s_exp(self, config):
         if not self.children and not config.get("no_leaves", False):
@@ -380,8 +382,8 @@ class NodeAST(ParsedAST):
 
 
 @dataclass
-class ListAST(ParsedAST):
-    children: List[ParsedAST]
+class ListAST(PythonAST):
+    children: List[PythonAST]
 
     def to_ns_s_exp(self, config):
         if not self.children:
@@ -399,11 +401,11 @@ class ListAST(ParsedAST):
 
 
 @dataclass
-class LeafAST(ParsedAST):
+class LeafAST(PythonAST):
     leaf: object
 
     def __post_init__(self):
-        assert not isinstance(self.leaf, ParsedAST)
+        assert not isinstance(self.leaf, PythonAST)
 
     def to_ns_s_exp(self, config):
         leaf_as_string = self.render_leaf_as_string()
@@ -419,7 +421,7 @@ class LeafAST(ParsedAST):
             or self.leaf is Ellipsis
         ):
             return str(self.leaf)
-        if isinstance(self.leaf, Symbol):
+        if isinstance(self.leaf, PythonSymbol):
             return self.leaf.render()
         if isinstance(self.leaf, float):
             return f"f{self.leaf}"
@@ -442,7 +444,7 @@ class LeafAST(ParsedAST):
         raise RuntimeError(f"invalid leaf: {self.leaf}")
 
     def to_python_ast(self):
-        if isinstance(self.leaf, Symbol):
+        if isinstance(self.leaf, PythonSymbol):
             return self.leaf.name
         return self.leaf
 
@@ -451,7 +453,7 @@ class LeafAST(ParsedAST):
 
 
 @dataclass
-class Variable(ParsedAST):
+class Variable(PythonAST):
     sym: str
 
     @property
@@ -495,9 +497,9 @@ class ChoicevarAST(Variable):
 
 
 @dataclass
-class AbstractionCallAST(ParsedAST):
+class AbstractionCallAST(PythonAST):
     tag: str
-    args: List[ParsedAST]
+    args: List[PythonAST]
     handle: uuid.UUID
 
     def to_ns_s_exp(self, config):
@@ -529,8 +531,8 @@ class AbstractionCallAST(ParsedAST):
 
 
 @dataclass
-class SliceElementAST(ParsedAST):
-    content: ParsedAST
+class SliceElementAST(PythonAST):
+    content: PythonAST
 
     @classmethod
     def of(cls, x):
@@ -574,8 +576,8 @@ class SliceElementAST(ParsedAST):
 
 
 @dataclass
-class StarrableElementAST(ParsedAST):
-    content: ParsedAST
+class StarrableElementAST(PythonAST):
+    content: PythonAST
 
     def to_ns_s_exp(self, config):
         # pylint: disable=no-member
@@ -599,7 +601,7 @@ class StarrableElementAST(ParsedAST):
 
 
 @dataclass
-class SpliceAST(ParsedAST):
+class SpliceAST(PythonAST):
     content: Union[SequenceAST, AbstractionCallAST]
 
     def __post_init__(self):

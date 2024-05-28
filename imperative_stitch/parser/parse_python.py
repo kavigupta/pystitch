@@ -1,6 +1,6 @@
 import ast
 
-from imperative_stitch.parser.parsed_ast import (
+from imperative_stitch.parser.python_ast import (
     LeafAST,
     ListAST,
     NodeAST,
@@ -14,7 +14,7 @@ from imperative_stitch.utils.ast_utils import (
     name_field,
 )
 
-from .symbol import Symbol
+from .symbol import PythonSymbol
 
 
 def fields_for_node(node):
@@ -33,7 +33,7 @@ def python_body_to_parsed_ast(x, descoper):
 
 def python_ast_to_parsed_ast(x, descoper):
     """
-    Convert an ast.AST object to a ParsedAST object.
+    Convert an ast.AST object to a PythonAST object.
     """
     if isinstance(x, ast.AST):
         result = []
@@ -41,7 +41,7 @@ def python_ast_to_parsed_ast(x, descoper):
             el = getattr(x, f)
             if x in descoper and f == name_field(x):
                 assert isinstance(el, str), (x, f, el)
-                result.append(LeafAST(Symbol(el, descoper[x])))
+                result.append(LeafAST(PythonSymbol(el, descoper[x])))
             else:
                 if f == "slice":
                     result.append(

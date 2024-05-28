@@ -9,7 +9,7 @@ from imperative_stitch.analyze_program.extract.extract_configuration import (
 )
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.parse_extract import parse_extract_pragma
-from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.wrap import (
     add_sentinel,
     split_by_sentinel_ast,
@@ -24,7 +24,7 @@ def add_pragmas_around_single_abstraction_call(parsed, abstr):
     the first abstraction call in the parsed code.
 
     Args:
-        parsed: ParsedAST
+        parsed: PythonAST
         abstr: dict[str, Abstraction]
 
     Returns:
@@ -63,7 +63,7 @@ def convert_output(abstractions, rewritten):
     unchanged = {}
 
     for i, code in enumerate(rewritten):
-        parsed = ParsedAST.parse_s_expression(code)
+        parsed = PythonAST.parse_s_expression(code)
         if not parsed.abstraction_calls():
             unchanged[i] = parsed.to_python()
             continue

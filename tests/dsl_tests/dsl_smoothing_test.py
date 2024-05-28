@@ -3,7 +3,7 @@ import unittest
 import neurosym as ns
 import numpy as np
 
-from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -23,9 +23,9 @@ class DSLSmoothingTest(unittest.TestCase):
     def dist_for_smoothing(
         self, programs, extra_programs=(), root="M", do_smooth_masking=False
     ):
-        programs = [ParsedAST.parse_python_module(program) for program in programs]
+        programs = [PythonAST.parse_python_module(program) for program in programs]
         extra_programs = [
-            ParsedAST.parse_python_module(program) for program in extra_programs
+            PythonAST.parse_python_module(program) for program in extra_programs
         ]
         dfa = export_dfa()
         dsl = create_dsl(
@@ -59,7 +59,7 @@ class DSLSmoothingTest(unittest.TestCase):
         self.dist = dist
 
     def likelihood(self, program):
-        program = ParsedAST.parse_python_module(program)
+        program = PythonAST.parse_python_module(program)
         log_p = self.fam.compute_likelihood(
             self.dist, program.to_type_annotated_ns_s_exp(self.dfa, "M")
         )

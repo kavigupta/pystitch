@@ -10,7 +10,7 @@ from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.stitch_output_set import load_annies_compressed_dataset
-from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
+from imperative_stitch.parser.python_ast import NodeAST, PythonAST
 
 
 def canonicalize(code):
@@ -102,8 +102,8 @@ def replace_s_expr(s_expr):
     if not leaf.startswith("~"):
         return s_expr
     leaf = leaf[1:]
-    return ParsedAST.parse_s_expression(leaf)
+    return PythonAST.parse_s_expression(leaf)
 
 
 def parse_with_hijacking(code):
-    return ParsedAST.parse_python_module(code).map(replace_s_expr)
+    return PythonAST.parse_python_module(code).map(replace_s_expr)

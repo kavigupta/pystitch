@@ -12,7 +12,7 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set_no_dfa,
 )
 from imperative_stitch.parser.convert import s_exp_to_python
-from imperative_stitch.parser.parsed_ast import AbstractionCallAST, ParsedAST
+from imperative_stitch.parser.python_ast import AbstractionCallAST, PythonAST
 from imperative_stitch.utils.run_code import run_python_with_timeout
 from tests.utils import expand_with_slow_tests
 
@@ -59,7 +59,7 @@ class SequenceTest(unittest.TestCase):
     def test_stub_insertion_subseq(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_in_seq)
+            PythonAST.parse_s_expression(self.ctx_in_seq)
             .abstraction_calls_to_stubs(self.abtractions)
             .to_python(),
             """
@@ -71,7 +71,7 @@ class SequenceTest(unittest.TestCase):
     def test_stub_insertion_rooted(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_rooted)
+            PythonAST.parse_s_expression(self.ctx_rooted)
             .abstraction_calls_to_stubs(self.abtractions)
             .to_python(),
             """
@@ -81,7 +81,7 @@ class SequenceTest(unittest.TestCase):
         )
 
     def test_stub_insertion_rooted_substitute_variables(self):
-        parsed = ParsedAST.parse_s_expression(self.ctx_rooted)
+        parsed = PythonAST.parse_s_expression(self.ctx_rooted)
         abstracts = parsed.abstraction_calls()
         [handle] = abstracts.keys()
         ac = abstracts[handle]
@@ -89,7 +89,7 @@ class SequenceTest(unittest.TestCase):
             tag=ac.tag,
             handle=ac.handle,
             args=[
-                ParsedAST.parse_s_expression(x)
+                PythonAST.parse_s_expression(x)
                 for x in [
                     "&u:0",
                     "&v:0",
@@ -109,7 +109,7 @@ class SequenceTest(unittest.TestCase):
     def test_injection_subseq(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_in_seq)
+            PythonAST.parse_s_expression(self.ctx_in_seq)
             .abstraction_calls_to_bodies(self.abtractions)
             .to_python(),
             """
@@ -122,7 +122,7 @@ class SequenceTest(unittest.TestCase):
     def test_injection_subseq_pragmas(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_in_seq)
+            PythonAST.parse_s_expression(self.ctx_in_seq)
             .abstraction_calls_to_bodies(self.abtractions, pragmas=True)
             .to_python(),
             """
@@ -137,7 +137,7 @@ class SequenceTest(unittest.TestCase):
     def test_injection_rooted(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_rooted)
+            PythonAST.parse_s_expression(self.ctx_rooted)
             .abstraction_calls_to_bodies(self.abtractions)
             .to_python(),
             """
@@ -150,7 +150,7 @@ class SequenceTest(unittest.TestCase):
     def test_injection_rooted_pragmas(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_rooted)
+            PythonAST.parse_s_expression(self.ctx_rooted)
             .abstraction_calls_to_bodies(self.abtractions, pragmas=True)
             .to_python(),
             """
@@ -353,7 +353,7 @@ class MultiKindTest(unittest.TestCase):
     def test_stub_includes_choicevar(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_choicevar)
+            PythonAST.parse_s_expression(self.ctx_includes_choicevar)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             """
@@ -364,7 +364,7 @@ class MultiKindTest(unittest.TestCase):
     def test_stub_includes_multi_choicevar(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_multi_choicevar)
+            PythonAST.parse_s_expression(self.ctx_includes_multi_choicevar)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             r"""
@@ -375,7 +375,7 @@ class MultiKindTest(unittest.TestCase):
     def test_stub_no_choicevar(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_no_choicevar)
+            PythonAST.parse_s_expression(self.ctx_no_choicevar)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             """
@@ -386,7 +386,7 @@ class MultiKindTest(unittest.TestCase):
     def test_stub_metavariable_stub(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_metavariable_stub)
+            PythonAST.parse_s_expression(self.ctx_includes_metavariable_stub)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             """
@@ -397,7 +397,7 @@ class MultiKindTest(unittest.TestCase):
     def test_stub_choicevar_stub(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_choicevar_stub)
+            PythonAST.parse_s_expression(self.ctx_includes_choicevar_stub)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             """
@@ -408,7 +408,7 @@ class MultiKindTest(unittest.TestCase):
     def test_stub_choicevar_seq_stub(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_choicevar_seq_stub)
+            PythonAST.parse_s_expression(self.ctx_includes_choicevar_seq_stub)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python(),
             """
@@ -419,7 +419,7 @@ class MultiKindTest(unittest.TestCase):
     def test_injection_includes_choicevar(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_choicevar)
+            PythonAST.parse_s_expression(self.ctx_includes_choicevar)
             .abstraction_calls_to_bodies(self.abstractions)
             .to_python(),
             """
@@ -431,7 +431,7 @@ class MultiKindTest(unittest.TestCase):
         )
 
     def test_rooted_choicevar_body(self):
-        res = ParsedAST.parse_s_expression(
+        res = PythonAST.parse_s_expression(
             self.ctx_includes_choicevar.replace("fn_1", "fn_4")
         ).abstraction_calls_to_bodies(self.abstractions)
         print(res)
@@ -447,7 +447,7 @@ class MultiKindTest(unittest.TestCase):
         )
 
     def test_rooted_choicevar_body_missing(self):
-        res = ParsedAST.parse_s_expression(
+        res = PythonAST.parse_s_expression(
             self.ctx_no_choicevar.replace("fn_1", "fn_4")
         ).abstraction_calls_to_bodies(self.abstractions)
         print(res)
@@ -463,7 +463,7 @@ class MultiKindTest(unittest.TestCase):
     def test_injection_includes_choicevar_pragmas(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_choicevar)
+            PythonAST.parse_s_expression(self.ctx_includes_choicevar)
             .abstraction_calls_to_bodies(self.abstractions, pragmas=True)
             .to_python(),
             """
@@ -481,7 +481,7 @@ class MultiKindTest(unittest.TestCase):
     def test_injection_includes_multi_choicevar(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_includes_multi_choicevar)
+            PythonAST.parse_s_expression(self.ctx_includes_multi_choicevar)
             .abstraction_calls_to_bodies(self.abstractions)
             .to_python(),
             """
@@ -496,7 +496,7 @@ class MultiKindTest(unittest.TestCase):
     def test_injection_doesnt_include_choicevar(self):
         assertSameCode(
             self,
-            ParsedAST.parse_s_expression(self.ctx_no_choicevar)
+            PythonAST.parse_s_expression(self.ctx_no_choicevar)
             .abstraction_calls_to_bodies(self.abstractions)
             .to_python(),
             """
@@ -508,7 +508,7 @@ class MultiKindTest(unittest.TestCase):
 
     def test_stub_fn2_1(self):
         out = (
-            ParsedAST.parse_s_expression(self.ctx_for_fn2_1)
+            PythonAST.parse_s_expression(self.ctx_for_fn2_1)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python()
         )
@@ -525,7 +525,7 @@ class MultiKindTest(unittest.TestCase):
 
     def test_injection_fn2_1(self):
         out = (
-            ParsedAST.parse_s_expression(self.ctx_for_fn2_1)
+            PythonAST.parse_s_expression(self.ctx_for_fn2_1)
             .abstraction_calls_to_bodies(self.abstractions)
             .to_python()
         )
@@ -547,7 +547,7 @@ class MultiKindTest(unittest.TestCase):
 
     def test_injection_fn2_1_pragmas(self):
         out = (
-            ParsedAST.parse_s_expression(self.ctx_for_fn2_1)
+            PythonAST.parse_s_expression(self.ctx_for_fn2_1)
             .abstraction_calls_to_bodies(self.abstractions, pragmas=True)
             .to_python()
         )
@@ -571,7 +571,7 @@ class MultiKindTest(unittest.TestCase):
 
     def test_stub_fn3_1(self):
         out = (
-            ParsedAST.parse_s_expression(self.ctx_for_fn3_1)
+            PythonAST.parse_s_expression(self.ctx_for_fn3_1)
             .abstraction_calls_to_stubs(self.abstractions)
             .to_python()
         )
@@ -591,7 +591,7 @@ class MultiKindTest(unittest.TestCase):
 
     def test_injection_fn3_1(self):
         out = (
-            ParsedAST.parse_s_expression(self.ctx_for_fn3_1)
+            PythonAST.parse_s_expression(self.ctx_for_fn3_1)
             .abstraction_calls_to_bodies(self.abstractions)
             .to_python()
         )
@@ -621,11 +621,11 @@ class RealDataTest(unittest.TestCase):
         for code, rewritten in zip(eg["code"], eg["rewritten"]):
             code = s_exp_to_python(code)
             if check_stubs_pragmas:
-                ParsedAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(
+                PythonAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(
                     abstr
                 )
             out = (
-                ParsedAST.parse_s_expression(rewritten)
+                PythonAST.parse_s_expression(rewritten)
                 .abstraction_calls_to_bodies_recursively(abstr)
                 .to_python()
             )
@@ -641,7 +641,7 @@ class RealDataTest(unittest.TestCase):
             )
             if check_stubs_pragmas:
                 check_no_crash = (
-                    ParsedAST.parse_s_expression(rewritten)
+                    PythonAST.parse_s_expression(rewritten)
                     .abstraction_calls_to_bodies(abstr, pragmas=True)
                     .to_python()
                 )
