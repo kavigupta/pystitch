@@ -11,9 +11,10 @@ from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
 )
+from imperative_stitch.utils.python_dfa import BAD_TYPES
 from imperative_stitch.utils.types import SEPARATOR
 
-from .classify_nodes import BAD_TYPES, classify_nodes_in_program
+from .classify_nodes import classify_nodes_in_program
 
 
 @dataclass
