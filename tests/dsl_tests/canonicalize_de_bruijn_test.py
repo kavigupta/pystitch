@@ -17,6 +17,7 @@ from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
     canonicalize_de_bruijn,
+    uncanonicalize_de_bruijn,
 )
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -34,8 +35,8 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
         program = PythonAST.parse_python_module(program)
         dfa, s_exp = self.run_canonicalize(program)
         print(ns.render_s_expression(s_exp))
-        canonicalized = PythonAST.from_type_annotated_de_bruijn_ns_s_exp(
-            ns.render_s_expression(s_exp), dfa, abstrs=()
+        canonicalized = PythonAST.parse_s_expression(
+            uncanonicalize_de_bruijn(dfa, s_exp, abstrs=())
         ).to_python()
         return s_exp, canonicalized
 
@@ -147,8 +148,8 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
             ns.render_s_expression(ns.parse_s_expression(expected)),
         )
         res = (
-            PythonAST.from_type_annotated_de_bruijn_ns_s_exp(
-                ns.render_s_expression(s_exp), dfa, abstrs=abstrs
+            PythonAST.parse_s_expression(
+                uncanonicalize_de_bruijn(dfa, s_exp, abstrs=abstrs)
             )
             .abstraction_calls_to_stubs({x.name: x for x in abstrs})
             .to_python()

@@ -91,17 +91,6 @@ class PythonAST(ABC):
             dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
         )
 
-    @classmethod
-    def from_type_annotated_de_bruijn_ns_s_exp(cls, s_exp, dfa, abstrs=()):
-        # pylint: disable=cyclic-import
-        from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
-            uncanonicalize_de_bruijn,
-        )
-
-        s_exp = uncanonicalize_de_bruijn(dfa, s_exp, abstrs)
-
-        return cls.parse_s_expression(s_exp)
-
     def to_python(self):
         """
         Convert this PythonAST into python code.
