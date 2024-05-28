@@ -9,7 +9,7 @@ import neurosym as ns
 from increase_recursionlimit import increase_recursionlimit
 
 from .splice import Splice
-from .symbol import Symbol, create_descoper
+from .symbol import PythonSymbol, create_descoper
 
 
 class PythonAST(ABC):
@@ -255,7 +255,7 @@ class PythonAST(ABC):
         Create a name PythonAST from the given name node containing a symbol.
         """
         assert isinstance(name_node, LeafAST) and isinstance(
-            name_node.leaf, Symbol
+            name_node.leaf, PythonSymbol
         ), name_node
         return NodeAST(
             typ=ast.Name,
@@ -272,7 +272,7 @@ class PythonAST(ABC):
 
         In this case, the symbol must be a symbol representing a name.
         """
-        assert isinstance(name_sym, Symbol), name_sym
+        assert isinstance(name_sym, PythonSymbol), name_sym
         return NodeAST(
             typ=ast.Call,
             children=[
@@ -294,7 +294,7 @@ class PythonAST(ABC):
         Render this PythonAST as a __ref__ variable for stub display, i.e.,
             `a` -> `__ref__(a)`
         """
-        return PythonAST.call(Symbol(name="__ref__", scope=None), PythonAST.name(self))
+        return PythonAST.call(PythonSymbol(name="__ref__", scope=None), PythonAST.name(self))
 
     def render_codevar(self):
         """
@@ -302,7 +302,7 @@ class PythonAST(ABC):
             `a` -> `__code__("a")`
         """
         return PythonAST.call(
-            Symbol(name="__code__", scope=None),
+            PythonSymbol(name="__code__", scope=None),
             PythonAST.constant(self.to_python()),
         )
 
@@ -312,8 +312,8 @@ class PythonAST(ABC):
             [
                 ListAST(
                     [
-                        PythonAST.name(LeafAST(Symbol("__metavariable__", None))),
-                        PythonAST.name(LeafAST(Symbol(name, None))),
+                        PythonAST.name(LeafAST(PythonSymbol("__metavariable__", None))),
+                        PythonAST.name(LeafAST(PythonSymbol(name, None))),
                         self,
                     ]
                 )
@@ -419,7 +419,7 @@ class LeafAST(PythonAST):
             or self.leaf is Ellipsis
         ):
             return str(self.leaf)
-        if isinstance(self.leaf, Symbol):
+        if isinstance(self.leaf, PythonSymbol):
             return self.leaf.render()
         if isinstance(self.leaf, float):
             return f"f{self.leaf}"
@@ -442,7 +442,7 @@ class LeafAST(PythonAST):
         raise RuntimeError(f"invalid leaf: {self.leaf}")
 
     def to_python_ast(self):
-        if isinstance(self.leaf, Symbol):
+        if isinstance(self.leaf, PythonSymbol):
             return self.leaf.name
         return self.leaf
 

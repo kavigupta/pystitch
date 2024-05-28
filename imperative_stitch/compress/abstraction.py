@@ -10,7 +10,7 @@ from imperative_stitch.parser.python_ast import (
     SpliceAST,
     Variable,
 )
-from imperative_stitch.parser.symbol import Symbol
+from imperative_stitch.parser.symbol import PythonSymbol
 from imperative_stitch.utils.classify_nodes import export_dfa
 
 
@@ -127,7 +127,7 @@ class Abstraction:
         arguments = self.process_arguments(arguments)
         args_list = arguments.render_list()
         e_stub = PythonAST.call(
-            Symbol(name=self.name, scope=None),
+            PythonSymbol(name=self.name, scope=None),
             *args_list,
         )
         if self.dfa_root == "E":
@@ -183,14 +183,14 @@ class Abstraction:
         Render the body but with the #0, %0, ?0, kept as placeholders.
         """
         arguments = Arguments(
-            [PythonAST.name(LeafAST(Symbol(f"#{i}", None))) for i in range(self.arity)],
-            [LeafAST(Symbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
+            [PythonAST.name(LeafAST(PythonSymbol(f"#{i}", None))) for i in range(self.arity)],
+            [LeafAST(PythonSymbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
             [
                 SequenceAST(
                     "/seq",
                     [
                         PythonAST.expr_stmt(
-                            PythonAST.name(LeafAST(Symbol(f"?{i}", None)))
+                            PythonAST.name(LeafAST(PythonSymbol(f"?{i}", None)))
                         )
                     ],
                 )

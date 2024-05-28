@@ -21,14 +21,14 @@ from imperative_stitch.parser.python_ast import (
 )
 from imperative_stitch.utils.export_as_dsl import SEPARATOR
 
-from .symbol import Symbol
+from .symbol import PythonSymbol
 
 
 def s_exp_leaf_to_value(x):
     """
     Returns (True, a python representation of the leaf) if it is a leaf, or (False, None) otherwise.
     """
-    sym_x = Symbol.parse(x)
+    sym_x = PythonSymbol.parse(x)
     if sym_x is not None:
         return True, sym_x
     if x == "Ellipsis":

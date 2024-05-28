@@ -8,7 +8,7 @@ from imperative_stitch.utils.ast_utils import name_field, true_globals
 
 
 @dataclass(frozen=True)
-class Symbol:
+class PythonSymbol:
     """
     Represents a symbol, like &x:3. This means the symbol x in static frame 3.
     Can also represent a global symbol that's either a builtin or an imported

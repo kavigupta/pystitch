@@ -14,7 +14,7 @@ from imperative_stitch.utils.ast_utils import (
     name_field,
 )
 
-from .symbol import Symbol
+from .symbol import PythonSymbol
 
 
 def fields_for_node(node):
@@ -41,7 +41,7 @@ def python_ast_to_parsed_ast(x, descoper):
             el = getattr(x, f)
             if x in descoper and f == name_field(x):
                 assert isinstance(el, str), (x, f, el)
-                result.append(LeafAST(Symbol(el, descoper[x])))
+                result.append(LeafAST(PythonSymbol(el, descoper[x])))
             else:
                 if f == "slice":
                     result.append(
