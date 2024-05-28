@@ -374,13 +374,7 @@ class AbstractionCallAST(PythonAST):
         if self.handle in handle_to_replacement:
             return handle_to_replacement[self.handle]
         # pylint: disable=protected-access
-        return self.map(
-            lambda x: (
-                x
-                if isinstance(x, AbstractionCallAST) and x.tag == self.tag
-                else x._replace_abstraction_calls(handle_to_replacement)
-            )
-        )
+        return self
 
 
 @dataclass
