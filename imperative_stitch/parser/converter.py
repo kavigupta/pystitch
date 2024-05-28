@@ -28,7 +28,7 @@ def s_exp_to_python(code):
 
 def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> PythonAST:
     """
-    Converts an s expression to a PythonAST object.
+    Converts an s expression to a PythonAST object. If the code is a string, it is first parsed into an s-expression.
     """
     with increase_recursionlimit():
         if isinstance(code, str):
@@ -38,6 +38,9 @@ def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> PythonAST:
 
 
 def python_statement_to_python_ast(code: Union[str, ast.AST]) -> PythonAST:
+    """
+    Like python_to_python_ast, but for a single statement.
+    """
     code = python_statements_to_python_ast(code)
     assert (
         len(code.elements) == 1
@@ -47,6 +50,9 @@ def python_statement_to_python_ast(code: Union[str, ast.AST]) -> PythonAST:
 
 
 def python_statements_to_python_ast(code: Union[str, ast.AST]) -> SequenceAST:
+    """
+    Like python_to_python_ast, but for a sequence of statements.
+    """
     code = python_to_python_ast(code)
     assert isinstance(code, NodeAST) and code.typ is ast.Module
     assert len(code.children) == 2
@@ -59,7 +65,14 @@ def python_to_python_ast(
     code: Union[str, ast.AST], descoper: Union[NoneType, dict] = None
 ) -> PythonAST:
     """
-    Parse the given python code into a PythonAST.
+    Parse the given python code into a PythonAST. If the code is a string, it is first parsed into an AST.
+
+    Args:
+        code: The python code to parse.
+        descoper: The descoper to use. If None, a new one is created.
+
+    Returns:
+        The parsed PythonAST.
     """
 
     with increase_recursionlimit():
