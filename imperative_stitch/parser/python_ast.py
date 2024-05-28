@@ -32,51 +32,6 @@ class PythonAST(ABC):
                 descoper if descoper is not None else create_descoper(ast_node),
             )
 
-    @classmethod
-    def parse_python_module(cls, code):
-        """
-        Parse the given python code into a PythonAST.
-        """
-        # pylint: disable=R0401
-        from .parse_python import python_ast_to_parsed_ast
-
-        with increase_recursionlimit():
-            code = ast.parse(code)
-            code = python_ast_to_parsed_ast(code, create_descoper(code))
-            return code
-
-    @classmethod
-    def parse_python_statements(cls, code):
-        code = cls.parse_python_module(code)
-        assert isinstance(code, NodeAST) and code.typ is ast.Module
-        assert len(code.children) == 2
-        code = code.children[0]
-        return code
-
-    @classmethod
-    def parse_python_statement(cls, code):
-        code = cls.parse_python_statements(code)
-        assert isinstance(code, SequenceAST), code
-        assert (
-            len(code.elements) == 1
-        ), f"expected only one statement; got: [{[x.to_python() for x in code.elements]}]]"
-        code = code.elements[0]
-        return code
-
-    @classmethod
-    def parse_s_expression(cls, code):
-        """
-        Parse the given s-expression into a PythonAST.
-        """
-        # pylint: disable=R0401
-        with increase_recursionlimit():
-            from .parse_s_exp import s_exp_to_parsed_ast
-
-            if isinstance(code, str):
-                code = ns.parse_s_expression(code)
-            code = s_exp_to_parsed_ast(code)
-            return code
-
     @abstractmethod
     def to_ns_s_exp(self, config=frozendict()):
         """

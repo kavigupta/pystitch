@@ -14,7 +14,7 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser.python_ast import PythonAST
+from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
@@ -49,14 +49,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_program(
         self,
         program,
-        parser=PythonAST.parse_python_module,
+        parser=converter.python_to_python_ast,
         abstrs=(),
         convert_to_python=True,
     ):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
         )
-        annotated = PythonAST.parse_s_expression(
+        annotated = converter.s_exp_to_python_ast(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
                     parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
@@ -81,14 +81,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         print("*" * 80)
         print(
             abstraction_calls_to_stubs(
-                PythonAST.parse_s_expression(code), {x.name: x for x in abstractions}
+                converter.s_exp_to_python_ast(code), {x.name: x for x in abstractions}
             ).to_python()
         )
         print("*" * 80)
         if convert_to_python:
             print(
                 abstraction_calls_to_stubs(
-                    PythonAST.parse_s_expression(rewritten),
+                    converter.s_exp_to_python_ast(rewritten),
                     {x.name: x for x in abstractions},
                 ).to_python()
             )
@@ -96,14 +96,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         try:
             self.annotate_program(
                 code,
-                parser=PythonAST.parse_s_expression,
+                parser=converter.s_exp_to_python_ast,
                 abstrs=abstractions,
             )
         except AssertionError:
             return
         self.annotate_program(
             rewritten,
-            parser=PythonAST.parse_s_expression,
+            parser=converter.s_exp_to_python_ast,
             abstrs=abstractions,
             convert_to_python=convert_to_python,
         )
@@ -544,7 +544,9 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
     )
 
     def blank_abstraction(self, name, content):
-        return Abstraction.of(name, PythonAST.parse_python_statements(content), "seqS")
+        return Abstraction.of(
+            name, converter.python_statements_to_python_ast(content), "seqS"
+        )
 
     def test_with_empty_abstraction(self):
         code = cwq(
@@ -944,7 +946,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
 
     def test_targets_containing_abstraction(self):
         self.maxDiff = None
-        code = PythonAST.parse_s_expression(
+        code = converter.s_exp_to_python_ast(
             """
             (Module~M
                 (/seq~seqS~2
@@ -1035,7 +1037,7 @@ class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
 
         code = ns.render_s_expression(
             abstraction_calls_to_bodies_recursively(
-                PythonAST.parse_s_expression(rewritten), abstrs_dict
+                converter.s_exp_to_python_ast(rewritten), abstrs_dict
             ).to_ns_s_exp()
         )
         self.assertAbstractionAnnotation(code, rewritten, abstrs)
@@ -1045,7 +1047,7 @@ class DefUseMaskWihAbstractionsLikliehoodAnnieSetTest(DefUseMaskTestGeneric):
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
     def test_annies_compressed_realistic(self, i):
         abstrs, rewritten = load_annies_compressed_individual_programs()[i]
-        rewritten = PythonAST.parse_s_expression(rewritten)
+        rewritten = converter.s_exp_to_python_ast(rewritten)
         code = abstraction_calls_to_bodies(rewritten, {x.name: x for x in abstrs})
         dfa, _, fam, dist = fit_to([rewritten, code], parser=lambda x: x, abstrs=abstrs)
         # should not error

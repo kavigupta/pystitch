@@ -16,7 +16,7 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser.python_ast import PythonAST
+from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import (
     python_node_dictionary,
@@ -38,7 +38,7 @@ fn_1_body = """
 
 fn_1 = Abstraction.of("fn_1", fn_1_body, "seqS", dfa_symvars=["X", "X"])
 
-fn_1_args = [PythonAST.parse_s_expression(x) for x in ["&a:0", "&z:0"]]
+fn_1_args = [converter.s_exp_to_python_ast(x) for x in ["&a:0", "&z:0"]]
 
 fn_2_body = """
 (If
@@ -104,7 +104,7 @@ fn_2 = Abstraction.of(
 )
 
 fn_2_args_w_nothing = [
-    PythonAST.parse_s_expression(x)
+    converter.s_exp_to_python_ast(x)
     for x in [
         "(Call (Name g_print Load) (list (Constant i2 None)) nil)",
         "&c:0",
@@ -115,10 +115,10 @@ fn_2_args_w_nothing = [
     ]
 ]
 fn_2_args = fn_2_args_w_nothing[:-1] + [
-    PythonAST.parse_python_statements("if x == 3: pass")
+    converter.python_statements_to_python_ast("if x == 3: pass")
 ]
 fn_2_args_with_stub = fn_2_args_w_nothing[:-1] + [
-    PythonAST.parse_s_expression("(fn_3)")
+    converter.s_exp_to_python_ast("(fn_3)")
 ]
 
 fn_3 = Abstraction.of(
@@ -285,7 +285,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
 
     def test_body_expand_recursive(self):
-        context = PythonAST.parse_s_expression(
+        context = converter.s_exp_to_python_ast(
             "(fn_2 (Call (Name g_print Load) (list (Constant i2 None)) nil) &c:0 &a:0 &b:0 &d:0 (/choiceseq (fn_3)))"
         )
         context = abstraction_calls_to_bodies_recursively(
@@ -449,7 +449,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         tmp_abstraction_calls = {"fn_5": fn_5}
         result = ns.render_s_expression(
             abstraction_calls_to_bodies(
-                PythonAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))"),
+                converter.s_exp_to_python_ast("(/splice (fn_5 %1 %4 %5 %2 #0))"),
                 tmp_abstraction_calls,
             ).to_ns_s_exp()
         )
@@ -480,7 +480,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         dfa = export_dfa(abstrs={"fn_1": fn_1, "fn_2": fn_2})
         subset = DSLSubset.from_program(
             dfa,
-            PythonAST.parse_python_module("x = x + 2; y = y + x + 2"),
+            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
         )
         create_dsl(dfa, subset, "M")
@@ -548,13 +548,13 @@ class AbstractionRenderingTest(unittest.TestCase):
 class AbstractionRenderingAnnieSetTest(unittest.TestCase):
     def check_renders(self, s_exp):
         print(s_exp)
-        parsed = PythonAST.parse_s_expression(s_exp)
+        parsed = converter.s_exp_to_python_ast(s_exp)
         print(parsed)
         self.assertEqual(ns.render_s_expression(parsed.to_ns_s_exp()), s_exp)
 
     def check_renders_with_bodies_expanded(self, s_exp, abstrs):
         abstrs_dict = {x.name: x for x in abstrs}
-        parsed = PythonAST.parse_s_expression(s_exp)
+        parsed = converter.s_exp_to_python_ast(s_exp)
         parsed = abstraction_calls_to_bodies_recursively(parsed, abstrs_dict)
         parsed.to_ns_s_exp()
         parsed.to_python()

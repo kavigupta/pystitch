@@ -14,7 +14,7 @@ from imperative_stitch.compress.manipulate_abstraction import (
     replace_abstraction_calls,
 )
 from imperative_stitch.data.parse_extract import parse_extract_pragma
-from imperative_stitch.parser.python_ast import PythonAST
+from imperative_stitch.parser import converter
 from imperative_stitch.utils.wrap import (
     add_sentinel,
     split_by_sentinel_ast,
@@ -68,7 +68,7 @@ def convert_output(abstractions, rewritten):
     unchanged = {}
 
     for i, code in enumerate(rewritten):
-        parsed = PythonAST.parse_s_expression(code)
+        parsed = converter.s_exp_to_python_ast(code)
         if not collect_abstraction_calls(parsed):
             unchanged[i] = parsed.to_python()
             continue

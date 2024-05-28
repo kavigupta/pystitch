@@ -18,7 +18,6 @@ from imperative_stitch.parser.python_ast import (
     StarrableElementAST,
     SymvarAST,
 )
-from imperative_stitch.utils.export_as_dsl import SEPARATOR
 
 from .symbol import PythonSymbol
 
@@ -59,6 +58,9 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
     """
     Convert an s-expression (as pairs) to a parsed AST
     """
+    # pylint: disable=cyclic-import
+    from imperative_stitch.utils.export_as_dsl import SEPARATOR
+
     if x == "nil":
         return ListAST([])
     if isinstance(x, str):
