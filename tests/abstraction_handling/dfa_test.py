@@ -4,11 +4,11 @@ import unittest
 from textwrap import dedent
 
 import neurosym as ns
+from increase_recursionlimit import increase_recursionlimit
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.parser.symbol import Symbol
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
-from imperative_stitch.utils.recursion import limit_to_size
 
 from ..utils import expand_with_slow_tests, small_set_examples
 
@@ -234,7 +234,7 @@ class DFATest(unittest.TestCase):
         self.fail(f"Unknown classification {tag_to_check} {state_to_check}")
 
     def classify_elements_in_code_with_config(self, code, **kwargs):
-        with limit_to_size(code):
+        with increase_recursionlimit():
             print("#" * 80)
             print(code)
             code = ParsedAST.parse_python_module(code).to_ns_s_exp(kwargs)
@@ -401,7 +401,7 @@ class DFATest(unittest.TestCase):
 
 class TestExprNodeValidity(unittest.TestCase):
     def e_nodes(self, code):
-        with limit_to_size(code):
+        with increase_recursionlimit():
             print("#" * 80)
             print(code)
             code = ParsedAST.parse_python_module(code)

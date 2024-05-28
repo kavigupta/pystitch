@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import List, Union
 
 import neurosym as ns
+from increase_recursionlimit import increase_recursionlimit
 
-from ..utils.recursion import limit_to_size, no_recursionlimit
 from .splice import Splice
 from .symbol import Symbol, create_descoper
 
@@ -25,7 +25,7 @@ class ParsedAST(ABC):
         # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
 
-        with no_recursionlimit():
+        with increase_recursionlimit():
             return python_ast_to_parsed_ast(
                 ast_node,
                 descoper if descoper is not None else create_descoper(ast_node),
@@ -39,7 +39,7 @@ class ParsedAST(ABC):
         # pylint: disable=R0401
         from .parse_python import python_ast_to_parsed_ast
 
-        with limit_to_size(code):
+        with increase_recursionlimit():
             code = ast.parse(code)
             code = python_ast_to_parsed_ast(code, create_descoper(code))
             return code
@@ -68,7 +68,7 @@ class ParsedAST(ABC):
         Parse the given s-expression into a ParsedAST.
         """
         # pylint: disable=R0401
-        with limit_to_size(code):
+        with increase_recursionlimit():
             from .parse_s_exp import s_exp_to_parsed_ast
 
             code = ns.parse_s_expression(code)
@@ -81,7 +81,7 @@ class ParsedAST(ABC):
         """
         if renderer_kwargs is None:
             renderer_kwargs = {}
-        with no_recursionlimit():
+        with increase_recursionlimit():
             return ns.render_s_expression(self.to_ns_s_exp(dict(no_leaves=no_leaves)))
 
     @abstractmethod
@@ -126,7 +126,7 @@ class ParsedAST(ABC):
         """
         Convert this ParsedAST into python code.
         """
-        with no_recursionlimit():
+        with increase_recursionlimit():
             code = self.to_python_ast()
             if isinstance(code, Splice):
                 code = code.target
