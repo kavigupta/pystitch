@@ -129,19 +129,18 @@ class PythonAST(ABC):
         self.map(collect)
         return result
 
-    def _replace_abstraction_calls(self, handle_to_replacement):
-        """
-        Replace the abstraction call with the given handle with the given replacement.
-        """
-        del handle_to_replacement
-        return self
-
     def replace_abstraction_calls(self, handle_to_replacement):
         """
         Replace the abstraction call with the given handle with the given replacement.
         """
         # pylint: disable=protected-access
-        return self.map(lambda x: x._replace_abstraction_calls(handle_to_replacement))
+        return self.map(
+            lambda x: (
+                handle_to_replacement.get(x.handle, x)
+                if isinstance(x, AbstractionCallAST)
+                else x
+            )
+        )
 
     def map_abstraction_calls(self, replace_fn):
         """
@@ -369,12 +368,6 @@ class AbstractionCallAST(PythonAST):
         return fn(
             AbstractionCallAST(self.tag, [x.map(fn) for x in self.args], self.handle)
         )
-
-    def _replace_abstraction_calls(self, handle_to_replacement):
-        if self.handle in handle_to_replacement:
-            return handle_to_replacement[self.handle]
-        # pylint: disable=protected-access
-        return self
 
 
 @dataclass
