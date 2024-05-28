@@ -12,7 +12,7 @@ from imperative_stitch.data.stitch_output_set import (
 )
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.recursion import no_recursionlimit
+from increase_recursionlimit import increase_recursionlimit
 from tests.abstraction_handling.abstraction_test import assertSameCode
 from tests.utils import expand_with_slow_tests, small_set_examples
 
@@ -38,7 +38,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.maxDiff = None
         parsed = ParsedAST.parse_s_expression(s_exp)
         print(parsed)
-        with no_recursionlimit():
+        with increase_recursionlimit():
             s_exp_update = ns.render_s_expression(ns.parse_s_expression(s_exp))
         self.assertEqual(s_exp_update, parsed.to_s_exp(no_leaves=no_leaves))
 
@@ -47,7 +47,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         s_exp = python_to_s_exp(
             test_code, renderer_kwargs=dict(columns=80), no_leaves=no_leaves
         )
-        with no_recursionlimit():
+        with increase_recursionlimit():
             self.assert_valid_s_exp(ns.parse_s_expression(s_exp), no_leaves=no_leaves)
         self.check_s_exp(s_exp, no_leaves=no_leaves)
         s_exp_parsed = ParsedAST.parse_s_expression(s_exp)

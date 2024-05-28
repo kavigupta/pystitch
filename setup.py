@@ -26,5 +26,6 @@ setuptools.setup(
         # my fork of python-graphs, update this to the latest commit hash
         "python-graphs @ https://github.com/kavigupta/python-graphs/archive/693b2bc5e65a0f930617d75c3fb0c1750d35a622.zip",
         "neurosym==0.0.45",
+        "increase_recursionlimit==1.0.0",
     ],
 )
