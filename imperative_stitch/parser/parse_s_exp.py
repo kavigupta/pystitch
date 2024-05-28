@@ -4,7 +4,6 @@ import uuid
 
 import neurosym as ns
 
-from imperative_stitch.parser.parse_python import fields_for_node
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.python_ast import (
     AbstractionCallAST,
@@ -74,7 +73,7 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
         if is_leaf:
             return LeafAST(leaf)
         typ = getattr(ast, x)
-        assert not fields_for_node(typ), typ
+        assert not ns.python_ast_tools.fields_for_node(typ), typ
         return NodeAST(typ, [])
     assert isinstance(x, ns.SExpression), str((type(x), x))
     tag, args = x.symbol, x.children

@@ -2,6 +2,7 @@ import copy
 import unittest
 from textwrap import dedent
 
+import neurosym as ns
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
@@ -439,10 +440,10 @@ class AbstractionRenderingTest(unittest.TestCase):
             dfa_choicevars=["seqS"],
         )
         tmp_abstraction_calls = {"fn_5": fn_5}
-        result = (
+        result = ns.render_s_expression(
             PythonAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))")
             .abstraction_calls_to_bodies(tmp_abstraction_calls)
-            .to_s_exp()
+            .to_ns_s_exp()
         )
         expected = """
         (/splice
@@ -461,7 +462,7 @@ class AbstractionRenderingTest(unittest.TestCase):
                         (Compare (Name %5 Load) (list Eq) (list (Name %2 Load)))
                         (/seq (Return (Name %1 Load))) (/seq))))
         """
-        expected = PythonAST.parse_s_expression(expected).to_s_exp()
+        expected = ns.render_s_expression(ns.parse_s_expression(expected))
         self.assertEqual(result, expected)
 
     def test_dfa_with_abstractions_works(self):
@@ -541,13 +542,13 @@ class AbstractionRenderingAnnieSetTest(unittest.TestCase):
         print(s_exp)
         parsed = PythonAST.parse_s_expression(s_exp)
         print(parsed)
-        self.assertEqual(parsed.to_s_exp(), s_exp)
+        self.assertEqual(ns.render_s_expression(parsed.to_ns_s_exp()), s_exp)
 
     def check_renders_with_bodies_expanded(self, s_exp, abstrs):
         abstrs_dict = {x.name: x for x in abstrs}
         parsed = PythonAST.parse_s_expression(s_exp)
         parsed = parsed.abstraction_calls_to_bodies_recursively(abstrs_dict)
-        parsed.to_s_exp()
+        parsed.to_ns_s_exp()
         parsed.to_python()
 
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)

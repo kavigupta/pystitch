@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from imperative_stitch.parser.parse_python import fields_for_node
+import neurosym as ns
+
 from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX, match_either
 
 
@@ -101,7 +102,8 @@ class ConstructHandler(Handler):
         super().__init__(mask, defined_production_idxs, config)
         assert isinstance(self.name, str)
         self.child_fields = {
-            field: i for i, field in enumerate(fields_for_node(self.name))
+            field: i
+            for i, field in enumerate(ns.python_ast_tools.fields_for_node(self.name))
         }
 
 

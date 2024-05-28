@@ -40,7 +40,10 @@ class ParseUnparseInverseTest(unittest.TestCase):
         print(parsed)
         with increase_recursionlimit():
             s_exp_update = ns.render_s_expression(ns.parse_s_expression(s_exp))
-        self.assertEqual(s_exp_update, parsed.to_s_exp(no_leaves=no_leaves))
+        self.assertEqual(
+            s_exp_update,
+            ns.render_s_expression(parsed.to_ns_s_exp(dict(no_leaves=no_leaves))),
+        )
 
     def check_with_args(self, test_code, no_leaves=False):
         test_code = self.canonicalize(test_code)
@@ -156,11 +159,11 @@ class AbstractionBodyRenderTest(unittest.TestCase):
         body = PythonAST.parse_s_expression(self.basic_symvars)
         self.assertEqual(
             self.basic_symvars,
-            body.to_s_exp(),
+            ns.render_s_expression(body.to_ns_s_exp()),
         )
         self.assertEqual(
             "(Assign (list (Name (var-%1) (Store))) (Constant (const-i2) (const-None)) (const-None))",
-            body.to_s_exp(no_leaves=True),
+            ns.render_s_expression(body.to_ns_s_exp(dict(no_leaves=True))),
         )
 
     def test_basic_symvars_variables_type_annotated_s_exp(self):
@@ -240,8 +243,8 @@ class AbstractionBodyRenderTest(unittest.TestCase):
     def test_all_kinds_s_exp(self):
         body = PythonAST.parse_s_expression(self.all_kinds)
         self.assertEqual(
-            PythonAST.parse_s_expression(self.all_kinds).to_s_exp(),
-            body.to_s_exp(),
+            PythonAST.parse_s_expression(self.all_kinds).to_ns_s_exp(),
+            body.to_ns_s_exp(),
         )
 
     def test_all_kinds_type_annotated_s_exp(self):
@@ -306,7 +309,9 @@ class AbstractionCallsTest(unittest.TestCase):
     def test_gather_calls(self):
         calls = PythonAST.parse_s_expression(self.ctx_in_seq).abstraction_calls()
         self.assertEqual(len(calls), 1)
-        abstraction_calls = [x.to_s_exp() for x in calls.values()]
+        abstraction_calls = [
+            ns.render_s_expression(x.to_ns_s_exp()) for x in calls.values()
+        ]
         self.assertEqual(sorted(abstraction_calls), ["(fn_1 &n:0 &s:0)"])
 
     def test_substitute_in_seq(self):
@@ -613,7 +618,9 @@ class AbstractionBodiesTest(unittest.TestCase):
                     export_dfa(abstrs=prev_abstrs), abstr["dfa_root"]
                 )
             )
-            body_from_ns_s_exp = PythonAST.parse_s_expression(body_ns_s_exp).to_s_exp()
+            body_from_ns_s_exp = ns.render_s_expression(
+                PythonAST.parse_s_expression(body_ns_s_exp).to_ns_s_exp()
+            )
             self.assertEqual(abstr["body"], body_from_ns_s_exp)
             prev_abstrs.append(Abstraction.of(f"fn_{i}", **abstr))
 
