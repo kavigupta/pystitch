@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import List, Union
 
 import neurosym as ns
+from frozendict import frozendict
 from increase_recursionlimit import increase_recursionlimit
 
 from .splice import Splice
@@ -75,17 +76,8 @@ class PythonAST(ABC):
             code = s_exp_to_parsed_ast(code)
             return code
 
-    def to_s_exp(self, *, renderer_kwargs=None, no_leaves=False) -> ns.SExpression:
-        """
-        Convert this PythonAST into an s-expression.
-        """
-        if renderer_kwargs is None:
-            renderer_kwargs = {}
-        with increase_recursionlimit():
-            return ns.render_s_expression(self.to_ns_s_exp(dict(no_leaves=no_leaves)))
-
     @abstractmethod
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         """
         Convert this PythonAST into a pair s-expression.
         """
@@ -342,7 +334,7 @@ class SequenceAST(PythonAST):
         assert isinstance(self.head, str), self.head
         assert all(isinstance(x, PythonAST) for x in self.elements), self.elements
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         return ns.SExpression(self.head, [x.to_ns_s_exp(config) for x in self.elements])
 
     def to_python_ast(self):
@@ -364,7 +356,7 @@ class NodeAST(PythonAST):
     typ: type
     children: List[PythonAST]
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         if not self.children and not config.get("no_leaves", False):
             return self.typ.__name__
 
@@ -385,7 +377,7 @@ class NodeAST(PythonAST):
 class ListAST(PythonAST):
     children: List[PythonAST]
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         if not self.children:
             return (
                 ns.SExpression("list", []) if config.get("no_leaves", False) else "nil"
@@ -407,7 +399,7 @@ class LeafAST(PythonAST):
     def __post_init__(self):
         assert not isinstance(self.leaf, PythonAST)
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         leaf_as_string = self.render_leaf_as_string()
         if not config.get("no_leaves", False):
             return leaf_as_string
@@ -463,7 +455,7 @@ class Variable(PythonAST):
     def map(self, fn):
         return fn(self)
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         if config.get("no_leaves", False):
             return ns.SExpression("var-" + self.sym, [])
         return self.sym
@@ -502,7 +494,7 @@ class AbstractionCallAST(PythonAST):
     args: List[PythonAST]
     handle: uuid.UUID
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         return ns.SExpression(self.tag, [x.to_ns_s_exp(config) for x in self.args])
 
     def to_python_ast(self):
@@ -540,7 +532,7 @@ class SliceElementAST(PythonAST):
             return x
         return SliceElementAST(x)
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         # should not be necessary; since we have the assertion
         # but pylint is not smart enough to figure that out
         # pylint: disable=no-member
@@ -579,7 +571,7 @@ class SliceElementAST(PythonAST):
 class StarrableElementAST(PythonAST):
     content: PythonAST
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         # pylint: disable=no-member
         assert isinstance(
             self.content, (NodeAST, AbstractionCallAST, Variable)
@@ -609,7 +601,7 @@ class SpliceAST(PythonAST):
             self.content, (SequenceAST, AbstractionCallAST, Variable)
         ), self.content
 
-    def to_ns_s_exp(self, config):
+    def to_ns_s_exp(self, config=frozendict()):
         return ns.SExpression("/splice", [self.content.to_ns_s_exp(config)])
 
     def to_python_ast(self):

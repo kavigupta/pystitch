@@ -180,7 +180,7 @@ class ProduceDslTest(unittest.TestCase):
 
     def test_produce_dsl_bad_type_annotate_length(self):
         program = PythonAST.parse_python_module("x: List[int, int] = 2")
-        print(program.to_s_exp())
+        print(ns.render_s_expression(program.to_ns_s_exp()))
         subset = DSLSubset.from_program(self.dfa, program, root="M")
         dsl = create_dsl(export_dfa(), subset, "M")
         ta_lines = {x.strip() for x in dsl.render().split("\n") if "list~TA" in x}
