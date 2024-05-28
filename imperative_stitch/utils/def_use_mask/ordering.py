@@ -1,6 +1,6 @@
 import neurosym as ns
 
-from imperative_stitch.utils.export_as_dsl import clean_type
+from imperative_stitch.utils.types import clean_type
 
 
 def field_order(node, fields):
