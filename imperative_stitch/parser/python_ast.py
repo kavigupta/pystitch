@@ -258,49 +258,6 @@ class PythonAST(ABC):
         """
         return NodeAST(typ=ast.Expr, children=[expr])
 
-    def render_symvar(self):
-        """
-        Render this PythonAST as a __ref__ variable for stub display, i.e.,
-            `a` -> `__ref__(a)`
-        """
-        return PythonAST.call(
-            PythonSymbol(name="__ref__", scope=None), PythonAST.name(self)
-        )
-
-    def render_codevar(self):
-        """
-        Render this PythonAST as a __code__ variable for stub display, i.e.,
-            `a` -> `__code__("a")`
-        """
-        return PythonAST.call(
-            PythonSymbol(name="__code__", scope=None),
-            PythonAST.constant(self.to_python()),
-        )
-
-    def wrap_in_metavariable(self, name):
-        return NodeAST(
-            ast.Set,
-            [
-                ListAST(
-                    [
-                        PythonAST.name(LeafAST(PythonSymbol("__metavariable__", None))),
-                        PythonAST.name(LeafAST(PythonSymbol(name, None))),
-                        self,
-                    ]
-                )
-            ],
-        )
-
-    def wrap_in_choicevar(self):
-        return SequenceAST(
-            "/seq",
-            [
-                PythonAST.parse_python_statement("__start_choice__"),
-                self,
-                PythonAST.parse_python_statement("__end_choice__"),
-            ],
-        )
-
 
 @dataclass
 class SequenceAST(PythonAST):
