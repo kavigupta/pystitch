@@ -1,7 +1,7 @@
-from frozendict import frozendict
 import json
 
 import neurosym as ns
+from frozendict import frozendict
 
 from imperative_stitch.utils.python_dfa import export_dfa_with_no_abstractions
 
