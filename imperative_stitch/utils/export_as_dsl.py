@@ -289,20 +289,4 @@ def add_disambiguating_type_tags(dfa, prog, start_state):
         if is_sequence(tag, node.symbol):
             new_symbol += SEPARATOR + str(len(node.children))
         node_id_to_new_symbol[id(node)] = new_symbol
-    return replace_symbols(prog, node_id_to_new_symbol)
-
-
-def replace_symbols(program, id_to_sym):
-    return ns.SExpression(
-        id_to_sym[id(program)],
-        tuple(replace_symbols(c, id_to_sym) for c in program.children),
-    )
-
-
-def replace_nodes(program, id_to_node):
-    if id(program) in id_to_node:
-        return id_to_node[id(program)]
-    return ns.SExpression(
-        program.symbol,
-        tuple(replace_nodes(c, id_to_node) for c in program.children),
-    )
+    return prog.replace_symbols_by_id(node_id_to_new_symbol)
