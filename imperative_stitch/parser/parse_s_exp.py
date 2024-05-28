@@ -5,7 +5,7 @@ import uuid
 import neurosym as ns
 
 from imperative_stitch.parser.parse_python import fields_for_node
-from imperative_stitch.parser.parsed_ast import (
+from imperative_stitch.parser.python_ast import (
     AbstractionCallAST,
     ChoicevarAST,
     LeafAST,

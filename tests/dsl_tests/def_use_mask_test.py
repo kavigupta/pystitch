@@ -9,7 +9,7 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.dsl_test import fit_to
@@ -44,14 +44,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_program(
         self,
         program,
-        parser=ParsedAST.parse_python_module,
+        parser=PythonAST.parse_python_module,
         abstrs=(),
         convert_to_python=True,
     ):
         dfa, _, fam, _ = fit_to(
             [program], parser=parser, abstrs=abstrs, include_type_preorder_mask=False
         )
-        annotated = ParsedAST.parse_s_expression(
+        annotated = PythonAST.parse_s_expression(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
                     parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
@@ -75,14 +75,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             print(abstr.body.to_s_exp())
         print("*" * 80)
         print(
-            ParsedAST.parse_s_expression(code)
+            PythonAST.parse_s_expression(code)
             .abstraction_calls_to_stubs({x.name: x for x in abstractions})
             .to_python()
         )
         print("*" * 80)
         if convert_to_python:
             print(
-                ParsedAST.parse_s_expression(rewritten)
+                PythonAST.parse_s_expression(rewritten)
                 .abstraction_calls_to_stubs({x.name: x for x in abstractions})
                 .to_python()
             )
@@ -90,14 +90,14 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         try:
             self.annotate_program(
                 code,
-                parser=ParsedAST.parse_s_expression,
+                parser=PythonAST.parse_s_expression,
                 abstrs=abstractions,
             )
         except AssertionError:
             return
         self.annotate_program(
             rewritten,
-            parser=ParsedAST.parse_s_expression,
+            parser=PythonAST.parse_s_expression,
             abstrs=abstractions,
             convert_to_python=convert_to_python,
         )
@@ -538,7 +538,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
     )
 
     def blank_abstraction(self, name, content):
-        return Abstraction.of(name, ParsedAST.parse_python_statements(content), "seqS")
+        return Abstraction.of(name, PythonAST.parse_python_statements(content), "seqS")
 
     def test_with_empty_abstraction(self):
         code = cwq(
@@ -938,7 +938,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
 
     def test_targets_containing_abstraction(self):
         self.maxDiff = None
-        code = ParsedAST.parse_s_expression(
+        code = PythonAST.parse_s_expression(
             """
             (Module~M
                 (/seq~seqS~2
@@ -1028,7 +1028,7 @@ class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
         abstrs_dict = {x.name: x for x in abstrs}
 
         code = (
-            ParsedAST.parse_s_expression(rewritten)
+            PythonAST.parse_s_expression(rewritten)
             .abstraction_calls_to_bodies_recursively(abstrs_dict)
             .to_s_exp()
         )
@@ -1039,7 +1039,7 @@ class DefUseMaskWihAbstractionsLikliehoodAnnieSetTest(DefUseMaskTestGeneric):
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)
     def test_annies_compressed_realistic(self, i):
         abstrs, rewritten = load_annies_compressed_individual_programs()[i]
-        rewritten = ParsedAST.parse_s_expression(rewritten)
+        rewritten = PythonAST.parse_s_expression(rewritten)
         code = rewritten.abstraction_calls_to_bodies({x.name: x for x in abstrs})
         dfa, _, fam, dist = fit_to([rewritten, code], parser=lambda x: x, abstrs=abstrs)
         # should not error

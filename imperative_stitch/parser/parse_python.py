@@ -1,6 +1,6 @@
 import ast
 
-from imperative_stitch.parser.parsed_ast import (
+from imperative_stitch.parser.python_ast import (
     LeafAST,
     ListAST,
     NodeAST,
@@ -33,7 +33,7 @@ def python_body_to_parsed_ast(x, descoper):
 
 def python_ast_to_parsed_ast(x, descoper):
     """
-    Convert an ast.AST object to a ParsedAST object.
+    Convert an ast.AST object to a PythonAST object.
     """
     if isinstance(x, ast.AST):
         result = []
