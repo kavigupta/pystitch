@@ -1,5 +1,4 @@
 import ast
-import json
 import re
 import unittest
 from textwrap import dedent
