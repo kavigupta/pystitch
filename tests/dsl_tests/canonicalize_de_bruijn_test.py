@@ -13,6 +13,7 @@ from imperative_stitch.analyze_program.ssa.banned_component import (
     check_banned_components,
 )
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import abstraction_calls_to_stubs
 from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
@@ -147,13 +148,12 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
             ns.render_s_expression(s_exp),
             ns.render_s_expression(ns.parse_s_expression(expected)),
         )
-        res = (
+        res = abstraction_calls_to_stubs(
             PythonAST.parse_s_expression(
                 uncanonicalize_de_bruijn(dfa, s_exp, abstrs=abstrs)
-            )
-            .abstraction_calls_to_stubs({x.name: x for x in abstrs})
-            .to_python()
-        )
+            ),
+            {x.name: x for x in abstrs},
+        ).to_python()
         self.assertEqual(
             res,
             cwq(

@@ -7,6 +7,10 @@ from increase_recursionlimit import increase_recursionlimit
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import (
+    collect_abstraction_calls,
+    replace_abstraction_calls,
+)
 from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
@@ -307,7 +311,7 @@ class AbstractionCallsTest(unittest.TestCase):
     """
 
     def test_gather_calls(self):
-        calls = PythonAST.parse_s_expression(self.ctx_in_seq).abstraction_calls()
+        calls = collect_abstraction_calls(PythonAST.parse_s_expression(self.ctx_in_seq))
         self.assertEqual(len(calls), 1)
         abstraction_calls = [
             ns.render_s_expression(x.to_ns_s_exp()) for x in calls.values()
@@ -318,9 +322,9 @@ class AbstractionCallsTest(unittest.TestCase):
         seq = PythonAST.parse_s_expression(self.ctx_in_seq)
         out = {
             x: PythonAST.parse_python_statements("x = 2; x = 3")
-            for x in seq.abstraction_calls()
+            for x in collect_abstraction_calls(seq)
         }
-        substituted = seq.replace_abstraction_calls(out)
+        substituted = replace_abstraction_calls(seq, out)
 
         assertSameCode(
             self,
@@ -336,9 +340,9 @@ class AbstractionCallsTest(unittest.TestCase):
         seq = PythonAST.parse_s_expression(self.ctx_rooted)
         out = {
             x: PythonAST.parse_python_statements("x = 2; x = 3")
-            for x in seq.abstraction_calls()
+            for x in collect_abstraction_calls(seq)
         }
-        substituted = seq.replace_abstraction_calls(out)
+        substituted = replace_abstraction_calls(seq, out)
 
         assertSameCode(
             self,
