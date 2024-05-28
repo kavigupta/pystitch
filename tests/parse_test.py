@@ -15,7 +15,7 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser import PythonAST, python_to_s_exp, s_exp_to_python
+from imperative_stitch.parser import PythonAST, converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from tests.abstraction_handling.abstraction_test import assertSameCode
 from tests.utils import expand_with_slow_tests, small_set_examples
@@ -51,7 +51,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
 
     def check_with_args(self, test_code, no_leaves=False):
         test_code = self.canonicalize(test_code)
-        s_exp = python_to_s_exp(
+        s_exp = converter.python_to_s_exp(
             test_code, renderer_kwargs=dict(columns=80), no_leaves=no_leaves
         )
         with increase_recursionlimit():
@@ -59,7 +59,7 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.check_s_exp(s_exp, no_leaves=no_leaves)
         s_exp_parsed = PythonAST.parse_s_expression(s_exp)
         print(repr(s_exp_parsed))
-        modified = s_exp_to_python(s_exp)
+        modified = converter.s_exp_to_python(s_exp)
         self.assertEqual(test_code, modified)
 
     def check(self, test_code):
@@ -80,13 +80,15 @@ class ParseUnparseInverseTest(unittest.TestCase):
         self.maxDiff = None
         self.check("x = 2\ny = 3\nz = 4")
         self.assertEqual(
-            python_to_s_exp("x = 2\ny = 3\nz = 4", renderer_kwargs=dict(columns=80000)),
+            converter.python_to_s_exp(
+                "x = 2\ny = 3\nz = 4", renderer_kwargs=dict(columns=80000)
+            ),
             "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None) (Assign (list (Name &y:0 Store)) (Constant i3 None) None) (Assign (list (Name &z:0 Store)) (Constant i4 None) None)) nil)",
         )
 
     def test_globals(self):
         self.assertEqual(
-            python_to_s_exp("import os", renderer_kwargs=dict(columns=80)),
+            converter.python_to_s_exp("import os", renderer_kwargs=dict(columns=80)),
             "(Module (/seq (Import (list (alias g_os None)))) nil)",
         )
 
@@ -119,14 +121,14 @@ class ParseUnparseInverseTest(unittest.TestCase):
     def test_unparse_sequence(self):
         # should work with or without the Module wrapper
         self.assertEqual(
-            s_exp_to_python(
+            converter.s_exp_to_python(
                 "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)"
             ),
             "x = 2",
         )
 
         self.assertEqual(
-            s_exp_to_python(
+            converter.s_exp_to_python(
                 "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))"
             ),
             "x = 2",

@@ -4,7 +4,7 @@ from fractions import Fraction
 import neurosym as ns
 import numpy as np
 
-from imperative_stitch.parser.convert import s_exp_to_python
+from imperative_stitch.parser import converter
 from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
@@ -267,7 +267,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
         out = [
             (
                 Fraction.from_float(np.exp(y)).limit_denominator(),
-                s_exp_to_python(ns.render_s_expression(x)),
+                converter.s_exp_to_python(ns.render_s_expression(x)),
             )
             for x, y in fam.enumerate(dist, min_likelihood=-10)
         ]
