@@ -12,12 +12,7 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import (
-    SEPARATOR,
-    DSLSubset,
-    create_dsl,
-    replace_nodes,
-)
+from imperative_stitch.utils.export_as_dsl import SEPARATOR, DSLSubset, create_dsl
 from imperative_stitch.utils.types import get_dfa_state
 
 dbv_type = "DBV"
@@ -164,7 +159,7 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, max_explicit_dbvar_i
             de_bruijn_idx, max_explicit_dbvar_index, mat.group("dfa_sym")
         )
 
-    return replace_nodes(s_exp, id_to_new)
+    return s_exp.replace_nodes_by_id(id_to_new)
 
 
 def get_defined_indices(mask):
@@ -254,7 +249,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         )
     )
 
-    return replace_nodes(s_exp_de_bruijn, id_to_new)
+    return s_exp_de_bruijn.replace_nodes_by_id(id_to_new)
 
 
 def compute_de_bruijn_limit(tree_dist: ns.TreeDistribution) -> int:
