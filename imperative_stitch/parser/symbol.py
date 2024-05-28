@@ -1,10 +1,9 @@
 import ast
-import copy
 from dataclasses import dataclass
 
 import ast_scope
 
-from imperative_stitch.utils.ast_utils import name_field, true_globals
+from imperative_stitch.utils.ast_utils import true_globals
 
 
 @dataclass(frozen=True)
@@ -55,26 +54,3 @@ def create_descoper(code):
                 scopes.append(annot[node])
             results[node] = scopes.index(annot[node])
     return results
-
-
-def canonicalize_names(code):
-    """
-    Normalizes a code object, replacing all symbols with _0 or _1 or _2, etc.
-    Each symbol is unique if it has the same scope
-    """
-    assert isinstance(code, ast.AST)
-    code = copy.deepcopy(code)
-    descoper = create_descoper(code)
-    name_and_scope_to_idx = {}
-    for node, scope in descoper.items():
-        if scope is None:
-            continue
-        for f in node._fields:
-            if f == name_field(node):
-                el = getattr(node, f)
-                assert isinstance(el, str), (node, f, el)
-                if (el, scope) not in name_and_scope_to_idx:
-                    name_and_scope_to_idx[(el, scope)] = len(name_and_scope_to_idx)
-                idx = name_and_scope_to_idx[(el, scope)]
-                setattr(node, f, f"_{idx}")
-    return code
