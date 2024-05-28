@@ -5,6 +5,7 @@ import uuid
 import neurosym as ns
 
 from imperative_stitch.parser.parse_python import fields_for_node
+from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.python_ast import (
     AbstractionCallAST,
     ChoicevarAST,
@@ -18,7 +19,6 @@ from imperative_stitch.parser.python_ast import (
     StarrableElementAST,
     SymvarAST,
 )
-from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.utils.export_as_dsl import SEPARATOR
 
 from .symbol import Symbol

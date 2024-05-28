@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 
 from imperative_stitch.parser import PythonAST
+from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.python_ast import (
     AbstractionCallAST,
     LeafAST,
@@ -9,7 +10,6 @@ from imperative_stitch.parser.python_ast import (
     SpliceAST,
     Variable,
 )
-from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.symbol import Symbol
 from imperative_stitch.utils.classify_nodes import export_dfa
 
