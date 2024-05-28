@@ -11,7 +11,7 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser.convert import s_exp_to_python
+from imperative_stitch.parser import converter
 from imperative_stitch.parser.python_ast import AbstractionCallAST, PythonAST
 from imperative_stitch.utils.run_code import run_python_with_timeout
 from tests.utils import expand_with_slow_tests
@@ -619,7 +619,7 @@ class RealDataTest(unittest.TestCase):
         }
         print(abstr)
         for code, rewritten in zip(eg["code"], eg["rewritten"]):
-            code = s_exp_to_python(code)
+            code = converter.s_exp_to_python(code)
             if check_stubs_pragmas:
                 PythonAST.parse_s_expression(rewritten).abstraction_calls_to_stubs(
                     abstr
@@ -674,7 +674,7 @@ class RealDataTest(unittest.TestCase):
         assert len(rewritten) == len(eg["code"])
 
         for rewr, code_original in zip(rewritten, eg["code"]):
-            code_original = s_exp_to_python(code_original)
+            code_original = converter.s_exp_to_python(code_original)
             print(code_original)
             out = outputs(code_original, eg["inputs"][:10])
             if out is None:
