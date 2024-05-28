@@ -6,6 +6,7 @@ from textwrap import dedent
 import neurosym as ns
 from increase_recursionlimit import increase_recursionlimit
 
+from imperative_stitch.compress.manipulate_python_ast import make_call
 from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.parser.symbol import PythonSymbol
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
@@ -418,7 +419,7 @@ class TestExprNodeValidity(unittest.TestCase):
         print(node)
         code = PythonAST.parse_s_expression(node)
         print(code)
-        code_in_function_call = PythonAST.call(
+        code_in_function_call = make_call(
             PythonSymbol(name="hi", scope=None), code
         )
         code_in_function_call = code_in_function_call.to_python()

@@ -208,57 +208,6 @@ class PythonAST(ABC):
             if not result.abstraction_calls():
                 return result
 
-    @classmethod
-    def constant(cls, leaf):
-        """
-        Create a constant PythonAST from the given leaf value (which must be a python constant).
-        """
-        assert not isinstance(leaf, PythonAST), leaf
-        return NodeAST(
-            typ=ast.Constant, children=[LeafAST(leaf=leaf), LeafAST(leaf=None)]
-        )
-
-    @classmethod
-    def name(cls, name_node):
-        """
-        Create a name PythonAST from the given name node containing a symbol.
-        """
-        assert isinstance(name_node, LeafAST) and isinstance(
-            name_node.leaf, PythonSymbol
-        ), name_node
-        return NodeAST(
-            typ=ast.Name,
-            children=[
-                name_node,
-                NodeAST(typ=ast.Load, children=[]),
-            ],
-        )
-
-    @classmethod
-    def call(cls, name_sym, *arguments):
-        """
-        Create a call PythonAST from the given symbol and arguments.
-
-        In this case, the symbol must be a symbol representing a name.
-        """
-        assert isinstance(name_sym, PythonSymbol), name_sym
-        return NodeAST(
-            typ=ast.Call,
-            children=[
-                cls.name(LeafAST(name_sym)),
-                ListAST(children=arguments),
-                ListAST(children=[]),
-            ],
-        )
-
-    @classmethod
-    def expr_stmt(cls, expr):
-        """
-        Create an expression statement PythonAST from the given expression.
-        """
-        return NodeAST(typ=ast.Expr, children=[expr])
-
-
 @dataclass
 class SequenceAST(PythonAST):
     head: str
