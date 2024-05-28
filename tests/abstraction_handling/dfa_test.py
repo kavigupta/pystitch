@@ -4,11 +4,11 @@ import unittest
 from textwrap import dedent
 
 import neurosym as ns
+from increase_recursionlimit import increase_recursionlimit
 
 from imperative_stitch.parser.parsed_ast import ParsedAST
 from imperative_stitch.parser.symbol import Symbol
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
-from increase_recursionlimit import increase_recursionlimit
 
 from ..utils import expand_with_slow_tests, small_set_examples
 

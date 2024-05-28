@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import List, Union
 
 import neurosym as ns
-
 from increase_recursionlimit import increase_recursionlimit
+
 from .splice import Splice
 from .symbol import Symbol, create_descoper
 

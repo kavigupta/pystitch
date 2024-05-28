@@ -3,6 +3,7 @@ import copy
 import unittest
 
 import neurosym as ns
+from increase_recursionlimit import increase_recursionlimit
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
@@ -12,7 +13,6 @@ from imperative_stitch.data.stitch_output_set import (
 )
 from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
 from imperative_stitch.utils.classify_nodes import export_dfa
-from increase_recursionlimit import increase_recursionlimit
 from tests.abstraction_handling.abstraction_test import assertSameCode
 from tests.utils import expand_with_slow_tests, small_set_examples
 
