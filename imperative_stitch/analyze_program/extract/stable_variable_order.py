@@ -1,8 +1,9 @@
 import ast
 
 import ast_scope
+import neurosym as ns
 
-from imperative_stitch.utils.ast_utils import ast_nodes_in_order, name_field
+from imperative_stitch.utils.ast_utils import ast_nodes_in_order
 
 
 def get_name_and_scope_each(func_def, metavariables, *, do_not_change_internal_args):
@@ -76,16 +77,18 @@ class NameChanger(ast.NodeTransformer):
             return super().generic_visit(node)
 
         new_name = self.node_to_new_name[node]
-        if name_field(node) is None:
+        if ns.python_ast_tools.name_field(node) is None:
             return super().generic_visit(node)
 
         if isinstance(node, ast.alias) and node.asname is None:
             self.undos.append(lambda: delattr(node, "asname"))
             setattr(node, "asname", new_name)
         else:
-            old_name = getattr(node, name_field(node))
-            self.undos.append(lambda: setattr(node, name_field(node), old_name))
-            setattr(node, name_field(node), new_name)
+            old_name = getattr(node, ns.python_ast_tools.name_field(node))
+            self.undos.append(
+                lambda: setattr(node, ns.python_ast_tools.name_field(node), old_name)
+            )
+            setattr(node, ns.python_ast_tools.name_field(node), new_name)
         return super().generic_visit(node)
 
 

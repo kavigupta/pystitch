@@ -1,6 +1,7 @@
 import ast
 import unittest
 
+import neurosym as ns
 import numpy as np
 from python_graphs import control_flow
 
@@ -18,7 +19,7 @@ from imperative_stitch.analyze_program.extract.extract_configuration import (
 )
 from imperative_stitch.analyze_program.ssa.banned_component import BannedComponentError
 from imperative_stitch.data import parse_extract_pragma
-from imperative_stitch.utils.ast_utils import ast_nodes_in_order, field_is_body
+from imperative_stitch.utils.ast_utils import ast_nodes_in_order
 from tests.utils import canonicalize, expand_with_slow_tests, small_set_examples
 
 
@@ -1144,7 +1145,7 @@ class GenericExtractRealisticTest(GenericExtractTest):
             (n, f)
             for n in nodes
             for f in n._fields
-            if field_is_body(type(n), f) and len(getattr(n, f)) > 0
+            if ns.python_ast_tools.field_is_body(type(n), f) and len(getattr(n, f)) > 0
         ]
         node, field = fields[rng.choice(len(fields))]
         length = len(getattr(node, field))

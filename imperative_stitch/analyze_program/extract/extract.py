@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import ast_scope
+import neurosym as ns
 
 from imperative_stitch.analyze_program.extract.errors import (
     BothYieldsAndReturns,
@@ -14,7 +15,6 @@ from imperative_stitch.analyze_program.extract.metavariable import (
     extract_metavariables,
 )
 from imperative_stitch.analyze_program.extract.pre_and_post_process import preprocess
-from imperative_stitch.utils.ast_utils import name_field
 
 from ..ssa.annotator import run_ssa
 from .generator import is_function_generator
@@ -159,7 +159,7 @@ def create_function_definition(
     )
     scope_info = ast_scope.annotate(func_def)
     make_global = [
-        getattr(astn, name_field(astn))
+        getattr(astn, ns.python_ast_tools.name_field(astn))
         for astn in set(scope_info) & set(ensure_global)
         if scope_info[astn] is not scope_info.global_scope
     ]

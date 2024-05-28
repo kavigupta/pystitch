@@ -1,7 +1,7 @@
 import ast
 from collections import defaultdict
 
-from imperative_stitch.utils.ast_utils import name_field
+import neurosym as ns
 
 from ..structures.per_function_cfg import PerFunctionCFG, eventually_accessible_cfns
 from .compute_node_to_containing import compute_enclosed_variables
@@ -257,7 +257,7 @@ def get_nodes_for_write(node):
     elif isinstance(node, ast.ExceptHandler):
         name = node.name
     elif isinstance(node, ast.alias):
-        name = getattr(node, name_field(node))
+        name = getattr(node, ns.python_ast_tools.name_field(node))
     else:
         raise NotImplementedError(f"Unexpected write: {node}")
     return [(node, name)]
