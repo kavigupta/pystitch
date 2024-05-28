@@ -89,7 +89,7 @@ def get_idx(s_exp_de_bruijn):
     return int(after)
 
 
-def canonicalize_de_bruijn(
+def canonicalize_de_bruijn_batched(
     programs, root_states, dfa, abstrs, max_explicit_dbvar_index
 ):
     """
@@ -123,6 +123,16 @@ def canonicalize_de_bruijn(
         )
         for s_exp, root in zip(s_exps, root_states)
     ]
+
+
+def canonicalize_de_bruijn(program, root_state, dfa, abstrs, max_explicit_dbvar_index):
+    """
+    Like canonicalize_de_bruijn_batched, but for a single program.
+    """
+    [result] = canonicalize_de_bruijn_batched(
+        [program], [root_state], dfa, abstrs, max_explicit_dbvar_index
+    )
+    return result
 
 
 def check_have_all_abstrs(dfa, abstrs):

@@ -72,7 +72,8 @@ class PythonAST(ABC):
         with increase_recursionlimit():
             from .parse_s_exp import s_exp_to_parsed_ast
 
-            code = ns.parse_s_expression(code)
+            if isinstance(code, str):
+                code = ns.parse_s_expression(code)
             code = s_exp_to_parsed_ast(code)
             return code
 
@@ -89,30 +90,6 @@ class PythonAST(ABC):
         return add_disambiguating_type_tags(
             dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
         )
-
-    def to_type_annotated_de_bruijn_ns_s_exp(
-        self, dfa, start_state, *, abstrs=(), max_explicit_dbvar_index
-    ):
-        # pylint: disable=cyclic-import
-        from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
-            canonicalize_de_bruijn,
-        )
-
-        [result] = canonicalize_de_bruijn(
-            [self], [start_state], dfa, abstrs, max_explicit_dbvar_index
-        )
-        return result
-
-    @classmethod
-    def from_type_annotated_de_bruijn_ns_s_exp(cls, s_exp, dfa, abstrs=()):
-        # pylint: disable=cyclic-import
-        from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
-            uncanonicalize_de_bruijn,
-        )
-
-        s_exp = uncanonicalize_de_bruijn(dfa, s_exp, abstrs)
-
-        return cls.parse_s_expression(ns.render_s_expression(s_exp))
 
     def to_python(self):
         """
