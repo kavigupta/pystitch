@@ -114,23 +114,19 @@ class PythonAST(ABC):
             i.e., run on all the children and then on the new object.
         """
 
-    def _collect_abstraction_calls(self, result):
-        """
-        Collect all abstraction calls in this PythonAST. Adds them to the given
-            dictionary from handle to abstraction call object.
-        """
-        del result
-        # by default, do nothing
-        return self
-
     def abstraction_calls(self):
         """
         Collect all abstraction calls in this PythonAST. Returns a dictionary
             from handle to abstraction call object.
         """
         result = {}
-        # pylint: disable=protected-access
-        self.map(lambda x: x._collect_abstraction_calls(result))
+
+        def collect(x):
+            if isinstance(x, AbstractionCallAST):
+                result[x.handle] = x
+            return x
+
+        self.map(collect)
         return result
 
     def _replace_abstraction_calls(self, handle_to_replacement):
@@ -373,10 +369,6 @@ class AbstractionCallAST(PythonAST):
         return fn(
             AbstractionCallAST(self.tag, [x.map(fn) for x in self.args], self.handle)
         )
-
-    def _collect_abstraction_calls(self, result):
-        result[self.handle] = self
-        return super()._collect_abstraction_calls(result)
 
     def _replace_abstraction_calls(self, handle_to_replacement):
         if self.handle in handle_to_replacement:
