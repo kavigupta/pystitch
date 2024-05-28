@@ -443,9 +443,6 @@ class SliceElementAST(PythonAST):
     def to_python_ast(self):
         return self.content.to_python_ast()
 
-    def substitute(self, arguments):
-        return SliceElementAST(self.content.substitute(arguments))
-
     def map(self, fn):
         return fn(SliceElementAST(self.content.map(fn)))
 
@@ -467,9 +464,6 @@ class StarrableElementAST(PythonAST):
 
     def to_python_ast(self):
         return self.content.to_python_ast()
-
-    def substitute(self, arguments):
-        return StarrableElementAST(self.content.substitute(arguments))
 
     def map(self, fn):
         return fn(StarrableElementAST(self.content.map(fn)))
