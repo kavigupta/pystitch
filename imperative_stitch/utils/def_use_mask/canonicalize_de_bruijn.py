@@ -5,6 +5,9 @@ from typing import List
 
 import neurosym as ns
 
+from imperative_stitch.compress.manipulate_abstraction import (
+    abstraction_calls_to_bodies,
+)
 from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_as_leaf,
@@ -197,7 +200,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     abstr_bodies = [
-        abstr.body.abstraction_calls_to_bodies(abstrs_dict).to_type_annotated_ns_s_exp(
+        abstraction_calls_to_bodies(abstr.body, abstrs_dict).to_type_annotated_ns_s_exp(
             dfa, abstr.dfa_root
         )
         for abstr in abstrs

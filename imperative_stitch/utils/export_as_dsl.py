@@ -7,6 +7,7 @@ import neurosym as ns
 import numpy as np
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import abstraction_calls_to_bodies
 from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
@@ -109,7 +110,7 @@ class DSLSubset:
             root = [root] * len(programs)
         abstrs_dict = {a.name: a for a in abstrs}
         programs = list(programs) + [
-            a.body.abstraction_calls_to_bodies(abstrs_dict) for a in abstrs
+            abstraction_calls_to_bodies(a.body, abstrs_dict) for a in abstrs
         ]
         root += [a.dfa_root for a in abstrs]
         return programs, root

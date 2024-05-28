@@ -6,6 +6,10 @@ import neurosym as ns
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import (
+    abstraction_calls_to_bodies,
+    abstraction_calls_to_bodies_recursively,
+)
 from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
@@ -249,7 +253,7 @@ class AbstractionRenderingTest(unittest.TestCase):
                     print(0)
             """,
         )
-        body = element.abstraction_calls_to_bodies({"fn_3": fn_3})
+        body = abstraction_calls_to_bodies(element, {"fn_3": fn_3})
         assertSameCode(
             self,
             body.to_python(),
@@ -281,8 +285,8 @@ class AbstractionRenderingTest(unittest.TestCase):
         context = PythonAST.parse_s_expression(
             "(fn_2 (Call (Name g_print Load) (list (Constant i2 None)) nil) &c:0 &a:0 &b:0 &d:0 (/choiceseq (fn_3)))"
         )
-        context = context.abstraction_calls_to_bodies_recursively(
-            {"fn_2": fn_2, "fn_3": fn_3}
+        context = abstraction_calls_to_bodies_recursively(
+            context, {"fn_2": fn_2, "fn_3": fn_3}
         )
         assertSameCode(
             self,
@@ -441,9 +445,10 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
         tmp_abstraction_calls = {"fn_5": fn_5}
         result = ns.render_s_expression(
-            PythonAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))")
-            .abstraction_calls_to_bodies(tmp_abstraction_calls)
-            .to_ns_s_exp()
+            abstraction_calls_to_bodies(
+                PythonAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))"),
+                tmp_abstraction_calls,
+            ).to_ns_s_exp()
         )
         expected = """
         (/splice
@@ -547,7 +552,7 @@ class AbstractionRenderingAnnieSetTest(unittest.TestCase):
     def check_renders_with_bodies_expanded(self, s_exp, abstrs):
         abstrs_dict = {x.name: x for x in abstrs}
         parsed = PythonAST.parse_s_expression(s_exp)
-        parsed = parsed.abstraction_calls_to_bodies_recursively(abstrs_dict)
+        parsed = abstraction_calls_to_bodies_recursively(parsed, abstrs_dict)
         parsed.to_ns_s_exp()
         parsed.to_python()
 

@@ -8,6 +8,7 @@ from imperative_stitch.analyze_program.extract.extract_configuration import (
     ExtractConfiguration,
 )
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import abstraction_calls_to_bodies
 from imperative_stitch.data.parse_extract import parse_extract_pragma
 from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.wrap import (
@@ -35,7 +36,7 @@ def add_pragmas_around_single_abstraction_call(parsed, abstr):
     call = ac[key]
     ac[key] = abstr[call.tag].substitute_body(call.args, pragmas=True)
     parsed = parsed.replace_abstraction_calls(ac)
-    parsed = parsed.abstraction_calls_to_bodies(abstr)
+    parsed = abstraction_calls_to_bodies(parsed, abstr)
     return parsed.to_python()
 
 

@@ -5,6 +5,11 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import (
+    abstraction_calls_to_bodies,
+    abstraction_calls_to_bodies_recursively,
+    abstraction_calls_to_stubs,
+)
 from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
@@ -61,8 +66,8 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             )
         )
         if convert_to_python:
-            annotated = annotated.abstraction_calls_to_stubs(
-                {x.name: x for x in abstrs}
+            annotated = abstraction_calls_to_stubs(
+                annotated, {x.name: x for x in abstrs}
             )
             return annotated.to_python()
         return annotated
@@ -75,16 +80,17 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             print(ns.render_s_expression(abstr.body.to_ns_s_exp()))
         print("*" * 80)
         print(
-            PythonAST.parse_s_expression(code)
-            .abstraction_calls_to_stubs({x.name: x for x in abstractions})
-            .to_python()
+            abstraction_calls_to_stubs(
+                PythonAST.parse_s_expression(code), {x.name: x for x in abstractions}
+            ).to_python()
         )
         print("*" * 80)
         if convert_to_python:
             print(
-                PythonAST.parse_s_expression(rewritten)
-                .abstraction_calls_to_stubs({x.name: x for x in abstractions})
-                .to_python()
+                abstraction_calls_to_stubs(
+                    PythonAST.parse_s_expression(rewritten),
+                    {x.name: x for x in abstractions},
+                ).to_python()
             )
         print("*" * 80)
         try:
@@ -1028,9 +1034,9 @@ class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
         abstrs_dict = {x.name: x for x in abstrs}
 
         code = ns.render_s_expression(
-            PythonAST.parse_s_expression(rewritten)
-            .abstraction_calls_to_bodies_recursively(abstrs_dict)
-            .to_ns_s_exp()
+            abstraction_calls_to_bodies_recursively(
+                PythonAST.parse_s_expression(rewritten), abstrs_dict
+            ).to_ns_s_exp()
         )
         self.assertAbstractionAnnotation(code, rewritten, abstrs)
 
@@ -1040,7 +1046,7 @@ class DefUseMaskWihAbstractionsLikliehoodAnnieSetTest(DefUseMaskTestGeneric):
     def test_annies_compressed_realistic(self, i):
         abstrs, rewritten = load_annies_compressed_individual_programs()[i]
         rewritten = PythonAST.parse_s_expression(rewritten)
-        code = rewritten.abstraction_calls_to_bodies({x.name: x for x in abstrs})
+        code = abstraction_calls_to_bodies(rewritten, {x.name: x for x in abstrs})
         dfa, _, fam, dist = fit_to([rewritten, code], parser=lambda x: x, abstrs=abstrs)
         # should not error
         fam.compute_likelihood(dist, rewritten.to_type_annotated_ns_s_exp(dfa, "M"))
