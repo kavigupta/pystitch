@@ -154,13 +154,13 @@ class DSLSubset:
         cls, *programs, root, dfa, abstrs, max_explicit_dbvar_index
     ):
         from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
-            canonicalize_de_bruijn,
+            canonicalize_de_bruijn_batched,
         )
 
         programs_all, roots_all = cls.create_program_list(
             *programs, root=root, abstrs=abstrs
         )
-        programs_all = canonicalize_de_bruijn(
+        programs_all = canonicalize_de_bruijn_batched(
             programs_all, roots_all, dfa, abstrs, max_explicit_dbvar_index
         )
         subset = cls.from_type_annotated_s_exps(programs_all)

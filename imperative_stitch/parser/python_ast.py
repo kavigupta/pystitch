@@ -98,8 +98,8 @@ class PythonAST(ABC):
             canonicalize_de_bruijn,
         )
 
-        [result] = canonicalize_de_bruijn(
-            [self], [start_state], dfa, abstrs, max_explicit_dbvar_index
+        result = canonicalize_de_bruijn(
+            self, start_state, dfa, abstrs, max_explicit_dbvar_index
         )
         return result
 
