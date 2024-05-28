@@ -15,6 +15,9 @@ from imperative_stitch.analyze_program.ssa.banned_component import (
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
+from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
+    canonicalize_de_bruijn,
+)
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
@@ -38,8 +41,8 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
 
     def run_canonicalize(self, program, abstrs=()):
         dfa = export_dfa(abstrs=abstrs)
-        s_exp = program.to_type_annotated_de_bruijn_ns_s_exp(
-            dfa, "M", max_explicit_dbvar_index=2, abstrs=abstrs
+        s_exp = canonicalize_de_bruijn(
+            program, "M", dfa, abstrs, max_explicit_dbvar_index=2
         )
         return dfa, s_exp
 
@@ -219,8 +222,8 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             dfa=dfa,
             max_explicit_dbvar_index=max_explicit_dbvar_index,
         )
-        test_program = parser(test_program).to_type_annotated_de_bruijn_ns_s_exp(
-            dfa, "M", max_explicit_dbvar_index=max_explicit_dbvar_index, abstrs=abstrs
+        test_program = canonicalize_de_bruijn(
+            parser(test_program), "M", dfa, abstrs, max_explicit_dbvar_index
         )
         print(ns.render_s_expression(fit_to_prog[0]))
         print(ns.render_s_expression(test_program))

@@ -90,19 +90,6 @@ class PythonAST(ABC):
             dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
         )
 
-    def to_type_annotated_de_bruijn_ns_s_exp(
-        self, dfa, start_state, *, abstrs=(), max_explicit_dbvar_index
-    ):
-        # pylint: disable=cyclic-import
-        from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
-            canonicalize_de_bruijn,
-        )
-
-        result = canonicalize_de_bruijn(
-            self, start_state, dfa, abstrs, max_explicit_dbvar_index
-        )
-        return result
-
     @classmethod
     def from_type_annotated_de_bruijn_ns_s_exp(cls, s_exp, dfa, abstrs=()):
         # pylint: disable=cyclic-import
