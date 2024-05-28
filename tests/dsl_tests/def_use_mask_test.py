@@ -72,7 +72,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
     ):
         print("*" * 80)
         for abstr in abstractions:
-            print(abstr.body.to_s_exp())
+            print(ns.render_s_expression(abstr.body.to_ns_s_exp()))
         print("*" * 80)
         print(
             PythonAST.parse_s_expression(code)
@@ -1027,10 +1027,10 @@ class DefUseMaskWithAbstractionsRealisticAnnieSetTest(DefUseMaskTestGeneric):
         abstrs, rewritten = load_annies_compressed_individual_programs()[i]
         abstrs_dict = {x.name: x for x in abstrs}
 
-        code = (
+        code = ns.render_s_expression(
             PythonAST.parse_s_expression(rewritten)
             .abstraction_calls_to_bodies_recursively(abstrs_dict)
-            .to_s_exp()
+            .to_ns_s_exp()
         )
         self.assertAbstractionAnnotation(code, rewritten, abstrs)
 
