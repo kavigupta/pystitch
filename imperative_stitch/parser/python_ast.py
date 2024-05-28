@@ -72,7 +72,8 @@ class PythonAST(ABC):
         with increase_recursionlimit():
             from .parse_s_exp import s_exp_to_parsed_ast
 
-            code = ns.parse_s_expression(code)
+            if isinstance(code, str):
+                code = ns.parse_s_expression(code)
             code = s_exp_to_parsed_ast(code)
             return code
 
@@ -99,7 +100,7 @@ class PythonAST(ABC):
 
         s_exp = uncanonicalize_de_bruijn(dfa, s_exp, abstrs)
 
-        return cls.parse_s_expression(ns.render_s_expression(s_exp))
+        return cls.parse_s_expression(s_exp)
 
     def to_python(self):
         """
