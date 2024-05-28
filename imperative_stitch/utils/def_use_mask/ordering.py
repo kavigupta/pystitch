@@ -1,11 +1,10 @@
 import neurosym as ns
 
-from imperative_stitch.parser.parse_python import fields_for_node
 from imperative_stitch.utils.export_as_dsl import clean_type
 
 
 def field_order(node, fields):
-    node_fields = fields_for_node(node)
+    node_fields = ns.python_ast_tools.fields_for_node(node)
     assert set(fields) == set(node_fields)
     return [node_fields.index(f) for f in fields]
 

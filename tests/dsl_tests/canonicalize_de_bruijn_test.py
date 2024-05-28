@@ -13,7 +13,6 @@ from imperative_stitch.analyze_program.ssa.banned_component import (
     check_banned_components,
 )
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -28,10 +27,10 @@ from tests.utils import (
 
 class CanonicalizeDeBruijnTest(unittest.TestCase):
     def python_to_python_via_de_bruijn(self, program):
-        program = PythonAST.parse_python_module(program)
+        program = ns.PythonAST.parse_python_module(program)
         dfa, s_exp = self.run_canonicalize(program)
         print(ns.render_s_expression(s_exp))
-        canonicalized = PythonAST.from_type_annotated_de_bruijn_ns_s_exp(
+        canonicalized = ns.PythonAST.from_type_annotated_de_bruijn_ns_s_exp(
             ns.render_s_expression(s_exp), dfa, abstrs=()
         ).to_python()
         return s_exp, canonicalized
@@ -144,7 +143,7 @@ class CanonicalizeDeBruijnTest(unittest.TestCase):
             ns.render_s_expression(ns.parse_s_expression(expected)),
         )
         res = (
-            PythonAST.from_type_annotated_de_bruijn_ns_s_exp(
+            ns.PythonAST.from_type_annotated_de_bruijn_ns_s_exp(
                 ns.render_s_expression(s_exp), dfa, abstrs=abstrs
             )
             .abstraction_calls_to_stubs({x.name: x for x in abstrs})
@@ -208,7 +207,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         test_program,
         max_explicit_dbvar_index=2,
         abstrs=(),
-        parser=PythonAST.parse_python_module,
+        parser=ns.PythonAST.parse_python_module,
     ):
         dfa = export_dfa(abstrs=abstrs)
 
@@ -430,7 +429,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             fit_to,
             test_program,
             abstrs=absts,
-            parser=PythonAST.parse_s_expression,
+            parser=ns.PythonAST.parse_s_expression,
         )
         self.assertEqual(res, [])
 
@@ -472,7 +471,7 @@ def parse_and_check(code_original, do_actual_check=True):
         check_banned_components(ast.parse(code_original))
     except BannedComponentError:
         return None, None
-    pa = PythonAST.parse_python_module(code_original)
+    pa = ns.PythonAST.parse_python_module(code_original)
     se = ns.render_s_expression(pa.to_type_annotated_ns_s_exp(export_dfa(), "M"))
     # Ban internal imports
     if re.search(
