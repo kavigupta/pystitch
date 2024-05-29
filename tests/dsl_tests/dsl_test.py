@@ -24,7 +24,7 @@ class SubsetTest(unittest.TestCase):
     def test_subset_basic(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
+            ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
         )
         print(subset)
@@ -47,7 +47,7 @@ class SubsetTest(unittest.TestCase):
     def test_subset_multi_length(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            converter.python_to_python_ast("x = [1, 2, 3]; y = [1, 2, 3, 4]"),
+            ns.python_to_python_ast("x = [1, 2, 3]; y = [1, 2, 3, 4]"),
             root="M",
         )
         print(subset)
@@ -74,8 +74,8 @@ class SubsetTest(unittest.TestCase):
     def test_subset_multi_root(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
-            converter.python_statement_to_python_ast("while True: pass"),
+            ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
+            ns.python_statement_to_python_ast("while True: pass"),
             root=("M", "S"),
         )
         print(subset)
@@ -99,8 +99,8 @@ class SubsetTest(unittest.TestCase):
     def test_subset_fill_in_missing(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
-            converter.python_to_python_ast("x = 2; y = 3; z = 4; a = 7"),
+            ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
+            ns.python_to_python_ast("x = 2; y = 3; z = 4; a = 7"),
             root=("M", "M"),
         )
         print(subset)
@@ -120,7 +120,7 @@ class ProduceDslTest(unittest.TestCase):
         self.dfa = export_dfa()
 
     def test_produce_dsl_basic(self):
-        program = converter.python_to_python_ast("x = x + 2; y = y + x + 2")
+        program = ns.python_to_python_ast("x = x + 2; y = y + x + 2")
         subset = DSLSubset.from_program(self.dfa, program, root="M")
         dsl = create_dsl(export_dfa(), subset, "M")
         assertDSL(
@@ -178,7 +178,7 @@ class ProduceDslTest(unittest.TestCase):
         )
 
     def test_produce_dsl_bad_type_annotate_length(self):
-        program = converter.python_to_python_ast("x: List[int, int] = 2")
+        program = ns.python_to_python_ast("x: List[int, int] = 2")
         print(ns.render_s_expression(program.to_ns_s_exp()))
         subset = DSLSubset.from_program(self.dfa, program, root="M")
         dsl = create_dsl(export_dfa(), subset, "M")
@@ -208,14 +208,14 @@ class ProduceDslTest(unittest.TestCase):
 
     def test_create_dsl_with_type_annot(self):
         # just check it doesn't crash
-        program = converter.python_to_python_ast("x:int = 5; y: float=5")
+        program = ns.python_to_python_ast("x:int = 5; y: float=5")
         subset = DSLSubset.from_program(self.dfa, program, root="M")
         create_dsl(export_dfa(), subset, "M")
 
 
 def fit_to(
     programs,
-    parser=converter.python_to_python_ast,
+    parser=ns.python_to_python_ast,
     root="M",
     abstrs=(),
     use_def_use=True,
@@ -358,7 +358,7 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
     def compute_likelihood(self, corpus, program):
         dfa, _, fam, dist = fit_to(corpus, smoothing=False)
         program = converter.to_type_annotated_ns_s_exp(
-            converter.python_to_python_ast(program), dfa, "M"
+            ns.python_to_python_ast(program), dfa, "M"
         )
         like = fam.compute_likelihood(dist, program)
         like = Fraction.from_float(float(np.exp(like))).limit_denominator()

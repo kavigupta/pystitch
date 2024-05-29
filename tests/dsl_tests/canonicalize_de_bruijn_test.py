@@ -33,7 +33,7 @@ from tests.utils import (
 
 class CanonicalizeDeBruijnTest(unittest.TestCase):
     def python_to_python_via_de_bruijn(self, program):
-        program = converter.python_to_python_ast(program)
+        program = ns.python_to_python_ast(program)
         dfa, s_exp = self.run_canonicalize(program)
         print(ns.render_s_expression(s_exp))
         canonicalized = converter.s_exp_to_python_ast(
@@ -212,7 +212,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         test_program,
         max_explicit_dbvar_index=2,
         abstrs=(),
-        parser=converter.python_to_python_ast,
+        parser=ns.python_to_python_ast,
     ):
         dfa = export_dfa(abstrs=abstrs)
 
@@ -476,7 +476,7 @@ def parse_and_check(code_original, do_actual_check=True):
         check_banned_components(ast.parse(code_original))
     except BannedComponentError:
         return None, None
-    pa = converter.python_to_python_ast(code_original)
+    pa = ns.python_to_python_ast(code_original)
     se = ns.render_s_expression(
         converter.to_type_annotated_ns_s_exp(pa, export_dfa(), "M")
     )

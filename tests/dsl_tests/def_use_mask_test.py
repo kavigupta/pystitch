@@ -49,7 +49,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_program(
         self,
         program,
-        parser=converter.python_to_python_ast,
+        parser=ns.python_to_python_ast,
         abstrs=(),
         convert_to_python=True,
     ):
@@ -544,9 +544,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
     )
 
     def blank_abstraction(self, name, content):
-        return Abstraction.of(
-            name, converter.python_statements_to_python_ast(content), "seqS"
-        )
+        return Abstraction.of(name, ns.python_statements_to_python_ast(content), "seqS")
 
     def test_with_empty_abstraction(self):
         code = cwq(
