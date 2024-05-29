@@ -8,7 +8,6 @@ from increase_recursionlimit import increase_recursionlimit
 
 from imperative_stitch.compress.manipulate_python_ast import make_call
 from imperative_stitch.parser import converter
-from imperative_stitch.parser.symbol import PythonSymbol
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
 
 from ..utils import expand_with_slow_tests, small_set_examples
@@ -421,7 +420,7 @@ class TestExprNodeValidity(unittest.TestCase):
         print(node)
         code = converter.s_exp_to_python_ast(node)
         print(code)
-        code_in_function_call = make_call(PythonSymbol(name="hi", scope=None), code)
+        code_in_function_call = make_call(ns.PythonSymbol(name="hi", scope=None), code)
         code_in_function_call = code_in_function_call.to_python()
         print(code_in_function_call)
         code_in_function_call = converter.python_statement_to_python_ast(

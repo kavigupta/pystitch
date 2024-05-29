@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
+import neurosym as ns
+
 from imperative_stitch.compress.manipulate_python_ast import (
     make_call,
     make_expr_stmt,
@@ -19,7 +21,6 @@ from imperative_stitch.parser.python_ast import (
     SpliceAST,
     Variable,
 )
-from imperative_stitch.parser.symbol import PythonSymbol
 from imperative_stitch.utils.classify_nodes import export_dfa
 
 
@@ -136,7 +137,7 @@ class Abstraction:
         arguments = self.process_arguments(arguments)
         args_list = arguments.render_list()
         e_stub = make_call(
-            PythonSymbol(name=self.name, scope=None),
+            ns.PythonSymbol(name=self.name, scope=None),
             *args_list,
         )
         if self.dfa_root == "E":
@@ -200,14 +201,14 @@ class Abstraction:
         """
         arguments = Arguments(
             [
-                make_name(LeafAST(PythonSymbol(f"#{i}", None)))
+                make_name(LeafAST(ns.PythonSymbol(f"#{i}", None)))
                 for i in range(self.arity)
             ],
-            [LeafAST(PythonSymbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
+            [LeafAST(ns.PythonSymbol(f"%{i + 1}", None)) for i in range(self.sym_arity)],
             [
                 SequenceAST(
                     "/seq",
-                    [make_expr_stmt(make_name(LeafAST(PythonSymbol(f"?{i}", None))))],
+                    [make_expr_stmt(make_name(LeafAST(ns.PythonSymbol(f"?{i}", None))))],
                 )
                 for i in range(self.choice_arity)
             ],

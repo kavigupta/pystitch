@@ -1,5 +1,7 @@
 import ast
 
+import neurosym as ns
+
 from imperative_stitch.parser import converter
 from imperative_stitch.parser.python_ast import (
     LeafAST,
@@ -8,15 +10,13 @@ from imperative_stitch.parser.python_ast import (
     PythonAST,
     SequenceAST,
 )
-from imperative_stitch.parser.symbol import PythonSymbol
-
 
 def render_symvar(node):
     """
     Render this PythonAST as a __ref__ variable for stub display, i.e.,
         `a` -> `__ref__(a)`
     """
-    return make_call(PythonSymbol(name="__ref__", scope=None), make_name(node))
+    return make_call(ns.PythonSymbol(name="__ref__", scope=None), make_name(node))
 
 
 def render_codevar(node):
@@ -25,7 +25,7 @@ def render_codevar(node):
         `a` -> `__code__("a")`
     """
     return make_call(
-        PythonSymbol(name="__code__", scope=None),
+        ns.PythonSymbol(name="__code__", scope=None),
         make_constant(node.to_python()),
     )
 
@@ -36,8 +36,8 @@ def wrap_in_metavariable(node, name):
         [
             ListAST(
                 [
-                    make_name(LeafAST(PythonSymbol("__metavariable__", None))),
-                    make_name(LeafAST(PythonSymbol(name, None))),
+                    make_name(LeafAST(ns.PythonSymbol("__metavariable__", None))),
+                    make_name(LeafAST(ns.PythonSymbol(name, None))),
                     node,
                 ]
             )
@@ -69,7 +69,7 @@ def make_name(name_node):
     Create a name PythonAST from the given name node containing a symbol.
     """
     assert isinstance(name_node, LeafAST) and isinstance(
-        name_node.leaf, PythonSymbol
+        name_node.leaf, ns.PythonSymbol
     ), name_node
     return NodeAST(
         typ=ast.Name,
@@ -86,7 +86,7 @@ def make_call(name_sym, *arguments):
 
     In this case, the symbol must be a symbol representing a name.
     """
-    assert isinstance(name_sym, PythonSymbol), name_sym
+    assert isinstance(name_sym, ns.PythonSymbol), name_sym
     return NodeAST(
         typ=ast.Call,
         children=[

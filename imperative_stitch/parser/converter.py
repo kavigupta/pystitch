@@ -1,15 +1,11 @@
 import ast
 import uuid
-from types import NoneType
 from typing import Union
 
 import neurosym as ns
-from increase_recursionlimit import increase_recursionlimit
 
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 
-from .parse_python import python_ast_to_parsed_ast
-from .parse_s_exp import s_exp_to_parsed_ast
 from .python_ast import (
     AbstractionCallAST,
     ChoicevarAST,
@@ -19,7 +15,6 @@ from .python_ast import (
     SequenceAST,
     SymvarAST,
 )
-from .symbol import create_descoper
 
 var_hooks = {
     "%": SymvarAST,
@@ -44,29 +39,15 @@ node_hooks = {
 }
 
 
-def python_to_s_exp(code: Union[str, ast.AST], **kwargs) -> str:
-    """
-    Converts python code to an s-expression.
-    """
-    return ns.render_s_expression(python_to_python_ast(code).to_ns_s_exp(kwargs))
+python_to_s_exp = ns.python_to_s_exp
 
 
 def s_exp_to_python(code: Union[str, ns.SExpression]) -> str:
-    """
-    Converts an s expression to python code.
-    """
-    return s_exp_to_python_ast(code).to_python()
+    return ns.s_exp_to_python(code, node_hooks)
 
 
 def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> PythonAST:
-    """
-    Converts an s expression to a PythonAST object. If the code is a string, it is first parsed into an s-expression.
-    """
-    with increase_recursionlimit():
-        if isinstance(code, str):
-            code = ns.parse_s_expression(code)
-        code = s_exp_to_parsed_ast(code, node_hooks)
-        return code
+    return ns.s_exp_to_python_ast(code, node_hooks)
 
 
 def python_statement_to_python_ast(code: Union[str, ast.AST]) -> PythonAST:
@@ -93,25 +74,4 @@ def python_statements_to_python_ast(code: Union[str, ast.AST]) -> SequenceAST:
     return code
 
 
-def python_to_python_ast(
-    code: Union[str, ast.AST], descoper: Union[NoneType, dict] = None
-) -> PythonAST:
-    """
-    Parse the given python code into a PythonAST. If the code is a string, it is first parsed into an AST.
-
-    Args:
-        code: The python code to parse.
-        descoper: The descoper to use. If None, a new one is created.
-
-    Returns:
-        The parsed PythonAST.
-    """
-
-    with increase_recursionlimit():
-        if isinstance(code, str):
-            code = ast.parse(code)
-        code = python_ast_to_parsed_ast(
-            code,
-            descoper if descoper is not None else create_descoper(code),
-        )
-        return code
+python_to_python_ast = ns.python_to_python_ast
