@@ -4,8 +4,10 @@ from typing import Callable, Dict, List
 
 import neurosym as ns
 
-from imperative_stitch.parser.patterns import VARIABLE_PATTERN
-from imperative_stitch.parser.python_ast import (
+from imperative_stitch.utils.types import SEPARATOR
+
+from .patterns import VARIABLE_PATTERN
+from .python_ast import (
     LeafAST,
     ListAST,
     NodeAST,
@@ -15,8 +17,6 @@ from imperative_stitch.parser.python_ast import (
     SpliceAST,
     StarrableElementAST,
 )
-from imperative_stitch.utils.types import SEPARATOR
-
 from .symbol import PythonSymbol
 
 
