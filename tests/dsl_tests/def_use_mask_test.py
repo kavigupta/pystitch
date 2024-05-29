@@ -17,7 +17,7 @@ from imperative_stitch.data.stitch_output_set import (
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.names import match_either
-from tests.dsl_tests.dsl_test import fit_to
+from tests.dsl_tests.utils import fit_to
 from tests.utils import (
     cwq,
     expand_with_slow_tests,
