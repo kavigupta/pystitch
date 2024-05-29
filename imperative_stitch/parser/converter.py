@@ -45,11 +45,6 @@ def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> PythonAST:
     return ns.s_exp_to_python_ast(code, node_hooks)
 
 
-python_to_python_ast = ns.python_to_python_ast
-python_statement_to_python_ast = ns.python_statement_to_python_ast
-python_statements_to_python_ast = ns.python_statements_to_python_ast
-
-
 def to_type_annotated_ns_s_exp(
     code: PythonAST, dfa: dict, start_state: str
 ) -> ns.SExpression:

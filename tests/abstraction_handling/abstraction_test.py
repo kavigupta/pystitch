@@ -115,7 +115,7 @@ fn_2_args_w_nothing = [
     ]
 ]
 fn_2_args = fn_2_args_w_nothing[:-1] + [
-    converter.python_statements_to_python_ast("if x == 3: pass")
+    ns.python_statements_to_python_ast("if x == 3: pass")
 ]
 fn_2_args_with_stub = fn_2_args_w_nothing[:-1] + [
     converter.s_exp_to_python_ast("(fn_3)")
@@ -480,7 +480,7 @@ class AbstractionRenderingTest(unittest.TestCase):
         dfa = export_dfa(abstrs={"fn_1": fn_1, "fn_2": fn_2})
         subset = DSLSubset.from_program(
             dfa,
-            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
+            ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
         )
         create_dsl(dfa, subset, "M")

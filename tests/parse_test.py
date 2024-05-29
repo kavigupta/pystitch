@@ -198,7 +198,7 @@ class AbstractionCallsTest(unittest.TestCase):
     def test_substitute_in_seq(self):
         seq = converter.s_exp_to_python_ast(self.ctx_in_seq)
         out = {
-            x: converter.python_statements_to_python_ast("x = 2; x = 3")
+            x: ns.python_statements_to_python_ast("x = 2; x = 3")
             for x in collect_abstraction_calls(seq)
         }
         substituted = replace_abstraction_calls(seq, out)
@@ -216,7 +216,7 @@ class AbstractionCallsTest(unittest.TestCase):
     def test_substitute_in_rooted(self):
         seq = converter.s_exp_to_python_ast(self.ctx_rooted)
         out = {
-            x: converter.python_statements_to_python_ast("x = 2; x = 3")
+            x: ns.python_statements_to_python_ast("x = 2; x = 3")
             for x in collect_abstraction_calls(seq)
         }
         substituted = replace_abstraction_calls(seq, out)

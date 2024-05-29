@@ -149,8 +149,8 @@ class Abstraction:
     def _add_extract_pragmas(self, body):
         if self.dfa_root == "E":
             raise ValueError("Cannot add extract pragmas to an expression")
-        start_pragma = converter.python_statement_to_python_ast("__start_extract__")
-        end_pragma = converter.python_statement_to_python_ast("__end_extract__")
+        start_pragma = ns.python_statement_to_python_ast("__start_extract__")
+        end_pragma = ns.python_statement_to_python_ast("__end_extract__")
         if self.dfa_root == "S":
             return SpliceAST(SequenceAST("/seq", [start_pragma, body, end_pragma]))
         assert self.dfa_root == "seqS"

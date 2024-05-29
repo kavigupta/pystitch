@@ -6,6 +6,7 @@ from functools import lru_cache
 from textwrap import dedent
 
 import pytest
+import neurosym as ns
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
@@ -107,4 +108,4 @@ def replace_s_expr(s_expr):
 
 
 def parse_with_hijacking(code):
-    return converter.python_to_python_ast(code).map(replace_s_expr)
+    return ns.python_to_python_ast(code).map(replace_s_expr)

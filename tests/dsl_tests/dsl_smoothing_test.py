@@ -23,9 +23,9 @@ class DSLSmoothingTest(unittest.TestCase):
     def dist_for_smoothing(
         self, programs, extra_programs=(), root="M", do_smooth_masking=False
     ):
-        programs = [converter.python_to_python_ast(program) for program in programs]
+        programs = [ns.python_to_python_ast(program) for program in programs]
         extra_programs = [
-            converter.python_to_python_ast(program) for program in extra_programs
+            ns.python_to_python_ast(program) for program in extra_programs
         ]
         dfa = export_dfa()
         dsl = create_dsl(
@@ -64,7 +64,7 @@ class DSLSmoothingTest(unittest.TestCase):
         self.dist = dist
 
     def likelihood(self, program):
-        program = converter.python_to_python_ast(program)
+        program = ns.python_to_python_ast(program)
         log_p = self.fam.compute_likelihood(
             self.dist,
             converter.to_type_annotated_ns_s_exp(program, self.dfa, "M"),

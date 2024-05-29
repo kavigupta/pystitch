@@ -2,7 +2,6 @@ import ast
 
 import neurosym as ns
 
-from imperative_stitch.parser import converter
 from imperative_stitch.parser.python_ast import LeafAST, ListAST, NodeAST, SequenceAST
 
 
@@ -48,8 +47,8 @@ def wrap_in_choicevar(node):
     return SequenceAST(
         "/seq",
         [
-            converter.python_statement_to_python_ast("__start_choice__"),
+            ns.python_statement_to_python_ast("__start_choice__"),
             node,
-            converter.python_statement_to_python_ast("__end_choice__"),
+            ns.python_statement_to_python_ast("__end_choice__"),
         ],
     )
