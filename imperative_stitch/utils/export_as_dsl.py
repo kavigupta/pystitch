@@ -1,4 +1,3 @@
-import copy
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union
@@ -14,9 +13,12 @@ from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
 )
-from imperative_stitch.utils.types import SEPARATOR, clean_type, unclean_type
-
-from .classify_nodes import classify_nodes_in_program
+from imperative_stitch.utils.types import (
+    SEPARATOR,
+    clean_type,
+    is_sequence,
+    unclean_type,
+)
 
 
 @dataclass
@@ -191,33 +193,6 @@ def traverse(s_exp):
         yield from traverse(child)
 
 
-def is_sequence_type(x):
-    x = ns.parse_type(x)
-    if isinstance(x, ns.ListType):
-        return True
-    if not isinstance(x, ns.AtomicType):
-        return False
-    return x.name == "seqS"
-
-
-def is_sequence_symbol(x):
-    return x in ["/seq", "/subseq", "list", "/choiceseq"]
-
-
-def is_sequence(type_name, head_symbol):
-    if head_symbol.startswith("fn_") or head_symbol.startswith("var-"):
-        return False
-    seq_type = is_sequence_type(type_name)
-    seq_symbol = is_sequence_symbol(head_symbol)
-    assert seq_type == seq_symbol or type_name in ns.pruned_python_dfa_states, (
-        seq_type,
-        seq_symbol,
-        type_name,
-        head_symbol,
-    )
-    return seq_type or seq_symbol
-
-
 def create_dsl(dfa, dsl_subset, start_state, dslf=None):
     from .def_use_mask.canonicalize_de_bruijn import (
         dbvar_successor_symbol,
@@ -264,15 +239,3 @@ def create_smoothing_mask(dsl_full, dsl_subset):
     symbols_full = dsl_full.ordered_symbols(include_root=True)
     symbols_subset = set(dsl_subset.ordered_symbols(include_root=True))
     return np.array([s in symbols_subset for s in symbols_full])
-
-
-def add_disambiguating_type_tags(dfa, prog, start_state):
-    prog = copy.deepcopy(prog)
-    node_id_to_new_symbol = {}
-    for node, tag in classify_nodes_in_program(dfa, prog, start_state):
-        assert isinstance(node, ns.SExpression), node
-        new_symbol = node.symbol + SEPARATOR + clean_type(tag)
-        if is_sequence(tag, node.symbol):
-            new_symbol += SEPARATOR + str(len(node.children))
-        node_id_to_new_symbol[id(node)] = new_symbol
-    return prog.replace_symbols_by_id(node_id_to_new_symbol)
