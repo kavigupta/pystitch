@@ -264,7 +264,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             abstrs=abstrs,
             max_explicit_dbvar_index=max_explicit_dbvar_index,
         )
-        dsl = create_dsl(dfa, subset, "M")
+        dsl = create_dsl(dfa, subset, "M", include_dbvars=True)
 
         return programs, dsl
 

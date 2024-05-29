@@ -216,6 +216,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         dfa,
         DSLSubset.from_type_annotated_s_exps([s_exp_de_bruijn] + abstr_bodies),
         get_dfa_state(s_exp_de_bruijn.symbol),
+        include_dbvars=True,
     )
     fam = ns.BigramProgramDistributionFamily(
         dsl,
