@@ -29,7 +29,6 @@ class DSLSubsetTest(unittest.TestCase):
                     "ConstKind": ["const-None"],
                     "TC": ["const-None"],
                 },
-                include_dbvars=False,
             ),
         )
 
@@ -56,7 +55,6 @@ class DSLSubsetTest(unittest.TestCase):
                     "ConstKind": ["const-None"],
                     "TC": ["const-None"],
                 },
-                include_dbvars=False,
             ),
         )
 
@@ -81,7 +79,6 @@ class DSLSubsetTest(unittest.TestCase):
                     "TC": ["const-None"],
                     "S": ["Pass"],
                 },
-                include_dbvars=False,
             ),
         )
 

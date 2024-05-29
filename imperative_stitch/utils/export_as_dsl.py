@@ -23,7 +23,6 @@ class DSLSubset:
 
     lengths_by_sequence_type: Dict[str, List[int]]
     leaves: Dict[str, List[str]]
-    include_dbvars: bool
 
     @classmethod
     def fit_dsl_to_programs_and_output_s_exps(
@@ -127,7 +126,6 @@ class DSLSubset:
                 k: sorted(v) for k, v in lengths_by_list_type.items()
             },
             leaves={k: sorted(v) for k, v in leaves.items()},
-            include_dbvars=num_vars > 0,
         )
 
     @classmethod
@@ -156,11 +154,7 @@ class DSLSubset:
             seq_type: list(range(min(lengths), max(lengths) + 1))
             for seq_type, lengths in self.lengths_by_sequence_type.items()
         }
-        return DSLSubset(
-            lengths_by_sequence_type=lengths_new,
-            leaves=self.leaves,
-            include_dbvars=self.include_dbvars,
-        )
+        return DSLSubset(lengths_by_sequence_type=lengths_new, leaves=self.leaves)
 
 
 def traverse(s_exp):
@@ -169,7 +163,7 @@ def traverse(s_exp):
         yield from traverse(child)
 
 
-def create_dsl(dfa, dsl_subset, start_state, dslf=None):
+def create_dsl(dfa, dsl_subset, start_state, dslf=None, include_dbvars=False):
     from .def_use_mask.canonicalize_de_bruijn import (
         dbvar_successor_symbol,
         dbvar_wrapper_symbol_by_root_type,
@@ -209,7 +203,7 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
         for constant in leaves:
             typ = ns.ArrowType((), ns.parse_type(target))
             dslf.concrete(constant + SEPARATOR + target, ns.render_type(typ), None)
-    if dsl_subset.include_dbvars:
+    if include_dbvars:
         dslf.concrete(dbvar_successor_symbol, "DBV -> DBV", None)
         for root_type, sym in dbvar_wrapper_symbol_by_root_type.items():
             dslf.concrete(sym, f"DBV -> {root_type}", None)
