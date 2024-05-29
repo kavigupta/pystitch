@@ -1,5 +1,7 @@
 import ast
 
+from no_toplevel_code import unwrap_ast, wrap_code
+
 from imperative_stitch.analyze_program.antiunify.extract_at_multiple_sites import (
     antiunify_extractions,
 )
@@ -15,12 +17,7 @@ from imperative_stitch.compress.manipulate_abstraction import (
 )
 from imperative_stitch.data.parse_extract import parse_extract_pragma
 from imperative_stitch.parser import converter
-from imperative_stitch.utils.wrap import (
-    add_sentinel,
-    split_by_sentinel_ast,
-    unwrap_ast,
-    wrap,
-)
+from imperative_stitch.utils.wrap import add_sentinel, split_by_sentinel_ast
 
 
 def add_pragmas_around_single_abstraction_call(parsed, abstr):
@@ -97,7 +94,7 @@ def run_extraction(elements):
         extracted: dict[int, str], the rewritten python code with the abstraction calls replaced
     """
     keys = sorted(elements.keys())
-    all_codes = "\n".join(add_sentinel(wrap(elements[k])) for k in keys)
+    all_codes = "\n".join(add_sentinel(wrap_code(elements[k])) for k in keys)
     config = ExtractConfiguration(True)
     tree, sites = parse_extract_pragma(all_codes)
     extrs = [

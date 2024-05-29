@@ -3,10 +3,10 @@ import json
 
 import tqdm.auto as tqdm
 from datasets import load_dataset
+from no_toplevel_code import wrap_code
 from permacache import permacache
 
 from imperative_stitch.utils.run_code import passes_tests
-from imperative_stitch.utils.wrap import wrap
 
 
 def extract_from_data(datapoint, *, max_tests, max_solutions):
@@ -30,7 +30,7 @@ def extract_from_data(datapoint, *, max_tests, max_solutions):
     ]
     solutions = solutions[:max_solutions]
     for i, sol in enumerate(tqdm.tqdm(solutions)):
-        sol = wrap(sol)
+        sol = wrap_code(sol)
         if not passes_tests(sol, inputs, outputs):
             continue
         yield dict(name=f"{name}_{i}", inputs=inputs, outputs=outputs, solution=sol)
