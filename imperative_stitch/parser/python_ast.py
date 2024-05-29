@@ -21,17 +21,20 @@ class PythonAST(ABC):
     """
 
     @abstractmethod
-    def to_ns_s_exp(self, config=frozendict()):
+    def to_ns_s_exp(self, config=frozendict()) -> ns.SExpression:
         """
         Convert this PythonAST into a pair s-expression.
         """
 
-    def to_type_annotated_ns_s_exp(self, dfa, start_state):
+    def to_type_annotated_ns_s_exp(self, dfa, start_state) -> ns.SExpression:
+        """
+        Like to_ns_s_exp, but adds type annotations.
+        """
         return add_disambiguating_type_tags(
             dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
         )
 
-    def to_python(self):
+    def to_python(self) -> str:
         """
         Convert this PythonAST into python code.
         """
@@ -42,7 +45,7 @@ class PythonAST(ABC):
             return ast.unparse(code)
 
     @abstractmethod
-    def to_python_ast(self):
+    def to_python_ast(self) -> ast.AST:
         """
         Convert this PythonAST into a python AST.
         """
