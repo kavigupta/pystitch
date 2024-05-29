@@ -2,11 +2,11 @@ import json
 from functools import lru_cache
 
 import tqdm
+import neurosym as ns
 from permacache import drop_if_equal, permacache, stable_hash
 
 from imperative_stitch.compress.julia_stitch import run_julia_stitch
 from imperative_stitch.data.compression_testing_code import compression_testing_code
-from imperative_stitch.parser import converter
 
 
 @permacache(
@@ -56,7 +56,7 @@ def stitch_output_set(
         if len(json.dumps(s)) > 5000:
             continue
         c = [
-            converter.python_to_s_exp(code, renderer_kwargs=dict(columns=float("inf")))
+            ns.python_to_s_exp(code, renderer_kwargs=dict(columns=float("inf")))
             for code in s
         ]
 

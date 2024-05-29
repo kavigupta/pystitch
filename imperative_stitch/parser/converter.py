@@ -37,9 +37,6 @@ node_hooks = {
 }
 
 
-python_to_s_exp = ns.python_to_s_exp
-
-
 def s_exp_to_python(code: Union[str, ns.SExpression]) -> str:
     return ns.s_exp_to_python(code, node_hooks)
 
