@@ -29,9 +29,6 @@ def export_dfa(*, abstrs=frozendict({})):
     return result
 
 
-classify_nodes_in_program = ns.run_dfa_on_program
-
-
 def add_disambiguating_type_tags(dfa, prog, start_state):
     return ns.add_disambiguating_type_tags(
         dfa, prog, start_state, non_sequence_prefixes
