@@ -13,14 +13,14 @@ from .parse_s_exp import s_exp_to_parsed_ast
 from .python_ast import NodeAST, PythonAST, SequenceAST
 
 
-def python_to_s_exp(code, **kwargs):
+def python_to_s_exp(code: Union[str, ast.AST], **kwargs) -> str:
     """
     Converts python code to an s-expression.
     """
     return ns.render_s_expression(python_to_python_ast(code).to_ns_s_exp(kwargs))
 
 
-def s_exp_to_python(code):
+def s_exp_to_python(code: Union[str, ns.SExpression]) -> str:
     """
     Converts an s expression to python code.
     """
