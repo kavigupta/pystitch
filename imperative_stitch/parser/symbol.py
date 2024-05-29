@@ -1,9 +1,10 @@
 import ast
+import uuid
 from dataclasses import dataclass
 
 import ast_scope
-
-from imperative_stitch.utils.ast_utils import true_globals
+import neurosym as ns
+from no_toplevel_code import wrap_ast
 
 
 @dataclass(frozen=True)
@@ -54,3 +55,15 @@ def create_descoper(code):
                 scopes.append(annot[node])
             results[node] = scopes.index(annot[node])
     return results
+
+
+def true_globals(node):
+    name = "_" + uuid.uuid4().hex
+    wpd = wrap_ast(node, name)
+    scope_info = ast_scope.annotate(wpd)
+    return {
+        x
+        for x in scope_info
+        if scope_info[x] == scope_info.global_scope
+        if getattr(x, ns.python_ast_tools.name_field(x)) != name
+    }

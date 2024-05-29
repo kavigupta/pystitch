@@ -27,5 +27,6 @@ setuptools.setup(
         "python-graphs @ https://github.com/kavigupta/python-graphs/archive/693b2bc5e65a0f930617d75c3fb0c1750d35a622.zip",
         "neurosym==0.0.47",
         "increase_recursionlimit==1.0.0",
+        "no-toplevel-code==1.0.0",
     ],
 )
