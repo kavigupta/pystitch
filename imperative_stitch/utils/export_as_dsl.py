@@ -9,6 +9,7 @@ from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
 )
+from imperative_stitch.parser import converter
 from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
@@ -35,9 +36,7 @@ class DSLSubset:
         *programs: Tuple[PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
-        to_s_exp=lambda program, dfa, root_sym: program.to_type_annotated_ns_s_exp(
-            dfa, root_sym
-        ),
+        to_s_exp=converter.to_type_annotated_ns_s_exp,
         include_variables=False,
     ):
         """
@@ -62,9 +61,7 @@ class DSLSubset:
         *programs: Tuple[PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
-        to_s_exp=lambda program, dfa, root_sym: program.to_type_annotated_ns_s_exp(
-            dfa, root_sym
-        ),
+        to_s_exp=converter.to_type_annotated_ns_s_exp,
         include_variables=False,
     ):
         """
@@ -78,7 +75,7 @@ class DSLSubset:
                 be the same length as the programs, providing a root symbol for each program.
             abstrs: abstractions: their bodies will be added to the list of programs
             to_s_exp: a function that converts a program to a type-annotated s-expression. By
-                default it uses the PythonAST.to_type_annotated_ns_s_exp method.
+                default it uses the converter.to_type_annotated_ns_s_exp method.
         """
         _, subset = cls.fit_dsl_to_programs_and_output_s_exps(
             dfa,
