@@ -8,7 +8,7 @@ from increase_recursionlimit import increase_recursionlimit
 
 from imperative_stitch.compress.manipulate_python_ast import make_call
 from imperative_stitch.parser import converter
-from imperative_stitch.utils.classify_nodes import classify_nodes_in_program, export_dfa
+from imperative_stitch.utils.classify_nodes import export_dfa
 
 from ..utils import expand_with_slow_tests, small_set_examples
 
@@ -183,7 +183,7 @@ class TestClassifications(unittest.TestCase):
     def classify_in_code(self, code, start_state):
         classified = [
             (ns.render_s_expression(x), tag)
-            for x, tag in classify_nodes_in_program(
+            for x, tag in ns.run_dfa_on_program(
                 dfa, code.to_ns_s_exp(dict()), start_state
             )
             if isinstance(x, ns.SExpression)
@@ -241,7 +241,7 @@ class DFATest(unittest.TestCase):
             print(code)
             code = converter.python_to_python_ast(code).to_ns_s_exp(kwargs)
             print(ns.render_s_expression(code))
-            classified = classify_nodes_in_program(dfa, code, "M")
+            classified = ns.run_dfa_on_program(dfa, code, "M")
             result = sorted(
                 {
                     (x.symbol, state)
@@ -409,7 +409,7 @@ class TestExprNodeValidity(unittest.TestCase):
             code = converter.python_to_python_ast(code)
             e_nodes = [
                 ns.render_s_expression(x)
-                for x, state in classify_nodes_in_program(
+                for x, state in ns.run_dfa_on_program(
                     dfa, code.to_ns_s_exp(dict()), "M"
                 )
                 if state == "E" and isinstance(x, ns.SExpression)

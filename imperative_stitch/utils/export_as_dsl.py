@@ -13,12 +13,7 @@ from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
 )
-from imperative_stitch.utils.types import (
-    SEPARATOR,
-    clean_type,
-    is_sequence,
-    unclean_type,
-)
+from imperative_stitch.utils.types import SEPARATOR, is_sequence
 
 
 @dataclass
@@ -137,7 +132,7 @@ class DSLSubset:
                 if node.symbol == de_bruijn_new:
                     num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
-                state = unclean_type(state)
+                state = ns.python_ast_tools.unclean_type(state)
                 assert isinstance(node, ns.SExpression)
                 if is_sequence(state, symbol):
                     lengths_by_list_type[state].add(len(node.children))
@@ -211,7 +206,11 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
                         ns.parse_type(target),
                     )
                     dslf.concrete(
-                        prod + SEPARATOR + clean_type(target) + SEPARATOR + str(length),
+                        prod
+                        + SEPARATOR
+                        + ns.python_ast_tools.clean_type(target)
+                        + SEPARATOR
+                        + str(length),
                         ns.render_type(typ),
                         None,
                     )
@@ -221,7 +220,9 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None):
                     ns.parse_type(target),
                 )
                 dslf.concrete(
-                    prod + SEPARATOR + clean_type(target), ns.render_type(typ), None
+                    prod + SEPARATOR + ns.python_ast_tools.clean_type(target),
+                    ns.render_type(typ),
+                    None,
                 )
     for target, leaves in dsl_subset.leaves.items():
         for constant in leaves:
