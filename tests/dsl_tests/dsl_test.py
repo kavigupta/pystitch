@@ -252,12 +252,7 @@ def fit_to(
         node_ordering=node_ordering,
     )
     counts = fam.count_programs(
-        [
-            [
-                converter.python_ast_to_type_annotated_s_exp(program, dfa, root)
-                for program in programs
-            ]
-        ]
+        [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
     if smoothing:
@@ -357,8 +352,8 @@ class EnumerateFittedDslTest(unittest.TestCase):
 class TestLikelihoodFittedDSL(unittest.TestCase):
     def compute_likelihood(self, corpus, program):
         dfa, _, fam, dist = fit_to(corpus, smoothing=False)
-        program = converter.python_ast_to_type_annotated_s_exp(
-            converter.python_to_python_ast(program), dfa, "M"
+        program = converter.python_to_python_ast(program).to_type_annotated_ns_s_exp(
+            dfa, "M"
         )
         like = fam.compute_likelihood(dist, program)
         like = Fraction.from_float(float(np.exp(like))).limit_denominator()
@@ -437,27 +432,15 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
 
         test_fam = ns.BigramProgramDistributionFamily(test_dsl)
         test_counts = test_fam.count_programs(
-            [
-                [
-                    converter.python_ast_to_type_annotated_s_exp(
-                        test_programs_ast[0], test_dfa, "E"
-                    )
-                ]
-            ]
+            [[test_programs_ast[0].to_type_annotated_ns_s_exp(test_dfa, "E")]]
         )
         test_dist = test_fam.counts_to_distribution(test_counts)[0]
         likelihood = test_fam.compute_likelihood(
-            test_dist,
-            converter.python_ast_to_type_annotated_s_exp(
-                test_programs_ast[1], test_dfa, "E"
-            ),
+            test_dist, test_programs_ast[1].to_type_annotated_ns_s_exp(test_dfa, "E")
         )
         self.assertEqual(likelihood, -np.inf)
         result = test_fam.compute_likelihood_per_node(
-            test_dist,
-            converter.python_ast_to_type_annotated_s_exp(
-                test_programs_ast[1], test_dfa, "E"
-            ),
+            test_dist, test_programs_ast[1].to_type_annotated_ns_s_exp(test_dfa, "E")
         )
         result = [
             (

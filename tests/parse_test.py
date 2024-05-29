@@ -182,25 +182,21 @@ class AbstractionBodyRenderTest(unittest.TestCase):
                     (Constant~E (const-i2~Const) (const-None~ConstKind)) (const-None~TC))
                 """
             ),
-            converter.python_ast_to_type_annotated_s_exp(body, export_dfa(), "S"),
+            body.to_type_annotated_ns_s_exp(export_dfa(), "S"),
         )
 
     def test_sequence_metavar_s_exp_export(self):
         self.maxDiff = None
-        result = converter.python_ast_to_type_annotated_s_exp(
-            converter.s_exp_to_python_ast(
-                """
-                (FunctionDef
-                    &f:0
-                    (arguments nil
-                    (list (arg &x:1 None None))
-                    None nil nil None nil)
-                    #0 nil None None)
-                """
-            ),
-            export_dfa(),
-            "S",
-        )
+        result = converter.s_exp_to_python_ast(
+            """
+            (FunctionDef
+                &f:0
+                (arguments nil
+                (list (arg &x:1 None None))
+                None nil nil None nil)
+                #0 nil None None)
+            """
+        ).to_type_annotated_ns_s_exp(export_dfa(), "S")
         result = ns.render_s_expression(result)
         expected = ns.render_s_expression(
             ns.parse_s_expression(
@@ -291,7 +287,7 @@ class AbstractionBodyRenderTest(unittest.TestCase):
                 )
             ),
             ns.render_s_expression(
-                converter.python_ast_to_type_annotated_s_exp(body, export_dfa(), "seqS")
+                body.to_type_annotated_ns_s_exp(export_dfa(), "seqS")
             ),
         )
 
@@ -626,8 +622,8 @@ class AbstractionBodiesTest(unittest.TestCase):
         for i, abstr in enumerate(x["abstractions"], 1):
             body = converter.s_exp_to_python_ast(abstr["body"])
             body_ns_s_exp = ns.render_s_expression(
-                converter.python_ast_to_type_annotated_s_exp(
-                    body, export_dfa(abstrs=prev_abstrs), abstr["dfa_root"]
+                body.to_type_annotated_ns_s_exp(
+                    export_dfa(abstrs=prev_abstrs), abstr["dfa_root"]
                 )
             )
             body_from_ns_s_exp = ns.render_s_expression(

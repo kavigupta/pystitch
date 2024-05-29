@@ -59,9 +59,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         annotated = converter.s_exp_to_python_ast(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
-                    converter.python_ast_to_type_annotated_s_exp(
-                        parser(program), dfa, "M"
-                    ),
+                    parser(program).to_type_annotated_ns_s_exp(dfa, "M"),
                     fam.tree_distribution_skeleton,
                     self.annotate_alternates,
                 )
@@ -864,10 +862,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         print(program)
         print(dist)
         self.assertEqual(
-            fam.compute_likelihood(
-                dist,
-                converter.python_ast_to_type_annotated_s_exp(program, dfa, "M"),
-            ),
+            fam.compute_likelihood(dist, program.to_type_annotated_ns_s_exp(dfa, "M")),
             -float("inf"),
         )
 
@@ -1009,9 +1004,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         expected = ns.render_s_expression(ns.parse_s_expression(expected))
         self.assertEqual(
             ns.render_s_expression(
-                converter.python_ast_to_type_annotated_s_exp(
-                    annotated, export_dfa(), "M"
-                )
+                annotated.to_type_annotated_ns_s_exp(export_dfa(), "M")
             ),
             expected,
         )
@@ -1058,7 +1051,4 @@ class DefUseMaskWihAbstractionsLikliehoodAnnieSetTest(DefUseMaskTestGeneric):
         code = abstraction_calls_to_bodies(rewritten, {x.name: x for x in abstrs})
         dfa, _, fam, dist = fit_to([rewritten, code], parser=lambda x: x, abstrs=abstrs)
         # should not error
-        fam.compute_likelihood(
-            dist,
-            converter.python_ast_to_type_annotated_s_exp(rewritten, dfa, "M"),
-        )
+        fam.compute_likelihood(dist, rewritten.to_type_annotated_ns_s_exp(dfa, "M"))
