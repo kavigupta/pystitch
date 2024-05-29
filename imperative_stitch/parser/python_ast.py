@@ -9,8 +9,6 @@ import neurosym as ns
 from frozendict import frozendict
 from increase_recursionlimit import increase_recursionlimit
 
-from imperative_stitch.utils.classify_nodes import add_disambiguating_type_tags
-
 from .splice import Splice
 from .symbol import PythonSymbol
 
@@ -25,11 +23,6 @@ class PythonAST(ABC):
         """
         Convert this PythonAST into a pair s-expression.
         """
-
-    def to_type_annotated_ns_s_exp(self, dfa, start_state):
-        return add_disambiguating_type_tags(
-            dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
-        )
 
     def to_python(self):
         """

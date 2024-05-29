@@ -6,6 +6,7 @@ import neurosym as ns
 from increase_recursionlimit import increase_recursionlimit
 
 from imperative_stitch.parser.symbol import create_descoper
+from imperative_stitch.utils.classify_nodes import add_disambiguating_type_tags
 
 from .parse_python import python_ast_to_parsed_ast
 from .parse_s_exp import s_exp_to_parsed_ast
@@ -83,3 +84,11 @@ def python_to_python_ast(
             descoper if descoper is not None else create_descoper(code),
         )
         return code
+
+
+def python_ast_to_type_annotated_s_exp(
+    program: PythonAST, dfa: dict, start_state: str
+) -> ns.SExpression:
+    return add_disambiguating_type_tags(
+        dfa, program.to_ns_s_exp(dict(no_leaves=True)), start_state
+    )
