@@ -6,7 +6,6 @@ import neurosym as ns
 
 from imperative_stitch.utils.types import SEPARATOR
 
-from .patterns import VARIABLE_PATTERN
 from .python_ast import (
     LeafAST,
     ListAST,
@@ -54,7 +53,6 @@ def s_exp_leaf_to_value(x):
 
 def s_exp_to_parsed_ast(
     x: ns.SExpression,
-    leaf_hooks: Dict[str, Callable[[str], PythonAST]],
     node_hooks: Dict[str, Callable[[str, List[PythonAST]], PythonAST]],
 ) -> PythonAST:
     """
@@ -63,9 +61,9 @@ def s_exp_to_parsed_ast(
     if x == "nil":
         return ListAST([])
     if isinstance(x, str):
-        for hook_prefix, hook in leaf_hooks.items():
+        for hook_prefix, hook in node_hooks.items():
             if x.startswith(hook_prefix):
-                return hook(x)
+                return hook(x, [])
 
         is_leaf, leaf = s_exp_leaf_to_value(x)
         if is_leaf:
@@ -82,12 +80,8 @@ def s_exp_to_parsed_ast(
         is_leaf, leaf = s_exp_leaf_to_value(tag[len("const-") :])
         assert is_leaf
         return LeafAST(leaf)
-    var_mat = VARIABLE_PATTERN.match(tag)
-    if var_mat:
-        assert len(args) == 0
-        return s_exp_to_parsed_ast(var_mat.group("name"), leaf_hooks, node_hooks)
     assert isinstance(tag, str), str(tag)
-    args = [s_exp_to_parsed_ast(x, leaf_hooks, node_hooks) for x in args]
+    args = [s_exp_to_parsed_ast(x, node_hooks) for x in args]
     if tag in {"/seq", "/subseq", "/choiceseq"}:
         return SequenceAST(tag, args)
     if tag in {"/splice"}:

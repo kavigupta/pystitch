@@ -6,6 +6,8 @@ from typing import Union
 import neurosym as ns
 from increase_recursionlimit import increase_recursionlimit
 
+from imperative_stitch.parser.patterns import VARIABLE_PATTERN
+
 from .parse_python import python_ast_to_parsed_ast
 from .parse_s_exp import s_exp_to_parsed_ast
 from .python_ast import (
@@ -19,14 +21,26 @@ from .python_ast import (
 )
 from .symbol import create_descoper
 
-leaf_hooks = {
+var_hooks = {
     "%": SymvarAST,
     "#": MetavarAST,
     "?": ChoicevarAST,
 }
 
+
+def hook_for_var(hook, change_tag=lambda x: x):
+    return lambda tag, _: hook(change_tag(tag))
+
+
 node_hooks = {
     "fn_": lambda tag, args: AbstractionCallAST(tag, args, uuid.uuid4()),
+    **{
+        f"var-{leaf}": hook_for_var(
+            hook, lambda tag: VARIABLE_PATTERN.match(tag).group("name")
+        )
+        for leaf, hook in var_hooks.items()
+    },
+    **{leaf: hook_for_var(hook) for leaf, hook in var_hooks.items()},
 }
 
 
@@ -51,7 +65,7 @@ def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> PythonAST:
     with increase_recursionlimit():
         if isinstance(code, str):
             code = ns.parse_s_expression(code)
-        code = s_exp_to_parsed_ast(code, leaf_hooks, node_hooks)
+        code = s_exp_to_parsed_ast(code, node_hooks)
         return code
 
 
