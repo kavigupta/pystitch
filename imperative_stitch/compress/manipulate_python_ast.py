@@ -1,5 +1,6 @@
 import ast
 
+from imperative_stitch.parser import converter
 from imperative_stitch.parser.python_ast import (
     LeafAST,
     ListAST,
@@ -48,9 +49,9 @@ def wrap_in_choicevar(node):
     return SequenceAST(
         "/seq",
         [
-            PythonAST.parse_python_statement("__start_choice__"),
+            converter.python_statement_to_python_ast("__start_choice__"),
             node,
-            PythonAST.parse_python_statement("__end_choice__"),
+            converter.python_statement_to_python_ast("__end_choice__"),
         ],
     )
 

@@ -10,7 +10,7 @@ from imperative_stitch.compress.manipulate_python_ast import (
     wrap_in_choicevar,
     wrap_in_metavariable,
 )
-from imperative_stitch.parser import PythonAST
+from imperative_stitch.parser import PythonAST, converter
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.python_ast import (
     AbstractionCallAST,
@@ -89,7 +89,7 @@ class Abstraction:
         choice_arity=None,
     ):
         if isinstance(body, str):
-            body = PythonAST.parse_s_expression(body)
+            body = converter.s_exp_to_python_ast(body)
         if arity is not None:
             assert arity == len(dfa_metavars)
         if sym_arity is not None:
@@ -151,8 +151,8 @@ class Abstraction:
     def _add_extract_pragmas(self, body):
         if self.dfa_root == "E":
             raise ValueError("Cannot add extract pragmas to an expression")
-        start_pragma = PythonAST.parse_python_statement("__start_extract__")
-        end_pragma = PythonAST.parse_python_statement("__end_extract__")
+        start_pragma = converter.python_statement_to_python_ast("__start_extract__")
+        end_pragma = converter.python_statement_to_python_ast("__end_extract__")
         if self.dfa_root == "S":
             return SpliceAST(SequenceAST("/seq", [start_pragma, body, end_pragma]))
         assert self.dfa_root == "seqS"

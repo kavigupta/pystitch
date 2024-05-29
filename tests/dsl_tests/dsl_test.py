@@ -5,7 +5,6 @@ import neurosym as ns
 import numpy as np
 
 from imperative_stitch.parser import converter
-from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -25,7 +24,7 @@ class SubsetTest(unittest.TestCase):
     def test_subset_basic(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            PythonAST.parse_python_module("x = x + 2; y = y + x + 2"),
+            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
         )
         print(subset)
@@ -48,7 +47,7 @@ class SubsetTest(unittest.TestCase):
     def test_subset_multi_length(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            PythonAST.parse_python_module("x = [1, 2, 3]; y = [1, 2, 3, 4]"),
+            converter.python_to_python_ast("x = [1, 2, 3]; y = [1, 2, 3, 4]"),
             root="M",
         )
         print(subset)
@@ -75,8 +74,8 @@ class SubsetTest(unittest.TestCase):
     def test_subset_multi_root(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            PythonAST.parse_python_module("x = x + 2; y = y + x + 2"),
-            PythonAST.parse_python_statement("while True: pass"),
+            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
+            converter.python_statement_to_python_ast("while True: pass"),
             root=("M", "S"),
         )
         print(subset)
@@ -100,8 +99,8 @@ class SubsetTest(unittest.TestCase):
     def test_subset_fill_in_missing(self):
         subset = DSLSubset.from_program(
             self.dfa,
-            PythonAST.parse_python_module("x = x + 2; y = y + x + 2"),
-            PythonAST.parse_python_module("x = 2; y = 3; z = 4; a = 7"),
+            converter.python_to_python_ast("x = x + 2; y = y + x + 2"),
+            converter.python_to_python_ast("x = 2; y = 3; z = 4; a = 7"),
             root=("M", "M"),
         )
         print(subset)
@@ -121,7 +120,7 @@ class ProduceDslTest(unittest.TestCase):
         self.dfa = export_dfa()
 
     def test_produce_dsl_basic(self):
-        program = PythonAST.parse_python_module("x = x + 2; y = y + x + 2")
+        program = converter.python_to_python_ast("x = x + 2; y = y + x + 2")
         subset = DSLSubset.from_program(self.dfa, program, root="M")
         dsl = create_dsl(export_dfa(), subset, "M")
         assertDSL(
@@ -179,7 +178,7 @@ class ProduceDslTest(unittest.TestCase):
         )
 
     def test_produce_dsl_bad_type_annotate_length(self):
-        program = PythonAST.parse_python_module("x: List[int, int] = 2")
+        program = converter.python_to_python_ast("x: List[int, int] = 2")
         print(ns.render_s_expression(program.to_ns_s_exp()))
         subset = DSLSubset.from_program(self.dfa, program, root="M")
         dsl = create_dsl(export_dfa(), subset, "M")
@@ -192,7 +191,7 @@ class ProduceDslTest(unittest.TestCase):
         new_dfa["E"]["fn_2"] = ["seqS"]
         new_dfa["seqS"]["fn_param_1"] = ["E"]
         test_programs = [
-            PythonAST.parse_s_expression(p)
+            converter.s_exp_to_python_ast(p)
             for p in ["(fn_1)", "(fn_2 (fn_param_1 (fn_1)))"]
         ]
         new_subset = DSLSubset.from_program(new_dfa, *test_programs, root="E")
@@ -209,14 +208,14 @@ class ProduceDslTest(unittest.TestCase):
 
     def test_create_dsl_with_type_annot(self):
         # just check it doesn't crash
-        program = PythonAST.parse_python_module("x:int = 5; y: float=5")
+        program = converter.python_to_python_ast("x:int = 5; y: float=5")
         subset = DSLSubset.from_program(self.dfa, program, root="M")
         create_dsl(export_dfa(), subset, "M")
 
 
 def fit_to(
     programs,
-    parser=PythonAST.parse_python_module,
+    parser=converter.python_to_python_ast,
     root="M",
     abstrs=(),
     use_def_use=True,
@@ -353,7 +352,7 @@ class EnumerateFittedDslTest(unittest.TestCase):
 class TestLikelihoodFittedDSL(unittest.TestCase):
     def compute_likelihood(self, corpus, program):
         dfa, _, fam, dist = fit_to(corpus, smoothing=False)
-        program = PythonAST.parse_python_module(program).to_type_annotated_ns_s_exp(
+        program = converter.python_to_python_ast(program).to_type_annotated_ns_s_exp(
             dfa, "M"
         )
         like = fam.compute_likelihood(dist, program)
@@ -421,7 +420,7 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
         # test from annie
         # I don't think it actually makes sense since (fn_3) shouldn't be possible
         test_programs = ["(fn_1 (fn_2) (fn_2))", "(fn_1 (fn_3 (fn_3)) (fn_3))"]
-        test_programs_ast = [PythonAST.parse_s_expression(p) for p in test_programs]
+        test_programs_ast = [converter.s_exp_to_python_ast(p) for p in test_programs]
         test_dfa = {"E": {"fn_1": ["E", "E"], "fn_2": [], "fn_3": ["E"]}}
 
         test_subset = DSLSubset.from_program(

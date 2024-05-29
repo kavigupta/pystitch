@@ -5,7 +5,7 @@ from imperative_stitch.analyze_program.extract.errors import (
     ClosureOverVariableModifiedInExtractedCode,
     ModifiesVariableClosedOverInNonExtractedCode,
 )
-from imperative_stitch.parser.python_ast import PythonAST
+from imperative_stitch.parser import converter
 from imperative_stitch.utils.ast_utils import ReplaceNodes
 from imperative_stitch.utils.classify_nodes import classify_nodes_in_program
 from tests.extract.extract_test import GenericExtractRealisticTest, GenericExtractTest
@@ -436,7 +436,7 @@ class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
         from ..abstraction_handling.dfa_test import dfa
 
-        convert = lambda b: PythonAST.from_python_ast(b, descoper={}).to_ns_s_exp(
+        convert = lambda b: converter.python_to_python_ast(b, descoper={}).to_ns_s_exp(
             dict()
         )
 

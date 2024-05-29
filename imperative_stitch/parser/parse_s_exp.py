@@ -18,7 +18,7 @@ from imperative_stitch.parser.python_ast import (
     StarrableElementAST,
     SymvarAST,
 )
-from imperative_stitch.utils.export_as_dsl import SEPARATOR
+from imperative_stitch.utils.types import SEPARATOR
 
 from .symbol import PythonSymbol
 

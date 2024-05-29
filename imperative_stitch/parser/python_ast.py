@@ -12,7 +12,7 @@ from increase_recursionlimit import increase_recursionlimit
 from imperative_stitch.utils.classify_nodes import add_disambiguating_type_tags
 
 from .splice import Splice
-from .symbol import PythonSymbol, create_descoper
+from .symbol import PythonSymbol
 
 
 class PythonAST(ABC):
@@ -20,77 +20,21 @@ class PythonAST(ABC):
     Represents a Parsed AST.
     """
 
-    @classmethod
-    def from_python_ast(cls, ast_node, descoper=None):
-        """
-        Convert the given python AST into a PythonAST.
-        """
-        # pylint: disable=R0401
-        from .parse_python import python_ast_to_parsed_ast
-
-        with increase_recursionlimit():
-            return python_ast_to_parsed_ast(
-                ast_node,
-                descoper if descoper is not None else create_descoper(ast_node),
-            )
-
-    @classmethod
-    def parse_python_module(cls, code):
-        """
-        Parse the given python code into a PythonAST.
-        """
-        # pylint: disable=R0401
-        from .parse_python import python_ast_to_parsed_ast
-
-        with increase_recursionlimit():
-            code = ast.parse(code)
-            code = python_ast_to_parsed_ast(code, create_descoper(code))
-            return code
-
-    @classmethod
-    def parse_python_statements(cls, code):
-        code = cls.parse_python_module(code)
-        assert isinstance(code, NodeAST) and code.typ is ast.Module
-        assert len(code.children) == 2
-        code = code.children[0]
-        return code
-
-    @classmethod
-    def parse_python_statement(cls, code):
-        code = cls.parse_python_statements(code)
-        assert isinstance(code, SequenceAST), code
-        assert (
-            len(code.elements) == 1
-        ), f"expected only one statement; got: [{[x.to_python() for x in code.elements]}]]"
-        code = code.elements[0]
-        return code
-
-    @classmethod
-    def parse_s_expression(cls, code):
-        """
-        Parse the given s-expression into a PythonAST.
-        """
-        # pylint: disable=R0401
-        with increase_recursionlimit():
-            from .parse_s_exp import s_exp_to_parsed_ast
-
-            if isinstance(code, str):
-                code = ns.parse_s_expression(code)
-            code = s_exp_to_parsed_ast(code)
-            return code
-
     @abstractmethod
-    def to_ns_s_exp(self, config=frozendict()):
+    def to_ns_s_exp(self, config=frozendict()) -> ns.SExpression:
         """
         Convert this PythonAST into a pair s-expression.
         """
 
-    def to_type_annotated_ns_s_exp(self, dfa, start_state):
+    def to_type_annotated_ns_s_exp(self, dfa, start_state) -> ns.SExpression:
+        """
+        Like to_ns_s_exp, but adds type annotations.
+        """
         return add_disambiguating_type_tags(
             dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
         )
 
-    def to_python(self):
+    def to_python(self) -> str:
         """
         Convert this PythonAST into python code.
         """
@@ -101,7 +45,7 @@ class PythonAST(ABC):
             return ast.unparse(code)
 
     @abstractmethod
-    def to_python_ast(self):
+    def to_python_ast(self) -> ast.AST:
         """
         Convert this PythonAST into a python AST.
         """
