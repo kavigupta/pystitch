@@ -1,24 +1,19 @@
 import ast
 import base64
-import uuid
 from typing import Callable, Dict, List
 
 import neurosym as ns
 
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.python_ast import (
-    AbstractionCallAST,
-    ChoicevarAST,
     LeafAST,
     ListAST,
-    MetavarAST,
     NodeAST,
     PythonAST,
     SequenceAST,
     SliceElementAST,
     SpliceAST,
     StarrableElementAST,
-    SymvarAST,
 )
 from imperative_stitch.utils.types import SEPARATOR
 
