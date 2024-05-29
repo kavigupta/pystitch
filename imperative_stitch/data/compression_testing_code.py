@@ -1,7 +1,6 @@
 import json
 import os
 
-import fire
 import neurosym as ns
 from datasets import load_dataset
 
@@ -59,4 +58,6 @@ def produce_julia_tests(jl_path):
 
 
 if __name__ == "__main__":
+    import fire
+
     fire.Fire(produce_julia_tests)
