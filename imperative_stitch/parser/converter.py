@@ -1,4 +1,3 @@
-import ast
 import uuid
 from typing import Union
 
@@ -11,9 +10,7 @@ from .python_ast import (
     AbstractionCallAST,
     ChoicevarAST,
     MetavarAST,
-    NodeAST,
     PythonAST,
-    SequenceAST,
     SymvarAST,
 )
 
