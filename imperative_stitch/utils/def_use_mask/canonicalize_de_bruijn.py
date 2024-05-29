@@ -180,12 +180,17 @@ def get_defined_indices(mask):
     """
     Get the set of defined indices for a given mask.
     """
+    mask = get_def_use_chain_mask(mask)
+    currently_defined = mask.currently_defined_indices()
+    return currently_defined
+
+
+def get_def_use_chain_mask(mask):
     assert isinstance(mask, ns.ConjunctionPreorderMask)
     assert len(mask.masks) == 1
     mask = mask.masks[-1]
     assert isinstance(mask, DefUseChainPreorderMask)
-    currently_defined = mask.currently_defined_indices()
-    return currently_defined
+    return mask
 
 
 def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
@@ -209,9 +214,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     dsl = create_dsl(
         dfa,
-        DSLSubset.from_type_annotated_s_exps(
-            [s_exp_de_bruijn] + abstr_bodies, include_variables=True
-        ),
+        DSLSubset.from_type_annotated_s_exps([s_exp_de_bruijn] + abstr_bodies),
         get_dfa_state(s_exp_de_bruijn.symbol),
     )
     fam = ns.BigramProgramDistributionFamily(
@@ -240,7 +243,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
             count_vars += 1
             return result
         sym_idx = indices[-idx]
-        sym, _ = tree_dist.symbols[sym_idx]
+        sym = get_def_use_chain_mask(mask).id_to_name(sym_idx)
         return ns.SExpression(sym, ())
 
     id_to_new = {}
@@ -260,6 +263,9 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
             s_exp_de_bruijn,
             tree_dist,
             replace_node_midstream=traverse_replacer,
+            symbol_to_index_fn=lambda mask, x: get_def_use_chain_mask(mask).name_to_id(
+                x
+            ),
         )
     )
 

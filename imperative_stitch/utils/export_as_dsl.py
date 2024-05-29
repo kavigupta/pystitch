@@ -10,9 +10,6 @@ from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
 )
 from imperative_stitch.parser import converter
-from imperative_stitch.utils.def_use_mask.extra_var import (
-    canonicalized_python_name_as_leaf,
-)
 from imperative_stitch.utils.types import SEPARATOR, is_sequence
 
 
@@ -36,7 +33,6 @@ class DSLSubset:
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
         to_s_exp=converter.to_type_annotated_ns_s_exp,
-        include_variables=False,
     ):
         """
         See from_program for details. This function returns both the programs and the subset.
@@ -48,9 +44,7 @@ class DSLSubset:
             for program, root_sym in zip(programs, root)
         ]
 
-        subset = cls.from_type_annotated_s_exps(
-            programs, include_variables=include_variables
-        )
+        subset = cls.from_type_annotated_s_exps(programs)
         return programs[:num_programs], subset
 
     @classmethod
@@ -61,7 +55,6 @@ class DSLSubset:
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
         to_s_exp=converter.to_type_annotated_ns_s_exp,
-        include_variables=False,
     ):
         """
         Construct a DSLSubset from a list of programs. The subset contains all the
@@ -77,12 +70,7 @@ class DSLSubset:
                 default it uses the converter.to_type_annotated_ns_s_exp method.
         """
         _, subset = cls.fit_dsl_to_programs_and_output_s_exps(
-            dfa,
-            *programs,
-            root=root,
-            abstrs=abstrs,
-            to_s_exp=to_s_exp,
-            include_variables=include_variables,
+            dfa, *programs, root=root, abstrs=abstrs, to_s_exp=to_s_exp
         )
         return subset
 
@@ -111,7 +99,7 @@ class DSLSubset:
         return programs, root
 
     @classmethod
-    def from_type_annotated_s_exps(cls, s_exps, *, include_variables=False):
+    def from_type_annotated_s_exps(cls, s_exps):
         """
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
@@ -134,9 +122,6 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
-        if include_variables:
-            for var in range(num_vars):
-                leaves["Name"].add(canonicalized_python_name_as_leaf(var))
         return cls(
             lengths_by_sequence_type={
                 k: sorted(v) for k, v in lengths_by_list_type.items()

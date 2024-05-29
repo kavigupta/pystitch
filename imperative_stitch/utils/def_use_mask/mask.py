@@ -5,7 +5,10 @@ from typing import Dict, List
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.utils.def_use_mask.extra_var import ExtraVar
+from imperative_stitch.utils.def_use_mask.extra_var import (
+    ExtraVar,
+    canonicalized_python_name_leaf_regex,
+)
 from imperative_stitch.utils.def_use_mask.handler import DefaultHandler
 from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -160,10 +163,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Convert the string to a symbol ID.
         """
-
-        # TODO this is a bit of a hack; we shouldn't need to check the tree distrubiton
-        # here, there should not be an overlap.
-        if name not in self.tree_dist.symbol_to_index:
+        if canonicalized_python_name_leaf_regex.match(name):
+            assert name not in self.tree_dist.symbol_to_index
             evar = ExtraVar.from_name(name)
             if evar is not None:
                 return evar
