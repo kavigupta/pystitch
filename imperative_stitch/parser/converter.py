@@ -51,31 +51,9 @@ def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> PythonAST:
     return ns.s_exp_to_python_ast(code, node_hooks)
 
 
-def python_statement_to_python_ast(code: Union[str, ast.AST]) -> PythonAST:
-    """
-    Like python_to_python_ast, but for a single statement.
-    """
-    code = python_statements_to_python_ast(code)
-    assert (
-        len(code.elements) == 1
-    ), f"expected only one statement; got: [{[x.to_python() for x in code.elements]}]]"
-    code = code.elements[0]
-    return code
-
-
-def python_statements_to_python_ast(code: Union[str, ast.AST]) -> SequenceAST:
-    """
-    Like python_to_python_ast, but for a sequence of statements.
-    """
-    code = python_to_python_ast(code)
-    assert isinstance(code, NodeAST) and code.typ is ast.Module
-    assert len(code.children) == 2
-    code = code.children[0]
-    assert isinstance(code, SequenceAST), code
-    return code
-
-
 python_to_python_ast = ns.python_to_python_ast
+python_statement_to_python_ast = ns.python_statement_to_python_ast
+python_statements_to_python_ast = ns.python_statements_to_python_ast
 
 
 def to_type_annotated_ns_s_exp(

@@ -6,7 +6,6 @@ from typing import List
 import neurosym as ns
 from frozendict import frozendict
 
-
 (
     PythonAST,
     SequenceAST,
