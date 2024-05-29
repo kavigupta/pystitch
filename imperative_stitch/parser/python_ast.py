@@ -9,6 +9,8 @@ import neurosym as ns
 from frozendict import frozendict
 from increase_recursionlimit import increase_recursionlimit
 
+from imperative_stitch.utils.classify_nodes import add_disambiguating_type_tags
+
 from .splice import Splice
 from .symbol import PythonSymbol
 
@@ -25,9 +27,6 @@ class PythonAST(ABC):
         """
 
     def to_type_annotated_ns_s_exp(self, dfa, start_state):
-        # pylint: disable=cyclic-import
-        from imperative_stitch.utils.export_as_dsl import add_disambiguating_type_tags
-
         return add_disambiguating_type_tags(
             dfa, self.to_ns_s_exp(dict(no_leaves=True)), start_state
         )
