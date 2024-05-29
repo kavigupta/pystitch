@@ -1,14 +1,12 @@
-from imperative_stitch.parser import converter
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
-from tests.dsl_tests.utils import fit_to
-
+import unittest
+from fractions import Fraction
 
 import neurosym as ns
 import numpy as np
 
-
-import unittest
-from fractions import Fraction
+from imperative_stitch.parser import converter
+from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
+from tests.dsl_tests.utils import fit_to
 
 
 class TestLikelihoodFittedDSL(unittest.TestCase):
