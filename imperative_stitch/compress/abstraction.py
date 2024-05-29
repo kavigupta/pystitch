@@ -11,13 +11,7 @@ from imperative_stitch.compress.manipulate_python_ast import (
 )
 from imperative_stitch.parser import converter
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
-from imperative_stitch.parser.python_ast import (
-    AbstractionCallAST,
-    LeafAST,
-    SequenceAST,
-    SpliceAST,
-    Variable,
-)
+from imperative_stitch.parser.python_ast import AbstractionCallAST, Variable
 from imperative_stitch.utils.classify_nodes import export_dfa
 
 
@@ -30,13 +24,13 @@ class Arguments:
 
     metavars: list[ns.PythonAST]
     symvars: list[ns.PythonAST]
-    choicevars: list[SequenceAST]
+    choicevars: list[ns.SequenceAST]
 
     def __post_init__(self):
         assert all(isinstance(x, ns.PythonAST) for x in self.metavars), self.metavars
         assert all(isinstance(x, ns.PythonAST) for x in self.symvars), self.symvars
         assert all(
-            isinstance(x, (SequenceAST, Variable, AbstractionCallAST))
+            isinstance(x, (ns.SequenceAST, Variable, AbstractionCallAST))
             for x in self.choicevars
         ), self.choicevars
 
@@ -142,7 +136,7 @@ class Abstraction:
         s_stub = ns.make_python_ast.make_expr_stmt(e_stub)
         if self.dfa_root == "S":
             return s_stub
-        seq_stub = SequenceAST("/seq", [s_stub])
+        seq_stub = ns.SequenceAST("/seq", [s_stub])
         assert self.dfa_root == "seqS"
         return seq_stub
 
@@ -152,9 +146,11 @@ class Abstraction:
         start_pragma = ns.python_statement_to_python_ast("__start_extract__")
         end_pragma = ns.python_statement_to_python_ast("__end_extract__")
         if self.dfa_root == "S":
-            return SpliceAST(SequenceAST("/seq", [start_pragma, body, end_pragma]))
+            return ns.SpliceAST(
+                ns.SequenceAST("/seq", [start_pragma, body, end_pragma])
+            )
         assert self.dfa_root == "seqS"
-        return SequenceAST("/seq", [start_pragma, *body.elements, end_pragma])
+        return ns.SequenceAST("/seq", [start_pragma, *body.elements, end_pragma])
 
     def substitute_body(self, arguments, *, pragmas=False):
         """
@@ -198,20 +194,20 @@ class Abstraction:
         """
         arguments = Arguments(
             [
-                ns.make_python_ast.make_name(LeafAST(ns.PythonSymbol(f"#{i}", None)))
+                ns.make_python_ast.make_name(ns.LeafAST(ns.PythonSymbol(f"#{i}", None)))
                 for i in range(self.arity)
             ],
             [
-                LeafAST(ns.PythonSymbol(f"%{i + 1}", None))
+                ns.LeafAST(ns.PythonSymbol(f"%{i + 1}", None))
                 for i in range(self.sym_arity)
             ],
             [
-                SequenceAST(
+                ns.SequenceAST(
                     "/seq",
                     [
                         ns.make_python_ast.make_expr_stmt(
                             ns.make_python_ast.make_name(
-                                LeafAST(ns.PythonSymbol(f"?{i}", None))
+                                ns.LeafAST(ns.PythonSymbol(f"?{i}", None))
                             )
                         )
                     ],

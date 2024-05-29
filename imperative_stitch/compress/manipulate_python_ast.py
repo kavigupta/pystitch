@@ -2,8 +2,6 @@ import ast
 
 import neurosym as ns
 
-from imperative_stitch.parser.python_ast import LeafAST, ListAST, NodeAST, SequenceAST
-
 
 def render_symvar(node):
     """
@@ -27,15 +25,17 @@ def render_codevar(node):
 
 
 def wrap_in_metavariable(node, name):
-    return NodeAST(
+    return ns.NodeAST(
         ast.Set,
         [
-            ListAST(
+            ns.ListAST(
                 [
                     ns.make_python_ast.make_name(
-                        LeafAST(ns.PythonSymbol("__metavariable__", None))
+                        ns.LeafAST(ns.PythonSymbol("__metavariable__", None))
                     ),
-                    ns.make_python_ast.make_name(LeafAST(ns.PythonSymbol(name, None))),
+                    ns.make_python_ast.make_name(
+                        ns.LeafAST(ns.PythonSymbol(name, None))
+                    ),
                     node,
                 ]
             )
@@ -44,7 +44,7 @@ def wrap_in_metavariable(node, name):
 
 
 def wrap_in_choicevar(node):
-    return SequenceAST(
+    return ns.SequenceAST(
         "/seq",
         [
             ns.python_statement_to_python_ast("__start_choice__"),

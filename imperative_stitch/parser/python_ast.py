@@ -6,24 +6,6 @@ from typing import List
 import neurosym as ns
 from frozendict import frozendict
 
-(
-    SequenceAST,
-    NodeAST,
-    ListAST,
-    LeafAST,
-    SliceElementAST,
-    StarrableElementAST,
-    SpliceAST,
-) = (
-    ns.SequenceAST,
-    ns.NodeAST,
-    ns.ListAST,
-    ns.LeafAST,
-    ns.SliceElementAST,
-    ns.StarrableElementAST,
-    ns.SpliceAST,
-)
-
 
 @dataclass
 class Variable(ns.PythonAST):
@@ -66,7 +48,7 @@ class ChoicevarAST(Variable):
         return ast.Name(id=self.sym)
 
     def _replace_with_substitute(self, arguments):
-        return SpliceAST(arguments.choicevars[self.idx])
+        return ns.SpliceAST(arguments.choicevars[self.idx])
 
 
 @dataclass
