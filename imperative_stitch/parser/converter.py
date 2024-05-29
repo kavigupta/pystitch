@@ -1,15 +1,33 @@
 import ast
+import uuid
 from types import NoneType
 from typing import Union
 
 import neurosym as ns
 from increase_recursionlimit import increase_recursionlimit
 
-from imperative_stitch.parser.symbol import create_descoper
-
 from .parse_python import python_ast_to_parsed_ast
 from .parse_s_exp import s_exp_to_parsed_ast
-from .python_ast import NodeAST, PythonAST, SequenceAST
+from .python_ast import (
+    AbstractionCallAST,
+    ChoicevarAST,
+    MetavarAST,
+    NodeAST,
+    PythonAST,
+    SequenceAST,
+    SymvarAST,
+)
+from .symbol import create_descoper
+
+leaf_hooks = {
+    "%": SymvarAST,
+    "#": MetavarAST,
+    "?": ChoicevarAST,
+}
+
+node_hooks = {
+    "fn_": lambda tag, args: AbstractionCallAST(tag, args, uuid.uuid4()),
+}
 
 
 def python_to_s_exp(code: Union[str, ast.AST], **kwargs) -> str:
@@ -33,7 +51,7 @@ def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> PythonAST:
     with increase_recursionlimit():
         if isinstance(code, str):
             code = ns.parse_s_expression(code)
-        code = s_exp_to_parsed_ast(code)
+        code = s_exp_to_parsed_ast(code, leaf_hooks, node_hooks)
         return code
 
 

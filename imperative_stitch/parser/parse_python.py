@@ -2,7 +2,7 @@ import ast
 
 import neurosym as ns
 
-from imperative_stitch.parser.python_ast import (
+from .python_ast import (
     LeafAST,
     ListAST,
     NodeAST,
@@ -10,7 +10,6 @@ from imperative_stitch.parser.python_ast import (
     SliceElementAST,
     StarrableElementAST,
 )
-
 from .symbol import PythonSymbol
 
 

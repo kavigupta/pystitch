@@ -1,6 +1,7 @@
 import ast
 import base64
 import uuid
+from typing import Callable, Dict, List
 
 import neurosym as ns
 
@@ -12,6 +13,7 @@ from imperative_stitch.parser.python_ast import (
     ListAST,
     MetavarAST,
     NodeAST,
+    PythonAST,
     SequenceAST,
     SliceElementAST,
     SpliceAST,
@@ -55,19 +57,20 @@ def s_exp_leaf_to_value(x):
     return False, None
 
 
-def s_exp_to_parsed_ast(x: ns.SExpression):
+def s_exp_to_parsed_ast(
+    x: ns.SExpression,
+    leaf_hooks: Dict[str, Callable[[str], PythonAST]],
+    node_hooks: Dict[str, Callable[[str, List[PythonAST]], PythonAST]],
+) -> PythonAST:
     """
     Convert an s-expression (as pairs) to a parsed AST
     """
     if x == "nil":
         return ListAST([])
     if isinstance(x, str):
-        if x.startswith("%"):
-            return SymvarAST(x)
-        if x.startswith("#"):
-            return MetavarAST(x)
-        if x.startswith("?"):
-            return ChoicevarAST(x)
+        for hook_prefix, hook in leaf_hooks.items():
+            if x.startswith(hook_prefix):
+                return hook(x)
 
         is_leaf, leaf = s_exp_leaf_to_value(x)
         if is_leaf:
@@ -87,9 +90,9 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
     var_mat = VARIABLE_PATTERN.match(tag)
     if var_mat:
         assert len(args) == 0
-        return s_exp_to_parsed_ast(var_mat.group("name"))
+        return s_exp_to_parsed_ast(var_mat.group("name"), leaf_hooks, node_hooks)
     assert isinstance(tag, str), str(tag)
-    args = [s_exp_to_parsed_ast(x) for x in args]
+    args = [s_exp_to_parsed_ast(x, leaf_hooks, node_hooks) for x in args]
     if tag in {"/seq", "/subseq", "/choiceseq"}:
         return SequenceAST(tag, args)
     if tag in {"/splice"}:
@@ -103,6 +106,7 @@ def s_exp_to_parsed_ast(x: ns.SExpression):
         return StarrableElementAST(args[0])
     if tag in {"list"}:
         return ListAST(args)
-    if tag.startswith("fn"):
-        return AbstractionCallAST(tag, args, uuid.uuid4())
+    for hook_prefix, hook in node_hooks.items():
+        if tag.startswith(hook_prefix):
+            return hook(tag, args)
     return NodeAST(getattr(ast, tag), args)
