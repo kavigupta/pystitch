@@ -50,7 +50,12 @@ class DSLSmoothingTest(unittest.TestCase):
             node_ordering=lambda dist: PythonNodeOrdering(dist, ()),
         )
         counts = fam.count_programs(
-            [[program.to_type_annotated_ns_s_exp(dfa, root) for program in programs]]
+            [
+                [
+                    converter.to_type_annotated_ns_s_exp(program, dfa, root)
+                    for program in programs
+                ]
+            ]
         )
         dist = fam.counts_to_distribution(counts)[0]
         dist = dist.bound_minimum_likelihood(1e-6, smooth_mask)
@@ -61,7 +66,8 @@ class DSLSmoothingTest(unittest.TestCase):
     def likelihood(self, program):
         program = converter.python_to_python_ast(program)
         log_p = self.fam.compute_likelihood(
-            self.dist, program.to_type_annotated_ns_s_exp(self.dfa, "M")
+            self.dist,
+            converter.to_type_annotated_ns_s_exp(program, self.dfa, "M"),
         )
         return log_p
 
