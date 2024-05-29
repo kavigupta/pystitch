@@ -544,9 +544,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
     )
 
     def blank_abstraction(self, name, content):
-        return Abstraction.of(
-            name, ns.python_statements_to_python_ast(content), "seqS"
-        )
+        return Abstraction.of(name, ns.python_statements_to_python_ast(content), "seqS")
 
     def test_with_empty_abstraction(self):
         code = cwq(

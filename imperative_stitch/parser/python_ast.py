@@ -7,7 +7,6 @@ import neurosym as ns
 from frozendict import frozendict
 
 (
-    PythonAST,
     SequenceAST,
     NodeAST,
     ListAST,
@@ -16,7 +15,6 @@ from frozendict import frozendict
     StarrableElementAST,
     SpliceAST,
 ) = (
-    ns.PythonAST,
     ns.SequenceAST,
     ns.NodeAST,
     ns.ListAST,
@@ -28,7 +26,7 @@ from frozendict import frozendict
 
 
 @dataclass
-class Variable(PythonAST):
+class Variable(ns.PythonAST):
     sym: str
 
     @property
@@ -72,9 +70,9 @@ class ChoicevarAST(Variable):
 
 
 @dataclass
-class AbstractionCallAST(PythonAST):
+class AbstractionCallAST(ns.PythonAST):
     tag: str
-    args: List[PythonAST]
+    args: List[ns.PythonAST]
     handle: uuid.UUID
 
     def to_ns_s_exp(self, config=frozendict()):

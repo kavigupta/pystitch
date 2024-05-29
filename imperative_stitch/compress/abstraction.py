@@ -9,7 +9,7 @@ from imperative_stitch.compress.manipulate_python_ast import (
     wrap_in_choicevar,
     wrap_in_metavariable,
 )
-from imperative_stitch.parser import PythonAST, converter
+from imperative_stitch.parser import converter
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
 from imperative_stitch.parser.python_ast import (
     AbstractionCallAST,
@@ -28,13 +28,13 @@ class Arguments:
         symbol variables, and choice variables.
     """
 
-    metavars: list[PythonAST]
-    symvars: list[PythonAST]
+    metavars: list[ns.PythonAST]
+    symvars: list[ns.PythonAST]
     choicevars: list[SequenceAST]
 
     def __post_init__(self):
-        assert all(isinstance(x, PythonAST) for x in self.metavars), self.metavars
-        assert all(isinstance(x, PythonAST) for x in self.symvars), self.symvars
+        assert all(isinstance(x, ns.PythonAST) for x in self.metavars), self.metavars
+        assert all(isinstance(x, ns.PythonAST) for x in self.symvars), self.symvars
         assert all(
             isinstance(x, (SequenceAST, Variable, AbstractionCallAST))
             for x in self.choicevars
@@ -61,7 +61,7 @@ class Arguments:
 @dataclass
 class Abstraction:
     name: str
-    body: PythonAST
+    body: ns.PythonAST
     arity: int
 
     sym_arity: int
@@ -114,7 +114,7 @@ class Abstraction:
         assert self.sym_arity == len(self.dfa_symvars)
         assert self.choice_arity == len(self.dfa_choicevars)
 
-        assert isinstance(self.body, PythonAST), self.body
+        assert isinstance(self.body, ns.PythonAST), self.body
 
     def process_arguments(self, arguments):
         """

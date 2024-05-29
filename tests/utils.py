@@ -5,8 +5,8 @@ import json
 from functools import lru_cache
 from textwrap import dedent
 
-import pytest
 import neurosym as ns
+import pytest
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction

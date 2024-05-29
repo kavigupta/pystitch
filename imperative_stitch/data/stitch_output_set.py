@@ -1,8 +1,8 @@
 import json
 from functools import lru_cache
 
-import tqdm
 import neurosym as ns
+import tqdm
 from permacache import drop_if_equal, permacache, stable_hash
 
 from imperative_stitch.compress.julia_stitch import run_julia_stitch

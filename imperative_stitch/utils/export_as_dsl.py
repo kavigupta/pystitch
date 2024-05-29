@@ -10,7 +10,6 @@ from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
 )
 from imperative_stitch.parser import converter
-from imperative_stitch.parser.python_ast import PythonAST
 from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_as_leaf,
 )
@@ -33,7 +32,7 @@ class DSLSubset:
     def fit_dsl_to_programs_and_output_s_exps(
         cls,
         dfa,
-        *programs: Tuple[PythonAST, ...],
+        *programs: Tuple[ns.PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
         to_s_exp=converter.to_type_annotated_ns_s_exp,
@@ -58,7 +57,7 @@ class DSLSubset:
     def from_program(
         cls,
         dfa,
-        *programs: Tuple[PythonAST, ...],
+        *programs: Tuple[ns.PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
         to_s_exp=converter.to_type_annotated_ns_s_exp,
@@ -90,7 +89,7 @@ class DSLSubset:
     @classmethod
     def create_program_list(
         cls,
-        *programs: Tuple[PythonAST, ...],
+        *programs: Tuple[ns.PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
     ):

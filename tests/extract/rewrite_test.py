@@ -435,7 +435,6 @@ class RewriteTest(GenericExtractTest):
 
 class GenericRewriteRealisticTest(GenericExtractRealisticTest):
     def get_expressions(self, body, start="S"):
-
         convert = lambda b: ns.python_to_python_ast(b, descoper={}).to_ns_s_exp(dict())
 
         lines = body if isinstance(body, list) else [body]
