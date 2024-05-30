@@ -87,8 +87,6 @@ class DSLSubset:
             root: the root symbol of the DSL. If a tuple is passed, it must
                 be the same length as the programs, providing a root symbol for each program.
             abstrs: abstractions: their bodies will be added to the list of programs
-            to_s_exp: a function that converts a program to a type-annotated s-expression. By
-                default it uses the converter.to_type_annotated_ns_s_exp method.
         """
         _, subset = cls.fit_dsl_to_programs_and_output_s_exps(
             dfa, *programs, root=root, abstrs=abstrs
