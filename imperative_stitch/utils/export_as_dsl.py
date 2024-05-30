@@ -55,7 +55,6 @@ class DSLSubset:
         *programs: Tuple[ns.PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
-        to_s_exp=converter.to_type_annotated_ns_s_exp,
     ):
         """
         See from_program for details. This function returns both the programs and the subset.
@@ -63,7 +62,7 @@ class DSLSubset:
         num_programs = len(programs)
         programs, root = cls.create_program_list(*programs, root=root, abstrs=abstrs)
         programs = [
-            to_s_exp(program, dfa, root_sym)
+            converter.to_type_annotated_ns_s_exp(program, dfa, root_sym)
             for program, root_sym in zip(programs, root)
         ]
 
@@ -77,7 +76,6 @@ class DSLSubset:
         *programs: Tuple[ns.PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
         abstrs: Tuple[Abstraction] = (),
-        to_s_exp=converter.to_type_annotated_ns_s_exp,
     ):
         """
         Construct a DSLSubset from a list of programs. The subset contains all the
@@ -93,7 +91,7 @@ class DSLSubset:
                 default it uses the converter.to_type_annotated_ns_s_exp method.
         """
         _, subset = cls.fit_dsl_to_programs_and_output_s_exps(
-            dfa, *programs, root=root, abstrs=abstrs, to_s_exp=to_s_exp
+            dfa, *programs, root=root, abstrs=abstrs
         )
         return subset
 
