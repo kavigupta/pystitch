@@ -103,17 +103,10 @@ class DSLSubset:
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
         """
-        # pylint: disable=cyclic-import
-        from .def_use_mask.canonicalize_de_bruijn import create_de_bruijn_child
-
-        de_bruijn_new = create_de_bruijn_child(0, 1).symbol
-        num_vars = 0
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
         for program in s_exps:
             for node in traverse(program):
-                if node.symbol == de_bruijn_new:
-                    num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = ns.python_ast_tools.unclean_type(state)
                 assert isinstance(node, ns.SExpression)
@@ -132,6 +125,7 @@ class DSLSubset:
     def from_programs_de_bruijn(
         cls, *programs, root, dfa, abstrs, max_explicit_dbvar_index
     ):
+        # pylint: disable=cyclic-import
         from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
             canonicalize_de_bruijn_batched,
         )
@@ -164,6 +158,7 @@ def traverse(s_exp):
 
 
 def create_dsl(dfa, dsl_subset, start_state, dslf=None, include_dbvars=False):
+    # pylint: disable=cyclic-import
     from .def_use_mask.canonicalize_de_bruijn import (
         dbvar_successor_symbol,
         dbvar_wrapper_symbol_by_root_type,
