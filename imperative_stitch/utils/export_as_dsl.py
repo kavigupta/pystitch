@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Set, Tuple, Union
 
 import neurosym as ns
@@ -21,8 +21,10 @@ class DSLSubset:
         - a dictionary from types to a list of leaves of that type
     """
 
-    _lengths_by_sequence_type: Dict[str, Set[int]]
-    _leaves: Dict[str, Set[str]]
+    _lengths_by_sequence_type: Dict[str, Set[int]] = field(
+        default_factory=lambda: defaultdict(set)
+    )
+    _leaves: Dict[str, Set[str]] = field(default_factory=lambda: defaultdict(set))
 
     @property
     def lengths_by_sequence_type(self) -> Dict[str, List[int]]:
@@ -31,6 +33,20 @@ class DSLSubset:
     @property
     def leaves(self) -> Dict[str, List[str]]:
         return {k: sorted(v) for k, v in self._leaves.items()}
+
+    def add_s_exps(self, *s_exps):
+        """
+        Add the following s-expressions to the subset. They must be type-annotated.
+        """
+        for s_exp in s_exps:
+            for node in traverse(s_exp):
+                symbol, state, *_ = node.symbol.split(SEPARATOR)
+                state = ns.python_ast_tools.unclean_type(state)
+                assert isinstance(node, ns.SExpression)
+                if is_sequence(state, symbol):
+                    self._lengths_by_sequence_type[state].add(len(node.children))
+                elif len(node.children) == 0 and not symbol.startswith("fn_"):
+                    self._leaves[state].add(symbol)
 
     @classmethod
     def fit_dsl_to_programs_and_output_s_exps(
@@ -111,18 +127,9 @@ class DSLSubset:
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
         """
-        lengths_by_list_type = defaultdict(set)
-        leaves = defaultdict(set)
-        for program in s_exps:
-            for node in traverse(program):
-                symbol, state, *_ = node.symbol.split(SEPARATOR)
-                state = ns.python_ast_tools.unclean_type(state)
-                assert isinstance(node, ns.SExpression)
-                if is_sequence(state, symbol):
-                    lengths_by_list_type[state].add(len(node.children))
-                elif len(node.children) == 0 and not symbol.startswith("fn_"):
-                    leaves[state].add(symbol)
-        return cls(_lengths_by_sequence_type=lengths_by_list_type, _leaves=leaves)
+        subset = cls()
+        subset.add_s_exps(*s_exps)
+        return subset
 
     @classmethod
     def from_programs_de_bruijn(
@@ -147,11 +154,10 @@ class DSLSubset:
         Fill in "missing lengths" for each sequence type. E.g., if the lengths
             of a sequence type are [1, 3], this function will add 2 to the list.
         """
-        lengths_new = {
+        self._lengths_by_sequence_type = {
             seq_type: set(range(min(lengths), max(lengths) + 1))
             for seq_type, lengths in self.lengths_by_sequence_type.items()
         }
-        return type(self)(_lengths_by_sequence_type=lengths_new, _leaves=self._leaves)
 
 
 def traverse(s_exp):

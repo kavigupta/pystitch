@@ -93,7 +93,7 @@ class DSLSubsetTest(unittest.TestCase):
         self.assertEqual(
             subset.lengths_by_sequence_type, {"seqS": [2, 4], "[L]": [1], "[TI]": [0]}
         )
-        subset = subset.fill_in_missing_lengths()
+        subset.fill_in_missing_lengths()
         print(subset)
         self.assertEqual(
             subset.lengths_by_sequence_type,
