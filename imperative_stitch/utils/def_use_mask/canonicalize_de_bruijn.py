@@ -352,3 +352,18 @@ class DeBruijnMaskHandler:
         assert is_dbvar_wrapper_symbol(sym)
         symbol = ExtraVar(self.num_available_symbols - self.dbvar_value)
         return symbol
+
+
+def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar_index):
+    assert len(programs) == len(roots), "The number of programs and roots must match."
+
+    programs_all = canonicalize_de_bruijn_batched(
+        programs,
+        roots,
+        dfa,
+        abstrs,
+        max_explicit_dbvar_index,
+        include_abstr_exprs=True,
+    )
+    subset = DSLSubset.from_type_annotated_s_exps(programs_all)
+    return programs_all[: len(programs)], subset

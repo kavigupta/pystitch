@@ -118,30 +118,6 @@ class DSLSubset:
         subset.add_s_exps(*s_exps)
         return subset
 
-    @classmethod
-    def from_programs_de_bruijn(
-        cls, *programs, roots, dfa, abstrs, max_explicit_dbvar_index
-    ):
-        # pylint: disable=cyclic-import
-        from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
-            canonicalize_de_bruijn_batched,
-        )
-
-        assert len(programs) == len(
-            roots
-        ), "The number of programs and roots must match."
-
-        programs_all = canonicalize_de_bruijn_batched(
-            programs,
-            roots,
-            dfa,
-            abstrs,
-            max_explicit_dbvar_index,
-            include_abstr_exprs=True,
-        )
-        subset = cls.from_type_annotated_s_exps(programs_all)
-        return programs_all[: len(programs)], subset
-
     def fill_in_missing_lengths(self):
         """
         Fill in "missing lengths" for each sequence type. E.g., if the lengths
