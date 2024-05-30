@@ -30,11 +30,7 @@ def fit_to(
     programs = [parser(p) for p in programs]
     subset_w_abstraction = DSLSubset.from_programs(dfa, *programs, root=root)
     subset_w_abstraction.add_abstractions(dfa, *abstrs)
-    dsl = create_dsl(
-        dfa,
-        subset_w_abstraction,
-        root,
-    )
+    dsl = create_dsl(dfa, subset_w_abstraction, root)
     dsl_subset = create_dsl(
         dfa, DSLSubset.from_programs(dfa, *programs, root=root), root
     )
