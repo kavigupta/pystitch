@@ -125,6 +125,7 @@ class DSLSubset:
     def from_programs_de_bruijn(
         cls, *programs, root, dfa, abstrs, max_explicit_dbvar_index
     ):
+        # pylint: disable=cyclic-import
         from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
             canonicalize_de_bruijn_batched,
         )
@@ -157,6 +158,7 @@ def traverse(s_exp):
 
 
 def create_dsl(dfa, dsl_subset, start_state, dslf=None, include_dbvars=False):
+    # pylint: disable=cyclic-import
     from .def_use_mask.canonicalize_de_bruijn import (
         dbvar_successor_symbol,
         dbvar_wrapper_symbol_by_root_type,
