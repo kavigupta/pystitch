@@ -64,7 +64,15 @@ class DSLSubset:
         root: Union[str, Tuple[str, ...]],
     ):
         """
-        Add the following programs to the subset. The root symbol of the program must be provided.
+        Add the programs to the subset. The root symbol of the DSL is passed as an argument,
+            and can be a single string or a tuple of strings.
+
+        Args:
+            dfa: the dfa of the DSL
+            programs: the programs to extract the subset from
+            root: the root symbol of the DSL. If a tuple is passed, it must
+                be the same length as the programs, providing a root symbol for each program.
+            abstrs: abstractions: their bodies will be added to the list of programs
         """
         if isinstance(root, str):
             root = [root] * len(programs)
@@ -102,15 +110,7 @@ class DSLSubset:
         abstrs: Tuple[Abstraction] = (),
     ):
         """
-        Construct a DSLSubset from a list of programs. The subset contains all the
-            sequence lengths and leaves that appear in the programs.
-
-        Args:
-            dfa: the dfa of the DSL
-            programs: the programs to extract the subset from
-            root: the root symbol of the DSL. If a tuple is passed, it must
-                be the same length as the programs, providing a root symbol for each program.
-            abstrs: abstractions: their bodies will be added to the list of programs
+        Factory version of add_programs.
         """
         subset = cls()
         subset.add_programs(dfa, *programs, root=root)
