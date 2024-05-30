@@ -103,17 +103,10 @@ class DSLSubset:
         Construct a DSLSubset from a list of type-annotated s-expressions. Used by
             DSLSubset.from_program.
         """
-        # pylint: disable=cyclic-import
-        from .def_use_mask.canonicalize_de_bruijn import create_de_bruijn_child
-
-        de_bruijn_new = create_de_bruijn_child(0, 1).symbol
-        num_vars = 0
         lengths_by_list_type = defaultdict(set)
         leaves = defaultdict(set)
         for program in s_exps:
             for node in traverse(program):
-                if node.symbol == de_bruijn_new:
-                    num_vars += 1
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = ns.python_ast_tools.unclean_type(state)
                 assert isinstance(node, ns.SExpression)
