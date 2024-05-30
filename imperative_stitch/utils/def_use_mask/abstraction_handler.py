@@ -1,6 +1,5 @@
 import neurosym as ns
 
-from imperative_stitch.parser import converter
 from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX
 
 from .handler import Handler, default_handler
@@ -47,7 +46,7 @@ class AbstractionHandler(Handler):
 
         head_symbol = "~".join(head_symbol.split("~")[:-1])
         abstraction = config.abstractions[head_symbol]
-        body = converter.to_type_annotated_ns_s_exp(
+        body = ns.to_type_annotated_ns_s_exp(
             abstraction.body, config.dfa, abstraction.dfa_root
         )
 

@@ -9,8 +9,7 @@ from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
 )
-from imperative_stitch.parser import converter
-from imperative_stitch.utils.types import SEPARATOR, is_sequence
+from imperative_stitch.utils.types import SEPARATOR
 
 
 @dataclass
@@ -43,7 +42,7 @@ class DSLSubset:
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = ns.python_ast_tools.unclean_type(state)
                 assert isinstance(node, ns.SExpression)
-                if is_sequence(state, symbol):
+                if ns.python_ast_tools.is_sequence(state, symbol):
                     self._lengths_by_sequence_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     self._leaves[state].add(symbol)
@@ -68,7 +67,7 @@ class DSLSubset:
 
         s_exps = []
         for program, root_sym in zip(programs, root):
-            s_exp = converter.to_type_annotated_ns_s_exp(program, dfa, root_sym)
+            s_exp = ns.to_type_annotated_ns_s_exp(program, dfa, root_sym)
             self.add_s_exps(s_exp)
             s_exps.append(s_exp)
         return s_exps
@@ -170,7 +169,7 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None, include_dbvars=False):
         dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
-            if is_sequence(target, prod):
+            if ns.python_ast_tools.is_sequence(target, prod):
                 assert len(dfa[target][prod]) == 1
                 for length in dsl_subset.lengths_by_sequence_type.get(target, []):
                     typ = ns.ArrowType(

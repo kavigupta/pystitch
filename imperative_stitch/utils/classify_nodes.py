@@ -27,9 +27,5 @@ def export_dfa(*, abstrs=frozendict({})):
     return result
 
 
-def add_disambiguating_type_tags(dfa, prog, start_state):
-    return ns.add_disambiguating_type_tags(dfa, prog, start_state)
-
-
 if __name__ == "__main__":
     print(json.dumps(export_dfa(), indent=2))

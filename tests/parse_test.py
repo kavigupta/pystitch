@@ -51,12 +51,12 @@ class AbstractionBodyRenderTest(unittest.TestCase):
                     (Constant~E (const-i2~Const) (const-None~ConstKind)) (const-None~TC))
                 """
             ),
-            converter.to_type_annotated_ns_s_exp(body, export_dfa(), "S"),
+            ns.to_type_annotated_ns_s_exp(body, export_dfa(), "S"),
         )
 
     def test_sequence_metavar_s_exp_export(self):
         self.maxDiff = None
-        result = converter.to_type_annotated_ns_s_exp(
+        result = ns.to_type_annotated_ns_s_exp(
             converter.s_exp_to_python_ast(
                 """
                 (FunctionDef
@@ -160,7 +160,7 @@ class AbstractionBodyRenderTest(unittest.TestCase):
                 )
             ),
             ns.render_s_expression(
-                converter.to_type_annotated_ns_s_exp(body, export_dfa(), "seqS")
+                ns.to_type_annotated_ns_s_exp(body, export_dfa(), "seqS")
             ),
         )
 
@@ -495,7 +495,7 @@ class AbstractionBodiesTest(unittest.TestCase):
         for i, abstr in enumerate(x["abstractions"], 1):
             body = converter.s_exp_to_python_ast(abstr["body"])
             body_ns_s_exp = ns.render_s_expression(
-                converter.to_type_annotated_ns_s_exp(
+                ns.to_type_annotated_ns_s_exp(
                     body, export_dfa(abstrs=prev_abstrs), abstr["dfa_root"]
                 )
             )

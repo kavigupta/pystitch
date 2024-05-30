@@ -59,7 +59,7 @@ class DefUseMaskTestGeneric(unittest.TestCase):
         annotated = converter.s_exp_to_python_ast(
             ns.render_s_expression(
                 ns.annotate_with_alternate_symbols(
-                    converter.to_type_annotated_ns_s_exp(parser(program), dfa, "M"),
+                    ns.to_type_annotated_ns_s_exp(parser(program), dfa, "M"),
                     fam.tree_distribution_skeleton,
                     self.annotate_alternates,
                 )
@@ -862,7 +862,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         self.assertEqual(
             fam.compute_likelihood(
                 dist,
-                converter.to_type_annotated_ns_s_exp(program, dfa, "M"),
+                ns.to_type_annotated_ns_s_exp(program, dfa, "M"),
             ),
             -float("inf"),
         )
@@ -1005,7 +1005,7 @@ class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
         expected = ns.render_s_expression(ns.parse_s_expression(expected))
         self.assertEqual(
             ns.render_s_expression(
-                converter.to_type_annotated_ns_s_exp(annotated, export_dfa(), "M")
+                ns.to_type_annotated_ns_s_exp(annotated, export_dfa(), "M")
             ),
             expected,
         )
@@ -1054,5 +1054,5 @@ class DefUseMaskWihAbstractionsLikliehoodAnnieSetTest(DefUseMaskTestGeneric):
         # should not error
         fam.compute_likelihood(
             dist,
-            converter.to_type_annotated_ns_s_exp(rewritten, dfa, "M"),
+            ns.to_type_annotated_ns_s_exp(rewritten, dfa, "M"),
         )
