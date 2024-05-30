@@ -29,7 +29,7 @@ class DSLSubset:
     def leaves(self) -> Dict[str, List[str]]:
         return {k: sorted(v) for k, v in self._leaves.items()}
 
-    def add_s_exps(self, *s_exps):
+    def add_s_exps(self, *s_exps, non_sequence_prefixes: Tuple[str] = ()):
         """
         Add the following s-expressions to the subset. They must be type-annotated.
         """
@@ -38,18 +38,20 @@ class DSLSubset:
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = ns.python_ast_tools.unclean_type(state)
                 assert isinstance(node, ns.SExpression)
-                if is_sequence(state, symbol):
+                if ns.python_ast_tools.is_sequence(
+                    state, symbol, non_sequence_prefixes=non_sequence_prefixes
+                ):
                     self._lengths_by_sequence_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     self._leaves[state].add(symbol)
 
     @classmethod
-    def from_s_exps(cls, s_exps):
+    def from_s_exps(cls, s_exps, non_sequence_prefixes: Tuple[str] = ()):
         """
         Factory version of add_s_exps.
         """
         subset = cls()
-        subset.add_s_exps(*s_exps)
+        subset.add_s_exps(*s_exps, non_sequence_prefixes=non_sequence_prefixes)
         return subset
 
     def add_programs(
@@ -84,7 +86,7 @@ class DSLSubset:
             s_exp = ns.to_type_annotated_ns_s_exp(
                 program, dfa, root_sym, non_sequence_prefixes
             )
-            self.add_s_exps(s_exp)
+            self.add_s_exps(s_exp, non_sequence_prefixes=non_sequence_prefixes)
             s_exps.append(s_exp)
         return s_exps
 

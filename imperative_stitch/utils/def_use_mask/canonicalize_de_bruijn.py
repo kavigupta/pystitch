@@ -225,7 +225,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     dsl = create_dsl(
         dfa,
-        DSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies),
+        DSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies, non_sequence_prefixes),
         get_dfa_state(s_exp_de_bruijn.symbol),
         include_dbvars=True,
     )
@@ -368,5 +368,5 @@ def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar
         max_explicit_dbvar_index,
         include_abstr_exprs=True,
     )
-    subset = DSLSubset.from_s_exps(programs_all)
+    subset = DSLSubset.from_s_exps(programs_all, non_sequence_prefixes)
     return programs_all[: len(programs)], subset
