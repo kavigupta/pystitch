@@ -83,7 +83,7 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
         test_programs_ast = [converter.s_exp_to_python_ast(p) for p in test_programs]
         test_dfa = {"E": {"fn_1": ["E", "E"], "fn_2": [], "fn_3": ["E"]}}
 
-        test_subset = DSLSubset.from_program(
+        test_subset = DSLSubset.from_programs(
             test_dfa,
             *test_programs_ast,
             root="E",

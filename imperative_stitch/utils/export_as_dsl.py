@@ -102,7 +102,18 @@ class DSLSubset:
         )
 
     @classmethod
-    def from_program(
+    def from_programs(
+        cls, dfa, *programs: Tuple[ns.PythonAST, ...], root: Union[str, Tuple[str, ...]]
+    ):
+        """
+        Factory version of add_programs.
+        """
+        subset = cls()
+        subset.add_programs(dfa, *programs, root=root)
+        return subset
+
+    @classmethod
+    def from_programs_and_abstractions(
         cls,
         dfa,
         *programs: Tuple[ns.PythonAST, ...],
