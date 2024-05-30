@@ -5,7 +5,6 @@ from typing import Dict, List, Set, Tuple, Union
 import neurosym as ns
 import numpy as np
 
-from imperative_stitch.parser import converter
 from imperative_stitch.utils.types import SEPARATOR, is_sequence
 
 
