@@ -58,6 +58,7 @@ class DSLSubset:
         dfa,
         *programs: Tuple[ns.PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
+        non_sequence_prefixes: Tuple[str] = (),
     ):
         """
         Add the programs to the subset. The root symbol of the DSL is passed as an argument,
@@ -81,20 +82,28 @@ class DSLSubset:
 
         s_exps = []
         for program, root_sym in zip(programs, root):
-            s_exp = converter.to_type_annotated_ns_s_exp(program, dfa, root_sym)
+            s_exp = ns.to_type_annotated_ns_s_exp(
+                program, dfa, root_sym, non_sequence_prefixes
+            )
             self.add_s_exps(s_exp)
             s_exps.append(s_exp)
         return s_exps
 
     @classmethod
     def from_programs(
-        cls, dfa, *programs: Tuple[ns.PythonAST, ...], root: Union[str, Tuple[str, ...]]
+        cls,
+        dfa,
+        *programs: Tuple[ns.PythonAST, ...],
+        root: Union[str, Tuple[str, ...]],
+        non_sequence_prefixes: Tuple[str] = (),
     ):
         """
         Factory version of add_programs.
         """
         subset = cls()
-        subset.add_programs(dfa, *programs, root=root)
+        subset.add_programs(
+            dfa, *programs, root=root, non_sequence_prefixes=non_sequence_prefixes
+        )
         return subset
 
     def fill_in_missing_lengths(self):

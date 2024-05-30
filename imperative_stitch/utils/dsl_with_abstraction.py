@@ -4,6 +4,7 @@ from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
 )
+from imperative_stitch.utils.types import non_sequence_prefixes
 
 
 def add_abstractions(subset, dfa, *abstrs: Tuple[Abstraction, ...]):
@@ -15,4 +16,5 @@ def add_abstractions(subset, dfa, *abstrs: Tuple[Abstraction, ...]):
         dfa,
         *[abstraction_calls_to_bodies(a.body, abstrs_dict) for a in abstrs],
         root=[a.dfa_root for a in abstrs],
+        non_sequence_prefixes=non_sequence_prefixes
     )

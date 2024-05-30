@@ -10,6 +10,7 @@ from imperative_stitch.utils.export_as_dsl import (
     create_dsl,
     create_smoothing_mask,
 )
+from imperative_stitch.utils.types import non_sequence_prefixes
 
 
 def fit_to(
@@ -29,7 +30,9 @@ def fit_to(
     """
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
-    subset_w_abstraction = DSLSubset.from_programs(dfa, *programs, root=root)
+    subset_w_abstraction = DSLSubset.from_programs(
+        dfa, *programs, root=root, non_sequence_prefixes=non_sequence_prefixes
+    )
     add_abstractions(subset_w_abstraction, dfa, *abstrs)
     dsl = create_dsl(dfa, subset_w_abstraction, root)
     dsl_subset = create_dsl(

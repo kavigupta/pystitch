@@ -18,7 +18,7 @@ from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.export_as_dsl import SEPARATOR, DSLSubset, create_dsl
-from imperative_stitch.utils.types import get_dfa_state
+from imperative_stitch.utils.types import get_dfa_state, non_sequence_prefixes
 
 dbv_type = "DBV"
 
@@ -110,7 +110,9 @@ def canonicalize_de_bruijn_batched(
     check_have_all_abstrs(dfa, abstrs)
 
     subset = DSLSubset()
-    s_exps = subset.add_programs(dfa, *programs, root=root_states)
+    s_exps = subset.add_programs(
+        dfa, *programs, root=root_states, non_sequence_prefixes=non_sequence_prefixes
+    )
     abstr_s_exps = add_abstractions(subset, dfa, *abstrs)
     if include_abstr_exprs:
         s_exps += abstr_s_exps
