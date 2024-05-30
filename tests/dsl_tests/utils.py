@@ -36,7 +36,11 @@ def fit_to(
     add_abstractions(subset_w_abstraction, dfa, *abstrs)
     dsl = create_dsl(dfa, subset_w_abstraction, root)
     dsl_subset = create_dsl(
-        dfa, DSLSubset.from_programs(dfa, *programs, root=root), root
+        dfa,
+        DSLSubset.from_programs(
+            dfa, *programs, root=root, non_sequence_prefixes=non_sequence_prefixes
+        ),
+        root,
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
     apms = [
