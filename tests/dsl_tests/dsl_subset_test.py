@@ -20,14 +20,14 @@ class DSLSubsetTest(unittest.TestCase):
         self.assertEqual(
             subset,
             DSLSubset(
-                lengths_by_sequence_type={"seqS": [2], "[L]": [1], "[TI]": [0]},
-                leaves={
-                    "Name": ["const-&x:0", "const-&y:0"],
-                    "Ctx": ["Load", "Store"],
-                    "O": ["Add"],
-                    "Const": ["const-i2"],
-                    "ConstKind": ["const-None"],
-                    "TC": ["const-None"],
+                _lengths_by_sequence_type={"seqS": {2}, "[L]": {1}, "[TI]": {0}},
+                _leaves={
+                    "Name": {"const-&x:0", "const-&y:0"},
+                    "Ctx": {"Load", "Store"},
+                    "O": {"Add"},
+                    "Const": {"const-i2"},
+                    "ConstKind": {"const-None"},
+                    "TC": {"const-None"},
                 },
             ),
         )
@@ -42,18 +42,18 @@ class DSLSubsetTest(unittest.TestCase):
         self.assertEqual(
             subset,
             DSLSubset(
-                lengths_by_sequence_type={
-                    "seqS": [2],
-                    "[L]": [1],
-                    "[StarredRoot]": [3, 4],
-                    "[TI]": [0],
+                _lengths_by_sequence_type={
+                    "seqS": {2},
+                    "[L]": {1},
+                    "[StarredRoot]": {3, 4},
+                    "[TI]": {0},
                 },
-                leaves={
-                    "Name": ["const-&x:0", "const-&y:0"],
-                    "Ctx": ["Load", "Store"],
-                    "Const": ["const-i1", "const-i2", "const-i3", "const-i4"],
-                    "ConstKind": ["const-None"],
-                    "TC": ["const-None"],
+                _leaves={
+                    "Name": {"const-&x:0", "const-&y:0"},
+                    "Ctx": {"Load", "Store"},
+                    "Const": {"const-i1", "const-i2", "const-i3", "const-i4"},
+                    "ConstKind": {"const-None"},
+                    "TC": {"const-None"},
                 },
             ),
         )
@@ -69,15 +69,15 @@ class DSLSubsetTest(unittest.TestCase):
         self.assertEqual(
             subset,
             DSLSubset(
-                lengths_by_sequence_type={"seqS": [0, 1, 2], "[L]": [1], "[TI]": [0]},
-                leaves={
-                    "Name": ["const-&x:0", "const-&y:0"],
-                    "Ctx": ["Load", "Store"],
-                    "O": ["Add"],
-                    "Const": ["const-True", "const-i2"],
-                    "ConstKind": ["const-None"],
-                    "TC": ["const-None"],
-                    "S": ["Pass"],
+                _lengths_by_sequence_type={"seqS": {0, 1, 2}, "[L]": {1}, "[TI]": {0}},
+                _leaves={
+                    "Name": {"const-&x:0", "const-&y:0"},
+                    "Ctx": {"Load", "Store"},
+                    "O": {"Add"},
+                    "Const": {"const-True", "const-i2"},
+                    "ConstKind": {"const-None"},
+                    "TC": {"const-None"},
+                    "S": {"Pass"},
                 },
             ),
         )

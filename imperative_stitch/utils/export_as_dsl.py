@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Set, Tuple, Union
 
 import neurosym as ns
 import numpy as np
@@ -21,8 +21,16 @@ class DSLSubset:
         - a dictionary from types to a list of leaves of that type
     """
 
-    lengths_by_sequence_type: Dict[str, List[int]]
-    leaves: Dict[str, List[str]]
+    _lengths_by_sequence_type: Dict[str, Set[int]]
+    _leaves: Dict[str, Set[str]]
+
+    @property
+    def lengths_by_sequence_type(self) -> Dict[str, List[int]]:
+        return {k: sorted(v) for k, v in self._lengths_by_sequence_type.items()}
+
+    @property
+    def leaves(self) -> Dict[str, List[str]]:
+        return {k: sorted(v) for k, v in self._leaves.items()}
 
     @classmethod
     def fit_dsl_to_programs_and_output_s_exps(
@@ -114,12 +122,7 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
-        return cls(
-            lengths_by_sequence_type={
-                k: sorted(v) for k, v in lengths_by_list_type.items()
-            },
-            leaves={k: sorted(v) for k, v in leaves.items()},
-        )
+        return cls(_lengths_by_sequence_type=lengths_by_list_type, _leaves=leaves)
 
     @classmethod
     def from_programs_de_bruijn(
@@ -145,10 +148,10 @@ class DSLSubset:
             of a sequence type are [1, 3], this function will add 2 to the list.
         """
         lengths_new = {
-            seq_type: list(range(min(lengths), max(lengths) + 1))
+            seq_type: set(range(min(lengths), max(lengths) + 1))
             for seq_type, lengths in self.lengths_by_sequence_type.items()
         }
-        return DSLSubset(lengths_by_sequence_type=lengths_new, leaves=self.leaves)
+        return type(self)(_lengths_by_sequence_type=lengths_new, _leaves=self._leaves)
 
 
 def traverse(s_exp):
