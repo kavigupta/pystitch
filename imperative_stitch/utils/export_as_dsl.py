@@ -122,12 +122,7 @@ class DSLSubset:
                     lengths_by_list_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     leaves[state].add(symbol)
-        return cls(
-            _lengths_by_sequence_type={
-                k: v for k, v in lengths_by_list_type.items()
-            },
-            _leaves={k: v for k, v in leaves.items()},
-        )
+        return cls(_lengths_by_sequence_type=lengths_by_list_type, _leaves=leaves)
 
     @classmethod
     def from_programs_de_bruijn(
