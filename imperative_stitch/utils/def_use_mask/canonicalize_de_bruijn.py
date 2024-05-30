@@ -103,9 +103,9 @@ def canonicalize_de_bruijn_batched(
 
     check_have_all_abstrs(dfa, abstrs)
 
-    s_exps, subset = DSLSubset.fit_dsl_to_programs_and_output_s_exps(
-        dfa, *programs, root=tuple(root_states), abstrs=abstrs
-    )
+    subset = DSLSubset()
+    s_exps = subset.add_programs(dfa, *programs, root=root_states)
+    subset.add_abstractions(dfa, *abstrs)
 
     dsl_by_root = {root: create_dsl(dfa, subset, root) for root in set(root_states)}
     fam = {

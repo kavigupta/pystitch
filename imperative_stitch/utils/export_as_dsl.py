@@ -48,6 +48,42 @@ class DSLSubset:
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     self._leaves[state].add(symbol)
 
+    def add_programs(
+        self,
+        dfa,
+        *programs: Tuple[ns.PythonAST, ...],
+        root: Union[str, Tuple[str, ...]],
+    ):
+        """
+        Add the following programs to the subset. The root symbol of the program must be provided.
+        """
+        if isinstance(root, str):
+            root = [root] * len(programs)
+        else:
+            if len(root) != len(programs):
+                raise ValueError(
+                    "The length of the root should be the same as the number of programs, but was"
+                    f" {len(root)} and {len(programs)} respectively."
+                )
+
+        s_exps = []
+        for program, root_sym in zip(programs, root):
+            s_exp = converter.to_type_annotated_ns_s_exp(program, dfa, root_sym)
+            self.add_s_exps(s_exp)
+            s_exps.append(s_exp)
+        return s_exps
+
+    def add_abstractions(self, dfa, *abstrs: Tuple[Abstraction, ...]):
+        """
+        Add the bodies of the abstractions to the subset.
+        """
+        abstrs_dict = {a.name: a for a in abstrs}
+        self.add_programs(
+            dfa,
+            *[abstraction_calls_to_bodies(a.body, abstrs_dict) for a in abstrs],
+            root=[a.dfa_root for a in abstrs],
+        )
+
     @classmethod
     def fit_dsl_to_programs_and_output_s_exps(
         cls,
@@ -59,15 +95,10 @@ class DSLSubset:
         """
         See from_program for details. This function returns both the programs and the subset.
         """
-        num_programs = len(programs)
-        programs, root = cls.create_program_list(*programs, root=root, abstrs=abstrs)
-        programs = [
-            converter.to_type_annotated_ns_s_exp(program, dfa, root_sym)
-            for program, root_sym in zip(programs, root)
-        ]
-
-        subset = cls.from_type_annotated_s_exps(programs)
-        return programs[:num_programs], subset
+        subset = cls()
+        s_exps = subset.add_programs(dfa, *programs, root=root)
+        subset.add_abstractions(dfa, *abstrs)
+        return s_exps, subset
 
     @classmethod
     def from_program(
