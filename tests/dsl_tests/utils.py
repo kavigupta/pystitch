@@ -28,11 +28,11 @@ def fit_to(
     """
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
+    subset_w_abstraction = DSLSubset.from_programs(dfa, *programs, root=root)
+    subset_w_abstraction.add_abstractions(dfa, *abstrs)
     dsl = create_dsl(
         dfa,
-        DSLSubset.from_programs_and_abstractions(
-            dfa, *programs, root=root, abstrs=abstrs
-        ),
+        subset_w_abstraction,
         root,
     )
     dsl_subset = create_dsl(

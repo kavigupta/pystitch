@@ -112,22 +112,6 @@ class DSLSubset:
         subset.add_programs(dfa, *programs, root=root)
         return subset
 
-    @classmethod
-    def from_programs_and_abstractions(
-        cls,
-        dfa,
-        *programs: Tuple[ns.PythonAST, ...],
-        root: Union[str, Tuple[str, ...]],
-        abstrs: Tuple[Abstraction] = (),
-    ):
-        """
-        Factory version of add_programs.
-        """
-        subset = cls()
-        subset.add_programs(dfa, *programs, root=root)
-        subset.add_abstractions(dfa, *abstrs)
-        return subset
-
     def fill_in_missing_lengths(self):
         """
         Fill in "missing lengths" for each sequence type. E.g., if the lengths
