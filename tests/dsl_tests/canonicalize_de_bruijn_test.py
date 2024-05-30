@@ -259,7 +259,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
     def fit_dsl(self, *programs, max_explicit_dbvar_index, abstrs, dfa):
         programs, subset = DSLSubset.from_programs_de_bruijn(
             *programs,
-            root="M",
+            roots=["M"] * len(programs),
             dfa=dfa,
             abstrs=abstrs,
             max_explicit_dbvar_index=max_explicit_dbvar_index,

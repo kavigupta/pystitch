@@ -94,7 +94,12 @@ def get_idx(s_exp_de_bruijn):
 
 
 def canonicalize_de_bruijn_batched(
-    programs, root_states, dfa, abstrs, max_explicit_dbvar_index
+    programs,
+    root_states,
+    dfa,
+    abstrs,
+    max_explicit_dbvar_index,
+    include_abstr_exprs=False,
 ):
     """
     Convert the programs to a de bruijn representation. Creates a tree distribution
@@ -103,9 +108,12 @@ def canonicalize_de_bruijn_batched(
 
     check_have_all_abstrs(dfa, abstrs)
 
-    s_exps, subset = DSLSubset.fit_dsl_to_programs_and_output_s_exps(
-        dfa, *programs, root=tuple(root_states), abstrs=abstrs
-    )
+    subset = DSLSubset()
+    s_exps = subset.add_programs(dfa, *programs, root=root_states)
+    abstr_s_exps = subset.add_abstractions(dfa, *abstrs)
+    if include_abstr_exprs:
+        s_exps += abstr_s_exps
+        root_states = list(root_states) + [abstr.dfa_root for abstr in abstrs]
 
     dsl_by_root = {root: create_dsl(dfa, subset, root) for root in set(root_states)}
     fam = {
