@@ -3,9 +3,6 @@ import json
 import neurosym as ns
 from frozendict import frozendict
 
-from imperative_stitch.utils.types import non_sequence_prefixes
-
-
 def export_dfa(*, abstrs=frozendict({})):
     """
     Takes a transition dictionary of the form above and converts
@@ -30,9 +27,7 @@ def export_dfa(*, abstrs=frozendict({})):
 
 
 def add_disambiguating_type_tags(dfa, prog, start_state):
-    return ns.add_disambiguating_type_tags(
-        dfa, prog, start_state, non_sequence_prefixes
-    )
+    return ns.add_disambiguating_type_tags(dfa, prog, start_state)
 
 
 if __name__ == "__main__":
