@@ -5,10 +5,6 @@ from typing import Dict, List, Set, Tuple, Union
 import neurosym as ns
 import numpy as np
 
-from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.compress.manipulate_abstraction import (
-    abstraction_calls_to_bodies,
-)
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.types import SEPARATOR, is_sequence
 
@@ -89,17 +85,6 @@ class DSLSubset:
             self.add_s_exps(s_exp)
             s_exps.append(s_exp)
         return s_exps
-
-    def add_abstractions(self, dfa, *abstrs: Tuple[Abstraction, ...]):
-        """
-        Add the bodies of the abstractions to the subset.
-        """
-        abstrs_dict = {a.name: a for a in abstrs}
-        return self.add_programs(
-            dfa,
-            *[abstraction_calls_to_bodies(a.body, abstrs_dict) for a in abstrs],
-            root=[a.dfa_root for a in abstrs],
-        )
 
     @classmethod
     def from_programs(
