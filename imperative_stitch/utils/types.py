@@ -1,7 +1,6 @@
 import neurosym as ns
 
 SEPARATOR = "~"
-non_sequence_prefixes = ("fn_", "var-")
 
 
 def get_dfa_state(sym):
@@ -9,6 +8,4 @@ def get_dfa_state(sym):
 
 
 def is_sequence(type_name, head_symbol):
-    return ns.python_ast_tools.is_sequence(
-        type_name, head_symbol, non_sequence_prefixes
-    )
+    return ns.python_ast_tools.is_sequence(type_name, head_symbol)
