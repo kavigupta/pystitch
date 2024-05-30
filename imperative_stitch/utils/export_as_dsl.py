@@ -48,6 +48,15 @@ class DSLSubset:
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     self._leaves[state].add(symbol)
 
+    @classmethod
+    def from_s_exps(cls, s_exps):
+        """
+        Factory version of add_s_exps.
+        """
+        subset = cls()
+        subset.add_s_exps(*s_exps)
+        return subset
+
     def add_programs(
         self,
         dfa,
@@ -106,16 +115,6 @@ class DSLSubset:
         subset = cls()
         subset.add_programs(dfa, *programs, root=root)
         subset.add_abstractions(dfa, *abstrs)
-        return subset
-
-    @classmethod
-    def from_type_annotated_s_exps(cls, s_exps):
-        """
-        Construct a DSLSubset from a list of type-annotated s-expressions. Used by
-            DSLSubset.from_program.
-        """
-        subset = cls()
-        subset.add_s_exps(*s_exps)
         return subset
 
     def fill_in_missing_lengths(self):
