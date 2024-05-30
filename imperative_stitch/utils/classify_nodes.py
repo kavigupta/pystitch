@@ -3,6 +3,7 @@ import json
 import neurosym as ns
 from frozendict import frozendict
 
+
 def export_dfa(*, abstrs=frozendict({})):
     """
     Takes a transition dictionary of the form above and converts
