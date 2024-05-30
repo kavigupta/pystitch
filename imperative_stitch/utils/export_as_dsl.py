@@ -78,27 +78,11 @@ class DSLSubset:
         Add the bodies of the abstractions to the subset.
         """
         abstrs_dict = {a.name: a for a in abstrs}
-        self.add_programs(
+        return self.add_programs(
             dfa,
             *[abstraction_calls_to_bodies(a.body, abstrs_dict) for a in abstrs],
             root=[a.dfa_root for a in abstrs],
         )
-
-    @classmethod
-    def fit_dsl_to_programs_and_output_s_exps(
-        cls,
-        dfa,
-        *programs: Tuple[ns.PythonAST, ...],
-        root: Union[str, Tuple[str, ...]],
-        abstrs: Tuple[Abstraction] = (),
-    ):
-        """
-        See from_program for details. This function returns both the programs and the subset.
-        """
-        subset = cls()
-        s_exps = subset.add_programs(dfa, *programs, root=root)
-        subset.add_abstractions(dfa, *abstrs)
-        return s_exps, subset
 
     @classmethod
     def from_program(
@@ -119,34 +103,10 @@ class DSLSubset:
                 be the same length as the programs, providing a root symbol for each program.
             abstrs: abstractions: their bodies will be added to the list of programs
         """
-        _, subset = cls.fit_dsl_to_programs_and_output_s_exps(
-            dfa, *programs, root=root, abstrs=abstrs
-        )
+        subset = cls()
+        subset.add_programs(dfa, *programs, root=root)
+        subset.add_abstractions(dfa, *abstrs)
         return subset
-
-    @classmethod
-    def create_program_list(
-        cls,
-        *programs: Tuple[ns.PythonAST, ...],
-        root: Union[str, Tuple[str, ...]],
-        abstrs: Tuple[Abstraction] = (),
-    ):
-        if isinstance(root, tuple):
-            if len(root) != len(programs):
-                raise ValueError(
-                    "The length of the root should be the same as the number of programs, but was"
-                    f" {len(root)} and {len(programs)} respectively."
-                )
-            root = list(root)
-        else:
-            assert isinstance(root, str)
-            root = [root] * len(programs)
-        abstrs_dict = {a.name: a for a in abstrs}
-        programs = list(programs) + [
-            abstraction_calls_to_bodies(a.body, abstrs_dict) for a in abstrs
-        ]
-        root += [a.dfa_root for a in abstrs]
-        return programs, root
 
     @classmethod
     def from_type_annotated_s_exps(cls, s_exps):
@@ -160,18 +120,24 @@ class DSLSubset:
 
     @classmethod
     def from_programs_de_bruijn(
-        cls, *programs, root, dfa, abstrs, max_explicit_dbvar_index
+        cls, *programs, roots, dfa, abstrs, max_explicit_dbvar_index
     ):
         # pylint: disable=cyclic-import
         from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
             canonicalize_de_bruijn_batched,
         )
 
-        programs_all, roots_all = cls.create_program_list(
-            *programs, root=root, abstrs=abstrs
-        )
+        assert len(programs) == len(
+            roots
+        ), "The number of programs and roots must match."
+
         programs_all = canonicalize_de_bruijn_batched(
-            programs_all, roots_all, dfa, abstrs, max_explicit_dbvar_index
+            programs,
+            roots,
+            dfa,
+            abstrs,
+            max_explicit_dbvar_index,
+            include_abstr_exprs=True,
         )
         subset = cls.from_type_annotated_s_exps(programs_all)
         return programs_all[: len(programs)], subset
