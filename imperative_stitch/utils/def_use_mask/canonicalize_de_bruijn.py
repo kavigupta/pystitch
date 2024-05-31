@@ -16,8 +16,7 @@ from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
-from imperative_stitch.utils.export_as_dsl import SEPARATOR, DSLSubset, create_dsl
-from imperative_stitch.utils.types import get_dfa_state
+from imperative_stitch.utils.types import SEPARATOR, get_dfa_state
 
 dbv_type = "DBV"
 
@@ -108,14 +107,16 @@ def canonicalize_de_bruijn_batched(
 
     check_have_all_abstrs(dfa, abstrs)
 
-    subset = DSLSubset()
+    subset = ns.PythonDSLSubset()
     s_exps = subset.add_programs(dfa, *programs, root=root_states)
     abstr_s_exps = add_abstractions(subset, dfa, *abstrs)
     if include_abstr_exprs:
         s_exps += abstr_s_exps
         root_states = list(root_states) + [abstr.dfa_root for abstr in abstrs]
 
-    dsl_by_root = {root: create_dsl(dfa, subset, root) for root in set(root_states)}
+    dsl_by_root = {
+        root: ns.create_python_dsl(dfa, subset, root) for root in set(root_states)
+    }
     fam = {
         root: ns.BigramProgramDistributionFamily(
             dsl,
@@ -220,9 +221,9 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         for abstr in abstrs
     ]
 
-    dsl = create_dsl(
+    dsl = ns.create_python_dsl(
         dfa,
-        DSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies),
+        ns.PythonDSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies),
         get_dfa_state(s_exp_de_bruijn.symbol),
         add_additional_productions=add_dbvar_additional_productions,
     )
@@ -365,7 +366,7 @@ def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar
         max_explicit_dbvar_index,
         include_abstr_exprs=True,
     )
-    subset = DSLSubset.from_s_exps(programs_all)
+    subset = ns.PythonDSLSubset.from_s_exps(programs_all)
     return programs_all[: len(programs)], subset
 
 

@@ -4,7 +4,6 @@ import neurosym as ns
 
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 from ..utils import assertDSL
 
@@ -15,8 +14,8 @@ class ProduceDslTest(unittest.TestCase):
 
     def test_produce_dsl_basic(self):
         program = ns.python_to_python_ast("x = x + 2; y = y + x + 2")
-        subset = DSLSubset.from_programs(self.dfa, program, root="M")
-        dsl = create_dsl(export_dfa(), subset, "M")
+        subset = ns.PythonDSLSubset.from_programs(self.dfa, program, root="M")
+        dsl = ns.create_python_dsl(export_dfa(), subset, "M")
         assertDSL(
             self,
             dsl.render(),
@@ -74,8 +73,8 @@ class ProduceDslTest(unittest.TestCase):
     def test_produce_dsl_bad_type_annotate_length(self):
         program = ns.python_to_python_ast("x: List[int, int] = 2")
         print(ns.render_s_expression(program.to_ns_s_exp()))
-        subset = DSLSubset.from_programs(self.dfa, program, root="M")
-        dsl = create_dsl(export_dfa(), subset, "M")
+        subset = ns.PythonDSLSubset.from_programs(self.dfa, program, root="M")
+        dsl = ns.create_python_dsl(export_dfa(), subset, "M")
         ta_lines = {x.strip() for x in dsl.render().split("\n") if "list~TA" in x}
         self.assertEqual(ta_lines, {"list~TA~2 :: (TA, TA) -> TA"})
 
@@ -88,8 +87,8 @@ class ProduceDslTest(unittest.TestCase):
             converter.s_exp_to_python_ast(p)
             for p in ["(fn_1)", "(fn_2 (fn_param_1 (fn_1)))"]
         ]
-        new_subset = DSLSubset.from_programs(new_dfa, *test_programs, root="E")
-        new_dsl = create_dsl(new_dfa, new_subset, "E")
+        new_subset = ns.PythonDSLSubset.from_programs(new_dfa, *test_programs, root="E")
+        new_dsl = ns.create_python_dsl(new_dfa, new_subset, "E")
         assertDSL(
             self,
             new_dsl.render(),
@@ -103,5 +102,5 @@ class ProduceDslTest(unittest.TestCase):
     def test_create_dsl_with_type_annot(self):
         # just check it doesn't crash
         program = ns.python_to_python_ast("x:int = 5; y: float=5")
-        subset = DSLSubset.from_programs(self.dfa, program, root="M")
-        create_dsl(export_dfa(), subset, "M")
+        subset = ns.PythonDSLSubset.from_programs(self.dfa, program, root="M")
+        ns.create_python_dsl(export_dfa(), subset, "M")

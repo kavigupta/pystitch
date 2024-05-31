@@ -24,7 +24,6 @@ from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
 )
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import create_dsl
 from tests.utils import (
     cwq,
     expand_with_slow_tests,
@@ -266,7 +265,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             abstrs=abstrs,
             max_explicit_dbvar_index=max_explicit_dbvar_index,
         )
-        dsl = create_dsl(
+        dsl = ns.create_python_dsl(
             dfa,
             subset,
             "M",
