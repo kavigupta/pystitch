@@ -4,7 +4,6 @@ from types import NoneType
 from typing import Callable, Dict, List, Set, Tuple, Union
 
 import neurosym as ns
-import numpy as np
 
 from imperative_stitch.utils.types import SEPARATOR
 
@@ -166,13 +165,3 @@ def create_dsl(
     add_additional_productions(dslf)
     dslf.prune_to(start_state, tolerate_pruning_entire_productions=True)
     return dslf.finalize()
-
-
-def create_smoothing_mask(dsl_full, dsl_subset):
-    """
-    Create a mask that can be used to smooth the output of a model that uses the full DSL
-        to the subset DSL.
-    """
-    symbols_full = dsl_full.ordered_symbols(include_root=True)
-    symbols_subset = set(dsl_subset.ordered_symbols(include_root=True))
-    return np.array([s in symbols_subset for s in symbols_full])

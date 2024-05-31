@@ -6,11 +6,7 @@ import numpy as np
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.export_as_dsl import (
-    DSLSubset,
-    create_dsl,
-    create_smoothing_mask,
-)
+from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 
 
 class DSLSmoothingTest(unittest.TestCase):
@@ -38,7 +34,7 @@ class DSLSmoothingTest(unittest.TestCase):
                 DSLSubset.from_programs(dfa, *programs, root=root),
                 root,
             )
-            smooth_mask = create_smoothing_mask(dsl, dsl_subset)
+            smooth_mask = dsl.create_smoothing_mask(dsl_subset)
         else:
             smooth_mask = None
         fam = ns.BigramProgramDistributionFamily(
