@@ -127,11 +127,7 @@ def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handl
 
     symbol = mask.id_to_name(symbol)
     if symbol.startswith("fn_"):
-        from imperative_stitch.utils.def_use_mask.abstraction_handler import (
-            AbstractionHandlerPuller,
-        )
-
-        return AbstractionHandlerPuller(config.abstractions).pull_handler(
+        return config.node_hooks["fn_"].pull_handler(
             symbol, mask, defined_production_idxs, config, handler_fn=default_handler
         )
 
