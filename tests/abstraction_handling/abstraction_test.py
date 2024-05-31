@@ -22,7 +22,6 @@ from imperative_stitch.utils.def_use_mask.ordering import (
     python_node_dictionary,
     python_node_ordering_with_abstractions,
 )
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.utils import (
     expand_with_slow_tests,
     load_annies_compressed_individual_programs,
@@ -478,12 +477,12 @@ class AbstractionRenderingTest(unittest.TestCase):
 
     def test_dsl_with_abstractions_works(self):
         dfa = export_dfa(abstrs={"fn_1": fn_1, "fn_2": fn_2})
-        subset = DSLSubset.from_programs(
+        subset = ns.PythonDSLSubset.from_programs(
             dfa,
             ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
         )
-        create_dsl(dfa, subset, "M")
+        ns.create_python_dsl(dfa, subset, "M")
 
     def test_in_order_simple(self):
         self.assertEqual(

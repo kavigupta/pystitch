@@ -5,7 +5,6 @@ import neurosym as ns
 import numpy as np
 
 from imperative_stitch.parser import converter
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.dsl_tests.utils import fit_to
 
 
@@ -85,12 +84,12 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
         test_programs_ast = [converter.s_exp_to_python_ast(p) for p in test_programs]
         test_dfa = {"E": {"fn_1": ["E", "E"], "fn_2": [], "fn_3": ["E"]}}
 
-        test_subset = DSLSubset.from_programs(
+        test_subset = ns.PythonDSLSubset.from_programs(
             test_dfa,
             *test_programs_ast,
             root="E",
         )
-        test_dsl = create_dsl(test_dfa, test_subset, "E")
+        test_dsl = ns.create_python_dsl(test_dfa, test_subset, "E")
 
         test_fam = ns.BigramProgramDistributionFamily(test_dsl)
         test_counts = test_fam.count_programs(
