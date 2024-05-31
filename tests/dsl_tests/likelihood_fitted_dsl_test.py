@@ -78,8 +78,10 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
 
     def test_likelihood_with_abstractions(self):
         # test from annie
-        # I don't think it actually makes sense since (fn_3) shouldn't be possible
-        test_programs = ["(fn_1 (fn_2) (fn_2))", "(fn_1 (fn_3 (fn_3)) (fn_3))"]
+        test_programs = [
+            "(fn_1 (fn_2) (fn_2))",
+            "(fn_1 (fn_3 (fn_3 (fn_2))) (fn_3 (fn_2)))",
+        ]
         test_programs_ast = [converter.s_exp_to_python_ast(p) for p in test_programs]
         test_dfa = {"E": {"fn_1": ["E", "E"], "fn_2": [], "fn_3": ["E"]}}
 
@@ -112,11 +114,14 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
             for x, y in result
             if y != 0  # remove zero log-likelihoods
         ]
+        print(result)
         self.assertEqual(
             result,
             [
-                ("(fn_3~E (fn_3~E))", Fraction(0, 1)),
-                ("(fn_3~E)", Fraction(0, 1)),
-                ("(fn_3~E)", Fraction(0, 1)),
+                ("(fn_3~E (fn_3~E (fn_2~E)))", Fraction(0, 1)),
+                ("(fn_3~E (fn_2~E))", Fraction(0, 1)),
+                ("(fn_2~E)", Fraction(0, 1)),
+                ("(fn_3~E (fn_2~E))", Fraction(0, 1)),
+                ("(fn_2~E)", Fraction(0, 1)),
             ],
         )

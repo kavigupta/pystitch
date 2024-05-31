@@ -40,7 +40,7 @@ class DSLSubset:
                 assert isinstance(node, ns.SExpression)
                 if ns.python_ast_tools.is_sequence(state, symbol):
                     self._lengths_by_sequence_type[state].add(len(node.children))
-                elif len(node.children) == 0 and not symbol.startswith("fn_"):
+                elif len(node.children) == 0:
                     self._leaves[state].add(symbol)
 
     @classmethod
