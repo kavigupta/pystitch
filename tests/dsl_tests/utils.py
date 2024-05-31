@@ -1,6 +1,5 @@
 import neurosym as ns
 
-from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -50,12 +49,7 @@ def fit_to(
         node_ordering=node_ordering,
     )
     counts = fam.count_programs(
-        [
-            [
-                converter.to_type_annotated_ns_s_exp(program, dfa, root)
-                for program in programs
-            ]
-        ]
+        [[ns.to_type_annotated_ns_s_exp(program, dfa, root) for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
     if smoothing:

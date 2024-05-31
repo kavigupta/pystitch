@@ -12,7 +12,7 @@ from tests.dsl_tests.utils import fit_to
 class TestLikelihoodFittedDSL(unittest.TestCase):
     def compute_likelihood(self, corpus, program):
         dfa, _, fam, dist = fit_to(corpus, smoothing=False)
-        program = converter.to_type_annotated_ns_s_exp(
+        program = ns.to_type_annotated_ns_s_exp(
             ns.python_to_python_ast(program), dfa, "M"
         )
         like = fam.compute_likelihood(dist, program)
@@ -92,23 +92,17 @@ class TestLikelihoodFittedDSL(unittest.TestCase):
 
         test_fam = ns.BigramProgramDistributionFamily(test_dsl)
         test_counts = test_fam.count_programs(
-            [
-                [
-                    converter.to_type_annotated_ns_s_exp(
-                        test_programs_ast[0], test_dfa, "E"
-                    )
-                ]
-            ]
+            [[ns.to_type_annotated_ns_s_exp(test_programs_ast[0], test_dfa, "E")]]
         )
         test_dist = test_fam.counts_to_distribution(test_counts)[0]
         likelihood = test_fam.compute_likelihood(
             test_dist,
-            converter.to_type_annotated_ns_s_exp(test_programs_ast[1], test_dfa, "E"),
+            ns.to_type_annotated_ns_s_exp(test_programs_ast[1], test_dfa, "E"),
         )
         self.assertEqual(likelihood, -np.inf)
         result = test_fam.compute_likelihood_per_node(
             test_dist,
-            converter.to_type_annotated_ns_s_exp(test_programs_ast[1], test_dfa, "E"),
+            ns.to_type_annotated_ns_s_exp(test_programs_ast[1], test_dfa, "E"),
         )
         result = [
             (
