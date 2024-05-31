@@ -4,7 +4,6 @@ from types import NoneType
 from typing import Callable, Dict, List, Set, Tuple, Union
 
 import neurosym as ns
-import numpy as np
 
 from imperative_stitch.utils.types import SEPARATOR
 
