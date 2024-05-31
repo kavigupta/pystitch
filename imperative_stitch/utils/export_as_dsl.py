@@ -35,9 +35,9 @@ class DSLSubset:
         """
         for s_exp in s_exps:
             for node in traverse(s_exp):
+                assert isinstance(node, ns.SExpression)
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = ns.python_ast_tools.unclean_type(state)
-                assert isinstance(node, ns.SExpression)
                 if ns.python_ast_tools.is_sequence(state, symbol):
                     self._lengths_by_sequence_type[state].add(len(node.children))
                 elif len(node.children) == 0:
