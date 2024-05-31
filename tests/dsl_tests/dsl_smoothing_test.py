@@ -29,13 +29,13 @@ class DSLSmoothingTest(unittest.TestCase):
         dfa = export_dfa()
         dsl = create_dsl(
             dfa,
-            DSLSubset.from_program(dfa, *programs, *extra_programs, root=root),
+            DSLSubset.from_programs(dfa, *programs, *extra_programs, root=root),
             root,
         )
         if do_smooth_masking:
             dsl_subset = create_dsl(
                 dfa,
-                DSLSubset.from_program(dfa, *programs, root=root),
+                DSLSubset.from_programs(dfa, *programs, root=root),
                 root,
             )
             smooth_mask = create_smoothing_mask(dsl, dsl_subset)

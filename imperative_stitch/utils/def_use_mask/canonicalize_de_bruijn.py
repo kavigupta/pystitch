@@ -15,6 +15,7 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.export_as_dsl import SEPARATOR, DSLSubset, create_dsl
 from imperative_stitch.utils.types import get_dfa_state
 
@@ -109,7 +110,7 @@ def canonicalize_de_bruijn_batched(
 
     subset = DSLSubset()
     s_exps = subset.add_programs(dfa, *programs, root=root_states)
-    abstr_s_exps = subset.add_abstractions(dfa, *abstrs)
+    abstr_s_exps = add_abstractions(subset, dfa, *abstrs)
     if include_abstr_exprs:
         s_exps += abstr_s_exps
         root_states = list(root_states) + [abstr.dfa_root for abstr in abstrs]
@@ -221,9 +222,9 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     dsl = create_dsl(
         dfa,
-        DSLSubset.from_type_annotated_s_exps([s_exp_de_bruijn] + abstr_bodies),
+        DSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies),
         get_dfa_state(s_exp_de_bruijn.symbol),
-        include_dbvars=True,
+        add_additional_productions=add_dbvar_additional_productions,
     )
     fam = ns.BigramProgramDistributionFamily(
         dsl,
@@ -351,3 +352,24 @@ class DeBruijnMaskHandler:
         assert is_dbvar_wrapper_symbol(sym)
         symbol = ExtraVar(self.num_available_symbols - self.dbvar_value)
         return symbol
+
+
+def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar_index):
+    assert len(programs) == len(roots), "The number of programs and roots must match."
+
+    programs_all = canonicalize_de_bruijn_batched(
+        programs,
+        roots,
+        dfa,
+        abstrs,
+        max_explicit_dbvar_index,
+        include_abstr_exprs=True,
+    )
+    subset = DSLSubset.from_s_exps(programs_all)
+    return programs_all[: len(programs)], subset
+
+
+def add_dbvar_additional_productions(dslf):
+    dslf.concrete(dbvar_successor_symbol, "DBV -> DBV", None)
+    for root_type, sym in dbvar_wrapper_symbol_by_root_type.items():
+        dslf.concrete(sym, f"DBV -> {root_type}", None)

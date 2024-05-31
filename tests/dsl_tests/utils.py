@@ -3,6 +3,7 @@ import neurosym as ns
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.export_as_dsl import (
     DSLSubset,
     create_dsl,
@@ -27,11 +28,13 @@ def fit_to(
     """
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
-    dsl = create_dsl(
-        dfa, DSLSubset.from_program(dfa, *programs, root=root, abstrs=abstrs), root
-    )
+    subset_w_abstraction = DSLSubset.from_programs(dfa, *programs, root=root)
+    add_abstractions(subset_w_abstraction, dfa, *abstrs)
+    dsl = create_dsl(dfa, subset_w_abstraction, root)
     dsl_subset = create_dsl(
-        dfa, DSLSubset.from_program(dfa, *programs, root=root), root
+        dfa,
+        DSLSubset.from_programs(dfa, *programs, root=root),
+        root,
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
     apms = [

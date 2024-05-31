@@ -11,7 +11,7 @@ class DSLSubsetTest(unittest.TestCase):
         self.dfa = export_dfa()
 
     def test_subset_basic(self):
-        subset = DSLSubset.from_program(
+        subset = DSLSubset.from_programs(
             self.dfa,
             ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
@@ -33,7 +33,7 @@ class DSLSubsetTest(unittest.TestCase):
         )
 
     def test_subset_multi_length(self):
-        subset = DSLSubset.from_program(
+        subset = DSLSubset.from_programs(
             self.dfa,
             ns.python_to_python_ast("x = [1, 2, 3]; y = [1, 2, 3, 4]"),
             root="M",
@@ -59,7 +59,7 @@ class DSLSubsetTest(unittest.TestCase):
         )
 
     def test_subset_multi_root(self):
-        subset = DSLSubset.from_program(
+        subset = DSLSubset.from_programs(
             self.dfa,
             ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             ns.python_statement_to_python_ast("while True: pass"),
@@ -83,7 +83,7 @@ class DSLSubsetTest(unittest.TestCase):
         )
 
     def test_subset_fill_in_missing(self):
-        subset = DSLSubset.from_program(
+        subset = DSLSubset.from_programs(
             self.dfa,
             ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             ns.python_to_python_ast("x = 2; y = 3; z = 4; a = 7"),

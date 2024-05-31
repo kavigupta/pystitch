@@ -478,7 +478,7 @@ class AbstractionRenderingTest(unittest.TestCase):
 
     def test_dsl_with_abstractions_works(self):
         dfa = export_dfa(abstrs={"fn_1": fn_1, "fn_2": fn_2})
-        subset = DSLSubset.from_program(
+        subset = DSLSubset.from_programs(
             dfa,
             ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
