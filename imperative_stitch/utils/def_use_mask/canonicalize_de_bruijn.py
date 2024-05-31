@@ -224,7 +224,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         dfa,
         DSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies),
         get_dfa_state(s_exp_de_bruijn.symbol),
-        include_dbvars=True,
+        add_additional_productions=add_dbvar_additional_productions,
     )
     fam = ns.BigramProgramDistributionFamily(
         dsl,
@@ -367,3 +367,9 @@ def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar
     )
     subset = DSLSubset.from_s_exps(programs_all)
     return programs_all[: len(programs)], subset
+
+
+def add_dbvar_additional_productions(dslf):
+    dslf.concrete(dbvar_successor_symbol, "DBV -> DBV", None)
+    for root_type, sym in dbvar_wrapper_symbol_by_root_type.items():
+        dslf.concrete(sym, f"DBV -> {root_type}", None)

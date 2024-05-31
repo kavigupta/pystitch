@@ -17,6 +17,7 @@ from imperative_stitch.compress.manipulate_abstraction import abstraction_calls_
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
+    add_dbvar_additional_productions,
     canonicalize_de_bruijn,
     dsl_subset_from_dbprograms,
     uncanonicalize_de_bruijn,
@@ -265,7 +266,12 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             abstrs=abstrs,
             max_explicit_dbvar_index=max_explicit_dbvar_index,
         )
-        dsl = create_dsl(dfa, subset, "M", include_dbvars=True)
+        dsl = create_dsl(
+            dfa,
+            subset,
+            "M",
+            add_additional_productions=add_dbvar_additional_productions,
+        )
 
         return programs, dsl
 
