@@ -138,7 +138,7 @@ def create_dsl(
     dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
-            input_types = [ns.parse_type(t) for t in dfa[target][prod]]
+            input_types = tuple(ns.parse_type(t) for t in dfa[target][prod])
             if ns.python_ast_tools.is_sequence(target, prod):
                 assert len(input_types) == 1
                 for length in dsl_subset.lengths_by_sequence_type.get(target, []):
