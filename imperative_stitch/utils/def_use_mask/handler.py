@@ -120,14 +120,19 @@ class DefaultHandler(Handler):
 
 def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handler:
     # pylint: disable=cyclic-import
-    from .abstraction_handler import AbstractionHandler
     from .defining_statement_handler import defining_statement_handlers
 
     assert isinstance(defined_production_idxs, list)
 
     symbol = mask.id_to_name(symbol)
     if symbol.startswith("fn_"):
-        return AbstractionHandler(mask, defined_production_idxs, config, symbol)
+        from imperative_stitch.utils.def_use_mask.abstraction_handler import (
+            pull_abstraction_handler,
+        )
+
+        return pull_abstraction_handler(config.abstractions)(
+            symbol, mask, defined_production_idxs, config
+        )
 
     return defining_statement_handlers().get(symbol, DefaultHandler)(
         mask, defined_production_idxs, config

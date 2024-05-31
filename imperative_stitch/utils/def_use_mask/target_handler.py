@@ -25,11 +25,15 @@ def create_target_handler(root_symbol: int, mask, defined_production_idxs, confi
     symbol = root_symbol
     symbol = mask.id_to_name(symbol)
     if symbol.startswith("fn"):
-        return AbstractionHandler(
+        from imperative_stitch.utils.def_use_mask.abstraction_handler import (
+            pull_abstraction_handler,
+        )
+
+        return pull_abstraction_handler(config.abstractions)(
+            symbol,
             mask,
             defined_production_idxs,
             config,
-            symbol,
             handler_fn=create_target_handler,
         )
     if symbol.startswith("list"):

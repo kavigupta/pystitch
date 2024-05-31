@@ -35,6 +35,7 @@ class AbstractionHandler(Handler):
         defined_production_idxs,
         config,
         head_symbol,
+        abstraction,
         handler_fn=default_handler,
     ):
         super().__init__(mask, defined_production_idxs, config)
@@ -44,8 +45,6 @@ class AbstractionHandler(Handler):
         assert ordering is not None, f"No ordering found for {head_symbol}"
         self._traversal_order_stack = ordering[::-1]
 
-        head_symbol = "~".join(head_symbol.split("~")[:-1])
-        abstraction = config.abstractions[head_symbol]
         body = ns.to_type_annotated_ns_s_exp(
             abstraction.body, config.dfa, abstraction.dfa_root
         )
@@ -224,3 +223,13 @@ class CollectingHandler(Handler):
     @property
     def defined_symbols(self):
         return self.underlying_handler.defined_symbols
+
+
+def pull_abstraction_handler(abstractions):
+    def get_handler(symbol, mask, defined_production_idxs, config, **kwargs):
+        abstraction = abstractions["~".join(symbol.split("~")[:-1])]
+        return AbstractionHandler(
+            mask, defined_production_idxs, config, symbol, abstraction, **kwargs
+        )
+
+    return get_handler
