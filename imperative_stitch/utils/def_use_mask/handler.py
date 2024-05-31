@@ -126,8 +126,9 @@ def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handl
     assert isinstance(defined_production_idxs, list)
 
     symbol = mask.id_to_name(symbol)
-    if symbol.startswith("fn_"):
-        return config.node_hooks["fn_"].pull_handler(
+    hook = config.get_hook(symbol)
+    if hook is not None:
+        return hook.pull_handler(
             symbol, mask, defined_production_idxs, config, handler_fn=default_handler
         )
 

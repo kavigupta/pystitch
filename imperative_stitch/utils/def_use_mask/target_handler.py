@@ -23,8 +23,9 @@ def create_target_handler(root_symbol: int, mask, defined_production_idxs, confi
 
     symbol = root_symbol
     symbol = mask.id_to_name(symbol)
-    if symbol.startswith("fn"):
-        return config.node_hooks["fn_"].pull_handler(
+    hook = config.get_hook(symbol)
+    if hook is not None:
+        return hook.pull_handler(
             symbol,
             mask,
             defined_production_idxs,

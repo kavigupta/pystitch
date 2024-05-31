@@ -4,7 +4,6 @@ from typing import Dict, List
 
 import neurosym as ns
 
-from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.utils.def_use_mask.abstraction_handler import (
     AbstractionHandlerPuller,
 )
@@ -21,6 +20,13 @@ from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 class DefUseMaskConfiguration:
     dfa: Dict
     node_hooks: Dict[str, HandlerPuller]
+
+    def get_hook(self, symbol):
+        prefixes = [x for x in self.node_hooks if symbol.startswith(x)]
+        if not prefixes:
+            return None
+        assert len(prefixes) == 1, f"Multiple hooks found for {symbol}: {prefixes}"
+        return self.node_hooks[prefixes[0]]
 
 
 class DefUseChainPreorderMask(ns.PreorderMask):
