@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Callable
 
 import neurosym as ns
 
@@ -127,13 +128,21 @@ def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handl
     symbol = mask.id_to_name(symbol)
     if symbol.startswith("fn_"):
         from imperative_stitch.utils.def_use_mask.abstraction_handler import (
-            pull_abstraction_handler,
+            AbstractionHandlerPuller,
         )
 
-        return pull_abstraction_handler(config.abstractions)(
-            symbol, mask, defined_production_idxs, config
+        return AbstractionHandlerPuller(config.abstractions).pull_handler(
+            symbol, mask, defined_production_idxs, config, handler_fn=default_handler
         )
 
     return defining_statement_handlers().get(symbol, DefaultHandler)(
         mask, defined_production_idxs, config
     )
+
+
+class HandlerPuller(ABC):
+    @abstractmethod
+    def pull_handler(
+        self, symbol: int, mask, defined_production_idxs, config, handler_fn: Callable
+    ) -> Handler:
+        pass
