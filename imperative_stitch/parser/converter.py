@@ -4,7 +4,6 @@ from typing import Union
 import neurosym as ns
 
 from imperative_stitch.parser.patterns import VARIABLE_PATTERN
-from imperative_stitch.utils.types import non_sequence_prefixes
 
 from .python_ast import AbstractionCallAST, ChoicevarAST, MetavarAST, SymvarAST
 
@@ -37,9 +36,3 @@ def s_exp_to_python(code: Union[str, ns.SExpression]) -> str:
 
 def s_exp_to_python_ast(code: Union[str, ns.SExpression]) -> ns.PythonAST:
     return ns.s_exp_to_python_ast(code, node_hooks)
-
-
-def to_type_annotated_ns_s_exp(
-    code: ns.PythonAST, dfa: dict, start_state: str
-) -> ns.SExpression:
-    return ns.to_type_annotated_ns_s_exp(code, dfa, start_state, non_sequence_prefixes)

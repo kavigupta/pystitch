@@ -241,7 +241,7 @@ class Abstraction:
             for i in ordering:
                 traverse(node.children[i])
 
-        body = converter.to_type_annotated_ns_s_exp(
+        body = ns.to_type_annotated_ns_s_exp(
             self.body, export_dfa(abstrs=previous_abstractions), self.dfa_root
         )
         traverse(body)

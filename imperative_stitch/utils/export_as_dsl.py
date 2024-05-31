@@ -5,7 +5,7 @@ from typing import Dict, List, Set, Tuple, Union
 import neurosym as ns
 import numpy as np
 
-from imperative_stitch.utils.types import SEPARATOR, is_sequence
+from imperative_stitch.utils.types import SEPARATOR
 
 
 @dataclass
@@ -29,7 +29,7 @@ class DSLSubset:
     def leaves(self) -> Dict[str, List[str]]:
         return {k: sorted(v) for k, v in self._leaves.items()}
 
-    def add_s_exps(self, *s_exps, non_sequence_prefixes: Tuple[str] = ()):
+    def add_s_exps(self, *s_exps):
         """
         Add the following s-expressions to the subset. They must be type-annotated.
         """
@@ -38,20 +38,18 @@ class DSLSubset:
                 symbol, state, *_ = node.symbol.split(SEPARATOR)
                 state = ns.python_ast_tools.unclean_type(state)
                 assert isinstance(node, ns.SExpression)
-                if ns.python_ast_tools.is_sequence(
-                    state, symbol, non_sequence_prefixes=non_sequence_prefixes
-                ):
+                if ns.python_ast_tools.is_sequence(state, symbol):
                     self._lengths_by_sequence_type[state].add(len(node.children))
                 elif len(node.children) == 0 and not symbol.startswith("fn_"):
                     self._leaves[state].add(symbol)
 
     @classmethod
-    def from_s_exps(cls, s_exps, non_sequence_prefixes: Tuple[str] = ()):
+    def from_s_exps(cls, s_exps):
         """
         Factory version of add_s_exps.
         """
         subset = cls()
-        subset.add_s_exps(*s_exps, non_sequence_prefixes=non_sequence_prefixes)
+        subset.add_s_exps(*s_exps)
         return subset
 
     def add_programs(
@@ -59,7 +57,6 @@ class DSLSubset:
         dfa,
         *programs: Tuple[ns.PythonAST, ...],
         root: Union[str, Tuple[str, ...]],
-        non_sequence_prefixes: Tuple[str] = (),
     ):
         """
         Add the programs to the subset. The root symbol of the DSL is passed as an argument,
@@ -83,28 +80,20 @@ class DSLSubset:
 
         s_exps = []
         for program, root_sym in zip(programs, root):
-            s_exp = ns.to_type_annotated_ns_s_exp(
-                program, dfa, root_sym, non_sequence_prefixes
-            )
-            self.add_s_exps(s_exp, non_sequence_prefixes=non_sequence_prefixes)
+            s_exp = ns.to_type_annotated_ns_s_exp(program, dfa, root_sym)
+            self.add_s_exps(s_exp)
             s_exps.append(s_exp)
         return s_exps
 
     @classmethod
     def from_programs(
-        cls,
-        dfa,
-        *programs: Tuple[ns.PythonAST, ...],
-        root: Union[str, Tuple[str, ...]],
-        non_sequence_prefixes: Tuple[str] = (),
+        cls, dfa, *programs: Tuple[ns.PythonAST, ...], root: Union[str, Tuple[str, ...]]
     ):
         """
         Factory version of add_programs.
         """
         subset = cls()
-        subset.add_programs(
-            dfa, *programs, root=root, non_sequence_prefixes=non_sequence_prefixes
-        )
+        subset.add_programs(dfa, *programs, root=root)
         return subset
 
     def fill_in_missing_lengths(self):
@@ -135,7 +124,7 @@ def create_dsl(dfa, dsl_subset, start_state, dslf=None, include_dbvars=False):
         dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
-            if is_sequence(target, prod):
+            if ns.python_ast_tools.is_sequence(target, prod):
                 assert len(dfa[target][prod]) == 1
                 for length in dsl_subset.lengths_by_sequence_type.get(target, []):
                     typ = ns.ArrowType(

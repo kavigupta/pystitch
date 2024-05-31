@@ -3,7 +3,6 @@ import unittest
 import neurosym as ns
 import numpy as np
 
-from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -52,7 +51,7 @@ class DSLSmoothingTest(unittest.TestCase):
         counts = fam.count_programs(
             [
                 [
-                    converter.to_type_annotated_ns_s_exp(program, dfa, root)
+                    ns.to_type_annotated_ns_s_exp(program, dfa, root)
                     for program in programs
                 ]
             ]
@@ -67,7 +66,7 @@ class DSLSmoothingTest(unittest.TestCase):
         program = ns.python_to_python_ast(program)
         log_p = self.fam.compute_likelihood(
             self.dist,
-            converter.to_type_annotated_ns_s_exp(program, self.dfa, "M"),
+            ns.to_type_annotated_ns_s_exp(program, self.dfa, "M"),
         )
         return log_p
 

@@ -8,7 +8,6 @@ import neurosym as ns
 from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
 )
-from imperative_stitch.parser import converter
 from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_as_leaf,
@@ -18,7 +17,7 @@ from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.export_as_dsl import SEPARATOR, DSLSubset, create_dsl
-from imperative_stitch.utils.types import get_dfa_state, non_sequence_prefixes
+from imperative_stitch.utils.types import get_dfa_state
 
 dbv_type = "DBV"
 
@@ -110,9 +109,7 @@ def canonicalize_de_bruijn_batched(
     check_have_all_abstrs(dfa, abstrs)
 
     subset = DSLSubset()
-    s_exps = subset.add_programs(
-        dfa, *programs, root=root_states, non_sequence_prefixes=non_sequence_prefixes
-    )
+    s_exps = subset.add_programs(dfa, *programs, root=root_states)
     abstr_s_exps = add_abstractions(subset, dfa, *abstrs)
     if include_abstr_exprs:
         s_exps += abstr_s_exps
@@ -217,7 +214,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     abstrs_dict = {abstr.name: abstr for abstr in abstrs}
     abstr_bodies = [
-        converter.to_type_annotated_ns_s_exp(
+        ns.to_type_annotated_ns_s_exp(
             abstraction_calls_to_bodies(abstr.body, abstrs_dict), dfa, abstr.dfa_root
         )
         for abstr in abstrs
@@ -225,7 +222,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     dsl = create_dsl(
         dfa,
-        DSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies, non_sequence_prefixes),
+        DSLSubset.from_s_exps([s_exp_de_bruijn] + abstr_bodies),
         get_dfa_state(s_exp_de_bruijn.symbol),
         include_dbvars=True,
     )
@@ -368,5 +365,5 @@ def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar
         max_explicit_dbvar_index,
         include_abstr_exprs=True,
     )
-    subset = DSLSubset.from_s_exps(programs_all, non_sequence_prefixes)
+    subset = DSLSubset.from_s_exps(programs_all)
     return programs_all[: len(programs)], subset

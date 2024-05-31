@@ -478,9 +478,7 @@ def parse_and_check(code_original, do_actual_check=True):
     except BannedComponentError:
         return None, None
     pa = ns.python_to_python_ast(code_original)
-    se = ns.render_s_expression(
-        converter.to_type_annotated_ns_s_exp(pa, export_dfa(), "M")
-    )
+    se = ns.render_s_expression(ns.to_type_annotated_ns_s_exp(pa, export_dfa(), "M"))
     # Ban internal imports
     if re.search(
         r"const-(&[a-zA-Z0-9_]+:[0-9]+|g_[A-Za-z0-9\.]*)~(Nullable)?NameStr", se

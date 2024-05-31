@@ -5,7 +5,6 @@ import neurosym as ns
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
-from imperative_stitch.utils.types import non_sequence_prefixes
 
 from ..utils import assertDSL
 
@@ -89,12 +88,7 @@ class ProduceDslTest(unittest.TestCase):
             converter.s_exp_to_python_ast(p)
             for p in ["(fn_1)", "(fn_2 (fn_param_1 (fn_1)))"]
         ]
-        new_subset = DSLSubset.from_programs(
-            new_dfa,
-            *test_programs,
-            root="E",
-            non_sequence_prefixes=non_sequence_prefixes
-        )
+        new_subset = DSLSubset.from_programs(new_dfa, *test_programs, root="E")
         new_dsl = create_dsl(new_dfa, new_subset, "E")
         assertDSL(
             self,

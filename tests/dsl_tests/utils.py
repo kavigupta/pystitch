@@ -1,6 +1,5 @@
 import neurosym as ns
 
-from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -10,7 +9,6 @@ from imperative_stitch.utils.export_as_dsl import (
     create_dsl,
     create_smoothing_mask,
 )
-from imperative_stitch.utils.types import non_sequence_prefixes
 
 
 def fit_to(
@@ -30,16 +28,12 @@ def fit_to(
     """
     dfa = export_dfa(abstrs=abstrs)
     programs = [parser(p) for p in programs]
-    subset_w_abstraction = DSLSubset.from_programs(
-        dfa, *programs, root=root, non_sequence_prefixes=non_sequence_prefixes
-    )
+    subset_w_abstraction = DSLSubset.from_programs(dfa, *programs, root=root)
     add_abstractions(subset_w_abstraction, dfa, *abstrs)
     dsl = create_dsl(dfa, subset_w_abstraction, root)
     dsl_subset = create_dsl(
         dfa,
-        DSLSubset.from_programs(
-            dfa, *programs, root=root, non_sequence_prefixes=non_sequence_prefixes
-        ),
+        DSLSubset.from_programs(dfa, *programs, root=root),
         root,
     )
     smooth_mask = create_smoothing_mask(dsl, dsl_subset)
@@ -58,12 +52,7 @@ def fit_to(
         node_ordering=node_ordering,
     )
     counts = fam.count_programs(
-        [
-            [
-                converter.to_type_annotated_ns_s_exp(program, dfa, root)
-                for program in programs
-            ]
-        ]
+        [[ns.to_type_annotated_ns_s_exp(program, dfa, root) for program in programs]]
     )
     dist = fam.counts_to_distribution(counts)[0]
     if smoothing:
