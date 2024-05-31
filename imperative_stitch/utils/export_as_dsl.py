@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple, Union
+from types import NoneType
+from typing import Callable, Dict, List, Set, Tuple, Union
 
 import neurosym as ns
 import numpy as np
@@ -108,29 +109,40 @@ class DSLSubset:
 
 
 def traverse(s_exp):
+    """
+    Yield all the nodes in the s-expression.
+    """
     yield s_exp
     for child in s_exp.children:
         yield from traverse(child)
 
 
 def create_dsl(
-    dfa,
-    dsl_subset,
-    start_state,
-    dslf=None,
-    add_additional_productions=lambda dslf: None,
+    dfa: dict,
+    dsl_subset: DSLSubset,
+    start_state: str,
+    add_additional_productions: Callable[[ns.DSLFactory], NoneType] = lambda dslf: None,
 ):
-    if dslf is None:
-        dslf = ns.DSLFactory()
+    """
+    Create a DSL from a DFA and a subset of the DSL.
+
+    Args:
+        dfa: the DFA of the DSL
+        dsl_subset: the subset of the DSL
+        start_state: the start state of the DSL
+        add_additional_productions: a function that adds additional productions to the DSL
+
+    Returns:
+        the DSL
+    """
+    dslf = ns.DSLFactory()
     for target in dfa:
         for prod in dfa[target]:
+            input_types = [ns.parse_type(t) for t in dfa[target][prod]]
             if ns.python_ast_tools.is_sequence(target, prod):
-                assert len(dfa[target][prod]) == 1
+                assert len(input_types) == 1
                 for length in dsl_subset.lengths_by_sequence_type.get(target, []):
-                    typ = ns.ArrowType(
-                        (ns.parse_type(dfa[target][prod][0]),) * length,
-                        ns.parse_type(target),
-                    )
+                    typ = ns.ArrowType(input_types * length, ns.parse_type(target))
                     dslf.concrete(
                         prod
                         + SEPARATOR
@@ -141,10 +153,7 @@ def create_dsl(
                         None,
                     )
             else:
-                typ = ns.ArrowType(
-                    tuple(ns.parse_type(x) for x in dfa[target][prod]),
-                    ns.parse_type(target),
-                )
+                typ = ns.ArrowType(tuple(input_types), ns.parse_type(target))
                 dslf.concrete(
                     prod + SEPARATOR + ns.python_ast_tools.clean_type(target),
                     ns.render_type(typ),
