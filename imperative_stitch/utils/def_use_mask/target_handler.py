@@ -5,7 +5,6 @@ def create_target_handler(root_symbol: int, mask, defined_production_idxs, confi
     """
     Create a target handler for the given root symbol.
     """
-    from .abstraction_handler import AbstractionHandler
 
     targets_map = {
         "Name~L": NameTargetHandler,
