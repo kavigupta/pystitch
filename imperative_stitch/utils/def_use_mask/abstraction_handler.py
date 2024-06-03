@@ -1,4 +1,5 @@
 from typing import List
+
 import neurosym as ns
 
 from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX

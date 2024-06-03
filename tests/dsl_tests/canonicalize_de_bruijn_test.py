@@ -325,7 +325,6 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
         )
 
     def test_likelihood_more_lookback_zero(self):
-
         self.maxDiff = None
         fit_to = ["x = 2; y = 2; y = x; y = x"]
         # this program is $0 = 2; $0 = 2; $1 = $2; $1 = $2
