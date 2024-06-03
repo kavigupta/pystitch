@@ -100,7 +100,7 @@ class Handler(ABC):
 
         for pred in special_case_predicates:
             if pred.applies(symbol_id):
-                return pred.compute_mask(symbol_id, names)
+                return pred.compute(symbol_id, names)
         if idx_to_name[symbol_id] is None:
             return True
         return idx_to_name[symbol_id] in names
