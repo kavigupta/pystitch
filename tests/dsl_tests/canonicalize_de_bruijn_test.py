@@ -305,14 +305,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
 
     def test_likelihood_function(self):
         fit_to = ["def f(x): pass\n"]
-        # this program is $0 = 2; $0 = $1; $1 = $2
         test_program = fit_to[0]
-        # this program is $0 = 2; $0 = $1; $0 = $1
-        # should have a likelihood of
-        # (2/3)^3 [$0 on LHS]
-        # (1/3)^2 [$1 on RHS]
-        # (1/3)^1 [2 on LHS]
-
         self.assertEqual(
             self.compute_likelihood(fit_to, test_program),
             [
