@@ -18,16 +18,16 @@ class DefiningConstructHandler(ChildFrameCreatorHandler):
         assert isinstance(self.construct_name_field, str)
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        if self.is_consntruct_name_field(position):
+        if self.is_construct_name_field(position):
             return self.target_child(position, symbol)
         return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
-        if self.is_consntruct_name_field(position):
+        if self.is_construct_name_field(position):
             self.defined_symbols += child.defined_symbols
         super().on_child_exit(position, symbol, child)
 
-    def is_consntruct_name_field(self, position):
+    def is_construct_name_field(self, position):
         return (
             self.construct_name_field is not None
             and position == self.child_fields[self.construct_name_field]
