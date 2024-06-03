@@ -1,3 +1,5 @@
+from imperative_stitch.utils.types import SEPARATOR
+
 from .handler import ConstructHandler, Handler
 
 
@@ -24,6 +26,15 @@ def create_target_handler(
 
     symbol = root_symbol
     symbol = mask.id_to_name(symbol)
+
+    if symbol.startswith("const") and symbol.split(SEPARATOR)[-1] in {
+        "Name",
+        "NullableName",
+        "NameStr",
+        "NullableNameStr",
+    }:
+        return SymbolTargetHandler(mask, defined_production_idxs, config, root_symbol)
+
     pulled = config.pull_handler(
         position,
         symbol,
@@ -98,6 +109,27 @@ class NonCollectingTargetHandler(PassthroughLHSHandler):
         return False
 
 
+class SymbolTargetHandler(TargetHandler):
+    """
+    Target handler for symbols. Since symbols have no children, this takes in the symbol
+        and sets it up in the defined symbols in __init__.
+    """
+
+    def __init__(self, mask, defined_production_idxs, config, symbol):
+        super().__init__(mask, defined_production_idxs, config)
+        if self.mask.id_to_name(symbol) != "const-None~NullableNameStr":
+            self.defined_symbols = [symbol]
+
+    def on_child_enter(self, position: int, symbol: int) -> Handler:
+        raise NotImplementedError("symbols should not have children.")
+
+    def on_child_exit(self, position: int, symbol: int, child: Handler):
+        raise NotImplementedError("symbols should not have children.")
+
+    def is_defining(self, position: int) -> bool:
+        return True
+
+
 class StarredHandler(PassthroughLHSConstructHandler):
     name = "Starred~L"
     use_fields = ["value"]
@@ -128,10 +160,12 @@ class NameTargetHandler(TargetConstructHandler):
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if self.is_defining(position):
-            # for alias, we don't want to keep None
-            if self.mask.id_to_name(symbol) != "const-None~NullableNameStr":
-                self.defined_symbols = [symbol]
+            return self.target_child(position, symbol)
         return super().on_child_enter(position, symbol)
+
+    def on_child_exit(self, position: int, symbol: int, child: Handler):
+        if hasattr(child, "defined_symbols") and child.defined_symbols:
+            self.defined_symbols = child.defined_symbols
 
     def is_defining(self, position: int) -> bool:
         return any(position == self.child_fields[x] for x in self.name_nodes)

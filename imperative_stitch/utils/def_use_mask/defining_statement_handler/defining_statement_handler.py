@@ -26,6 +26,8 @@ class DefiningStatementHandler(ConstructHandler):
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if position in self._targeted_positions:
+            if len(set(child.defined_symbols)) != len(child.defined_symbols):
+                raise ValueError(f"Duplicate symbols defined in child {child}")
             self.defined_symbols += child.defined_symbols
         if position == self.child_fields[self.define_symbols_on_exit]:
             current = set(self.defined_production_idxs)
