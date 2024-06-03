@@ -7,7 +7,6 @@ def create_target_handler(
     """
     Create a target handler for the given root symbol.
     """
-
     targets_map = {
         "Name~L": NameTargetHandler,
         "arg~A": ArgTargetHandler,

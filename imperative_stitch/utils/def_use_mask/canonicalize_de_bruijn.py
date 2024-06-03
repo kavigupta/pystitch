@@ -12,6 +12,7 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_as_leaf,
 )
+from imperative_stitch.utils.def_use_mask.handler import HandlerPuller
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -308,14 +309,22 @@ class DeBruijnMaskHandler:
     tree_dist: ns.TreeDistribution
     max_explicit_dbvar_index: int
     num_available_symbols: int
+    is_defn: bool
     level_nesting: int = 1
     inside_successor: bool = False
     dbvar_value: int = 0
 
-    def compute_mask(self, symbols: List[int], is_defn):
+    def compute_mask(
+        self,
+        position: int,
+        symbols: List[int],
+        idx_to_name: List[str],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
+    ):
         """
         Compute the mask for the given symbols.
         """
+        del position, idx_to_name, special_case_predicates
         mask = {}
         if self.inside_successor:
             # We are inside a successor, so the de bruijn limit is valid, as is successor
@@ -323,7 +332,7 @@ class DeBruijnMaskHandler:
             mask[dbvar_successor_symbol] = True
         else:
             # We are not inside a successor, so we need to iterate upwards
-            start_at = 0 if is_defn else 1
+            start_at = 0 if self.is_defn else 1
             for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
                 if i > self.max_explicit_dbvar_index:
                     mask[dbvar_successor_symbol] = True
@@ -395,3 +404,18 @@ class DBVarSymbolPredicate(SpecialCaseSymbolPredicate):
 
     def compute(self, symbol: int, names: List[str]) -> bool:
         return len(names) > 0
+
+
+class DBVarHandlerPuller(HandlerPuller):
+    def __init__(self):
+        pass
+
+    def pull_handler(
+        self, position, symbol, mask, defined_production_idxs, config, handler_fn
+    ):
+        return DeBruijnMaskHandler(
+            mask.tree_dist,
+            mask.max_explicit_dbvar_index,
+            len(mask.currently_defined_indices()),
+            mask.handlers[-1].is_defining(position),
+        )
