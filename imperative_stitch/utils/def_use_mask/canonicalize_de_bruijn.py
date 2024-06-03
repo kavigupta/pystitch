@@ -308,14 +308,22 @@ class DeBruijnMaskHandler:
     tree_dist: ns.TreeDistribution
     max_explicit_dbvar_index: int
     num_available_symbols: int
+    is_defn: bool
     level_nesting: int = 1
     inside_successor: bool = False
     dbvar_value: int = 0
 
-    def compute_mask(self, symbols: List[int], is_defn):
+    def compute_mask(
+        self,
+        position: int,
+        symbols: List[int],
+        idx_to_name: List[str],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
+    ):
         """
         Compute the mask for the given symbols.
         """
+        del position, idx_to_name, special_case_predicates
         mask = {}
         if self.inside_successor:
             # We are inside a successor, so the de bruijn limit is valid, as is successor
@@ -323,7 +331,7 @@ class DeBruijnMaskHandler:
             mask[dbvar_successor_symbol] = True
         else:
             # We are not inside a successor, so we need to iterate upwards
-            start_at = 0 if is_defn else 1
+            start_at = 0 if self.is_defn else 1
             for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
                 if i > self.max_explicit_dbvar_index:
                     mask[dbvar_successor_symbol] = True

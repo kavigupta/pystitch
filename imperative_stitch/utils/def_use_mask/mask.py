@@ -87,9 +87,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         handler = self.handlers[-1]
         if self.de_bruijn_mask_handler is not None:
-            return self.de_bruijn_mask_handler.compute_mask(
-                symbols, handler.is_defining(position)
-            )
+            handler = self.de_bruijn_mask_handler
         return handler.compute_mask(
             position, symbols, self.idx_to_name, self.special_case_predicates
         )
@@ -107,6 +105,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
                 self.tree_dist,
                 self.max_explicit_dbvar_index,
                 len(self.currently_defined_indices()),
+                self.handlers[-1].is_defining(position),
             )
             return
         if self.de_bruijn_mask_handler is not None:
