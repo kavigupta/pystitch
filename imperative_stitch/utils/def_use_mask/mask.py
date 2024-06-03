@@ -39,11 +39,10 @@ class DefUseMaskConfiguration:
     def pull_handler(
         self,
         position: int,
-        symbol: int,
+        symbol: str,
         mask: "DefUseChainPreorderMask",
         defined_production_idxs: List[int],
     ):
-        symbol = mask.id_to_name(symbol)
         hook = self.get_hook(symbol)
         if hook is None:
             return None
@@ -131,8 +130,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
         if is_dbvar_wrapper_symbol(self.id_to_name(symbol)):
             assert self.de_bruijn_mask_handler is None
-            self.de_bruijn_mask_handler = self.handlers[-1].on_child_enter(
-                position, symbol
+            self.de_bruijn_mask_handler = default_handler(
+                position, symbol, self, self.currently_defined_indices(), self.config
             )
             return
         if self.de_bruijn_mask_handler is not None:
