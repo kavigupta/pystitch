@@ -12,14 +12,13 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_as_leaf,
 )
-from imperative_stitch.utils.def_use_mask.handler import Handler, HandlerPuller
+from imperative_stitch.utils.def_use_mask.handler import HandlerPuller
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
     SpecialCaseSymbolPredicate,
 )
-from imperative_stitch.utils.def_use_mask.target_handler import TargetHandler
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.types import SEPARATOR, get_dfa_state
 
@@ -302,7 +301,7 @@ def compute_de_bruijn_limit(tree_dist: ns.TreeDistribution) -> int:
 
 
 @dataclass
-class DeBruijnMaskState:
+class DeBruijnMaskHandler:
     """
     Handles the mask behavior of de bruijin nodes.
     """
@@ -368,37 +367,6 @@ class DeBruijnMaskState:
         return symbol
 
 
-class DeBruijnMaskHandler(TargetHandler):
-    def __init__(
-        self,
-        mask,
-        defined_production_idxs,
-        config,
-        tree_dist: ns.TreeDistribution,
-        max_explicit_dbvar_index: int,
-        num_available_symbols: int,
-        is_defn: bool,
-    ):
-        super().__init__(mask, defined_production_idxs, config)
-        self.state = DeBruijnMaskState(
-            tree_dist, max_explicit_dbvar_index, num_available_symbols, is_defn
-        )
-
-    def is_defining(self, position: int) -> bool:
-        assert position == 0
-        return self.state.is_defn
-
-    def on_child_enter(self, position: int, symbol: int) -> Handler:
-        self.state.on_entry(symbol)
-        return self
-
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
-        result = self.state.on_exit(symbol)
-        if result is not None:
-            self.defined_symbols.append(result)
-        super().on_child_exit(position, symbol, child)
-
-
 def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar_index):
     assert len(programs) == len(roots), "The number of programs and roots must match."
 
@@ -446,9 +414,6 @@ class DBVarHandlerPuller(HandlerPuller):
         self, position, symbol, mask, defined_production_idxs, config, handler_fn
     ):
         return DeBruijnMaskHandler(
-            mask,
-            defined_production_idxs,
-            config,
             mask.tree_dist,
             mask.max_explicit_dbvar_index,
             len(mask.currently_defined_indices()),
