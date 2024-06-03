@@ -93,7 +93,7 @@ class Handler(ABC):
             symbol, self.mask, self.currently_defined_indices(), self.config
         )
 
-    def _matches(self, names, symbol_id, special_case_predicates, idx_to_name):
+    def _matches(self, names, symbol_id, idx_to_name, special_case_predicates):
         """
         Whether or not the symbol matches the names.
         """
@@ -109,19 +109,22 @@ class Handler(ABC):
         self,
         position: int,
         symbols: List[int],
-        special_case_predicates: List[SpecialCaseSymbolPredicate],
         idx_to_name: List[str],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
     ):
         """
         Compute the mask for the given names. If the context is defining,
             then all symbols are valid. Otherwise, only the symbols that
             match the names are valid.
         """
+        assert isinstance(special_case_predicates, list) and all(
+            isinstance(x, SpecialCaseSymbolPredicate) for x in special_case_predicates
+        )
         if self.is_defining(position):
             return [True] * len(symbols)
         names = set(self.currently_defined_names())
         return [
-            self._matches(names, symbol, special_case_predicates, idx_to_name)
+            self._matches(names, symbol, idx_to_name, special_case_predicates)
             for symbol in symbols
         ]
 
