@@ -11,7 +11,11 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_leaf_regex,
 )
-from imperative_stitch.utils.def_use_mask.handler import DefaultHandler, HandlerPuller
+from imperative_stitch.utils.def_use_mask.handler import (
+    DefaultHandler,
+    HandlerPuller,
+    default_handler,
+)
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
@@ -30,6 +34,26 @@ class DefUseMaskConfiguration:
             return None
         assert len(prefixes) == 1, f"Multiple hooks found for {symbol}: {prefixes}"
         return self.node_hooks[prefixes[0]]
+
+    def pull_handler(
+        self,
+        position: int,
+        symbol: str,
+        mask: "DefUseChainPreorderMask",
+        defined_production_idxs: List[int],
+        handler_fn=default_handler,
+    ):
+        hook = self.get_hook(symbol)
+        if hook is None:
+            return None
+        return hook.pull_handler(
+            position,
+            symbol,
+            mask,
+            defined_production_idxs,
+            self,
+            handler_fn=handler_fn,
+        )
 
 
 class DefUseChainPreorderMask(ns.PreorderMask):
