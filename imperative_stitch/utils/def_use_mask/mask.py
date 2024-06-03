@@ -114,15 +114,19 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             defining, then all symbols are valid. Otherwise, only the symbols that
             match the handler's names are valid.
         """
+        print("currently defined symbols", self.currently_defined_indices())
         handler = self.handlers[-1]
-        return handler.compute_mask(
+        m = handler.compute_mask(
             position, symbols, self.idx_to_name, self.special_case_predicates
         )
+        print(position, dict(zip([self.id_to_name(s) for s in symbols], m)))
+        return m
 
     def on_entry(self, position: int, symbol: int):
         """
         Updates the stack of handlers when entering a node.
         """
+        print("on entry", position, self.id_to_name(symbol))
         # pylint: disable=cyclic-import
         if not self.handlers:
             assert position == symbol == 0
@@ -134,6 +138,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Updates the stack of handlers when exiting a node.
         """
+        print("on exit", position, self.id_to_name(symbol))
         popped = self.handlers.pop()
         if not self.handlers:
             assert position == symbol == 0

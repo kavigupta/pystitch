@@ -325,15 +325,18 @@ class DeBruijnMaskState:
         """
         Compute the mask for the given symbols.
         """
+        print("COMPUTE MASK", position, symbols, idx_to_name, special_case_predicates)
         del position, idx_to_name, special_case_predicates
         mask = {}
         if self.inside_successor:
+            print("INSIDE SUCCESSOR")
             # We are inside a successor, so the de bruijn limit is valid, as is successor
             mask[dbvar_symbol(self.max_explicit_dbvar_index)] = True
             mask[dbvar_successor_symbol] = True
         else:
             # We are not inside a successor, so we need to iterate upwards
             start_at = 0 if self.is_defn else 1
+            print("START AT", start_at, self.num_available_symbols, self.dbvar_value)
             for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
                 if i > self.max_explicit_dbvar_index:
                     mask[dbvar_successor_symbol] = True
@@ -360,10 +363,10 @@ class DeBruijnMaskState:
         Handle the exit of a symbol.
         """
         self.level_nesting -= 1
-        if self.level_nesting > 0:
+        if self.level_nesting > 1:
             return None
-        sym = self.tree_dist.symbols[symbol][0]
-        assert is_dbvar_wrapper_symbol(sym)
+        # sym = self.tree_dist.symbols[symbol][0]
+        # assert is_dbvar_wrapper_symbol(sym)
         symbol = ExtraVar(self.num_available_symbols - self.dbvar_value)
         return symbol
 
@@ -380,8 +383,20 @@ class DeBruijnMaskHandler(TargetHandler):
         is_defn: bool,
     ):
         super().__init__(mask, defined_production_idxs, config)
+        print("IS DEFINING", is_defn)
         self.state = DeBruijnMaskState(
             tree_dist, max_explicit_dbvar_index, num_available_symbols, is_defn
+        )
+
+    def compute_mask(
+        self,
+        position: int,
+        symbols: List[int],
+        idx_to_name: List[str],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
+    ):
+        return self.state.compute_mask(
+            position, symbols, idx_to_name, special_case_predicates
         )
 
     def is_defining(self, position: int) -> bool:
@@ -389,14 +404,15 @@ class DeBruijnMaskHandler(TargetHandler):
         return self.state.is_defn
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
+        print("entering child of dbvar")
         self.state.on_entry(symbol)
         return self
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         result = self.state.on_exit(symbol)
-        if result is not None:
+        if result is not None and result not in self.defined_symbols:
             self.defined_symbols.append(result)
-        super().on_child_exit(position, symbol, child)
+            print("DEFINED SYMBOLS", self.defined_symbols)
 
 
 def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar_index):
