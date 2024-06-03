@@ -32,7 +32,7 @@ class DefiningStatementHandler(ConstructHandler):
         if position == self.child_fields[self.define_symbols_on_exit]:
             current = set(self.defined_production_idxs)
             self.defined_production_idxs += [
-                x for x in self.defined_symbols if symbol not in current
+                x for x in self.defined_symbols if x not in current
             ]
         super().on_child_exit(position, symbol, child)
 
