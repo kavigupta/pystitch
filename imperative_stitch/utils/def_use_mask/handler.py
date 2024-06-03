@@ -38,7 +38,7 @@ class Handler(ABC):
             The handler for the child.
         """
         return default_handler(
-            symbol, self.mask, self.currently_defined_indices(), self.config
+            position, symbol, self.mask, self.currently_defined_indices(), self.config
         )
 
     @abstractmethod
@@ -82,7 +82,7 @@ class Handler(ABC):
             names.add(mat.group("name"))
         return names
 
-    def target_child(self, symbol: int) -> "Handler":
+    def target_child(self, position: int, symbol: int) -> "Handler":
         """
         Return a handler collecting targets for the given child.
         """
@@ -90,7 +90,7 @@ class Handler(ABC):
         from .target_handler import create_target_handler
 
         return create_target_handler(
-            symbol, self.mask, self.currently_defined_indices(), self.config
+            position, symbol, self.mask, self.currently_defined_indices(), self.config
         )
 
     def _matches(self, names, symbol_id, idx_to_name, special_case_predicates):
@@ -157,7 +157,9 @@ class DefaultHandler(Handler):
         return False
 
 
-def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handler:
+def default_handler(
+    position: int, symbol: int, mask, defined_production_idxs, config
+) -> Handler:
     # pylint: disable=cyclic-import
     from .defining_statement_handler import defining_statement_handlers
 
@@ -167,7 +169,12 @@ def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handl
     hook = config.get_hook(symbol)
     if hook is not None:
         return hook.pull_handler(
-            symbol, mask, defined_production_idxs, config, handler_fn=default_handler
+            position,
+            symbol,
+            mask,
+            defined_production_idxs,
+            config,
+            handler_fn=default_handler,
         )
 
     return defining_statement_handlers().get(symbol, DefaultHandler)(
@@ -178,6 +185,12 @@ def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handl
 class HandlerPuller(ABC):
     @abstractmethod
     def pull_handler(
-        self, symbol: int, mask, defined_production_idxs, config, handler_fn: Callable
+        self,
+        position: int,
+        symbol: int,
+        mask,
+        defined_production_idxs,
+        config,
+        handler_fn: Callable,
     ) -> Handler:
         pass

@@ -36,6 +36,7 @@ class AbstractionHandler(Handler):
         config,
         head_symbol,
         abstraction,
+        position,
         handler_fn=default_handler,
     ):
         super().__init__(mask, defined_production_idxs, config)
@@ -54,7 +55,7 @@ class AbstractionHandler(Handler):
             config,
             body,
             lambda mask_copy, sym: handler_fn(
-                sym, mask_copy, self.defined_production_idxs, self.config
+                position, sym, mask_copy, self.defined_production_idxs, self.config
             ),
         )
 
@@ -229,8 +230,16 @@ class AbstractionHandlerPuller(HandlerPuller):
     def __init__(self, abstractions):
         self.abstractions = abstractions
 
-    def pull_handler(self, symbol, mask, defined_production_idxs, config, handler_fn):
+    def pull_handler(
+        self, position, symbol, mask, defined_production_idxs, config, handler_fn
+    ):
         abstraction = self.abstractions["~".join(symbol.split("~")[:-1])]
         return AbstractionHandler(
-            mask, defined_production_idxs, config, symbol, abstraction, handler_fn
+            mask,
+            defined_production_idxs,
+            config,
+            symbol,
+            abstraction,
+            position,
+            handler_fn,
         )

@@ -1,7 +1,9 @@
 from .handler import ConstructHandler, Handler
 
 
-def create_target_handler(root_symbol: int, mask, defined_production_idxs, config):
+def create_target_handler(
+    position: int, root_symbol: int, mask, defined_production_idxs, config
+):
     """
     Create a target handler for the given root symbol.
     """
@@ -26,6 +28,7 @@ def create_target_handler(root_symbol: int, mask, defined_production_idxs, confi
     hook = config.get_hook(symbol)
     if hook is not None:
         return hook.pull_handler(
+            position,
             symbol,
             mask,
             defined_production_idxs,
@@ -67,7 +70,7 @@ class PassthroughLHSHandler(TargetHandler):
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if self.is_defining(position):
-            return self.target_child(symbol)
+            return self.target_child(position, symbol)
         return super().on_child_enter(position, symbol)
 
     def is_defining(self, position: int) -> bool:
