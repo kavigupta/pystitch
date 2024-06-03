@@ -101,7 +101,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             },
         )
         self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
-        self.de_bruijn_mask_handler = None
 
     def currently_defined_indices(self):
         """
@@ -116,8 +115,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             match the handler's names are valid.
         """
         handler = self.handlers[-1]
-        if self.de_bruijn_mask_handler is not None:
-            handler = self.de_bruijn_mask_handler
         return handler.compute_mask(
             position, symbols, self.idx_to_name, self.special_case_predicates
         )
@@ -127,17 +124,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Updates the stack of handlers when entering a node.
         """
         # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import is_dbvar_wrapper_symbol
-
-        if is_dbvar_wrapper_symbol(self.id_to_name(symbol)):
-            assert self.de_bruijn_mask_handler is None
-            self.de_bruijn_mask_handler = default_handler(
-                position, symbol, self, self.currently_defined_indices(), self.config
-            )
-            return
-        if self.de_bruijn_mask_handler is not None:
-            self.de_bruijn_mask_handler.on_entry(symbol)
-            return
         if not self.handlers:
             assert position == symbol == 0
             self.handlers.append(DefaultHandler(self, [], self.config))
@@ -148,12 +134,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Updates the stack of handlers when exiting a node.
         """
-        if self.de_bruijn_mask_handler is not None:
-            symbol = self.de_bruijn_mask_handler.on_exit(symbol)
-            if symbol is None:
-                return
-            self.de_bruijn_mask_handler = None
-            self.on_entry(position, symbol)
         popped = self.handlers.pop()
         if not self.handlers:
             assert position == symbol == 0
