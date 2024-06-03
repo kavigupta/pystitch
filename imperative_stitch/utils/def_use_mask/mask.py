@@ -12,8 +12,11 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_leaf_regex,
 )
 from imperative_stitch.utils.def_use_mask.handler import DefaultHandler, HandlerPuller
-from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
+from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
+    NameEPredicate,
+)
 
 
 @dataclass
@@ -45,25 +48,22 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     def __init__(self, tree_dist, dsl, dfa, abstrs):
         # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import (
+            DBVarSymbolPredicate,
             compute_de_bruijn_limit,
-            is_dbvar_wrapper_symbol,
         )
 
         super().__init__(tree_dist)
         assert isinstance(tree_dist.ordering, PythonNodeOrdering)
         assert isinstance(abstrs, (list, tuple))
         self.dsl = dsl
-        self.has_global_available = any(
-            GLOBAL_REGEX.match(x) for x, _ in self.tree_dist.symbols
-        )
         self.idx_to_name = []
         for x, _ in self.tree_dist.symbols:
             mat = NAME_REGEX.match(x)
             self.idx_to_name.append(mat.group("name") if mat else None)
 
-        self.name_e = self.tree_dist.symbol_to_index.get("Name~E", -1)
-        self.dbvars = [
-            is_dbvar_wrapper_symbol(symbol) for symbol, _ in self.tree_dist.symbols
+        self.special_case_predicates = [
+            NameEPredicate(self.tree_dist),
+            DBVarSymbolPredicate(self.tree_dist),
         ]
 
         self.handlers = []
@@ -78,11 +78,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Whether or not the symbol matches the names.
         """
 
-        if symbol_id == self.name_e:
-            return self.has_global_available or len(names) > 0
-        if self.dbvars[symbol_id]:
-            assert self.de_bruijn_mask_handler is None
-            return len(names) > 0
+        for pred in self.special_case_predicates:
+            if pred.applies(symbol_id):
+                return pred.compute_mask(symbol_id, names)
         if self.idx_to_name[symbol_id] is None:
             return True
         return self.idx_to_name[symbol_id] in names

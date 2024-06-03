@@ -15,6 +15,9 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
+    SpecialCaseSymbolPredicate,
+)
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.types import SEPARATOR, get_dfa_state
 
@@ -374,3 +377,21 @@ def add_dbvar_additional_productions(dslf):
     dslf.concrete(dbvar_successor_symbol, "DBV -> DBV", None)
     for root_type, sym in dbvar_wrapper_symbol_by_root_type.items():
         dslf.concrete(sym, f"DBV -> {root_type}", None)
+
+
+class DBVarSymbolPredicate(SpecialCaseSymbolPredicate):
+    """
+    Predicate that applies to the DBVar symbol.
+    """
+
+    def __init__(self, tree_dist: ns.TreeDistribution):
+        super().__init__(tree_dist)
+        self.dbvars = [
+            is_dbvar_wrapper_symbol(symbol) for symbol, _ in tree_dist.symbols
+        ]
+
+    def applies(self, symbol: int) -> bool:
+        return self.dbvars[symbol]
+
+    def compute_mask(self, symbol: int, names: List[str]) -> bool:
+        return len(names) > 0
