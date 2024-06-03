@@ -41,6 +41,7 @@ class DefUseMaskConfiguration:
         symbol: str,
         mask: "DefUseChainPreorderMask",
         defined_production_idxs: List[int],
+        handler_fn=default_handler,
     ):
         hook = self.get_hook(symbol)
         if hook is None:
@@ -51,7 +52,7 @@ class DefUseMaskConfiguration:
             mask,
             defined_production_idxs,
             self,
-            handler_fn=default_handler,
+            handler_fn=handler_fn,
         )
 
 
