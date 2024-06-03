@@ -11,12 +11,17 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_leaf_regex,
 )
-from imperative_stitch.utils.def_use_mask.handler import DefaultHandler, HandlerPuller
+from imperative_stitch.utils.def_use_mask.handler import (
+    DefaultHandler,
+    HandlerPuller,
+    default_handler,
+)
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
     NameEPredicate,
 )
+from imperative_stitch.utils.types import SEPARATOR
 
 
 @dataclass
@@ -48,6 +53,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     def __init__(self, tree_dist, dsl, dfa, abstrs):
         # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import (
+            DBVarHandlerPuller,
             DBVarSymbolPredicate,
             compute_de_bruijn_limit,
         )
@@ -68,7 +74,11 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
         self.handlers = []
         self.config = DefUseMaskConfiguration(
-            dfa, {"fn_": AbstractionHandlerPuller({x.name: x for x in abstrs})}
+            dfa,
+            {
+                "fn_": AbstractionHandlerPuller({x.name: x for x in abstrs}),
+                "dbvar" + SEPARATOR: DBVarHandlerPuller(),
+            },
         )
         self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
         self.de_bruijn_mask_handler = None
@@ -97,15 +107,12 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         Updates the stack of handlers when entering a node.
         """
         # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import DeBruijnMaskHandler, is_dbvar_wrapper_symbol
+        from .canonicalize_de_bruijn import is_dbvar_wrapper_symbol
 
         if is_dbvar_wrapper_symbol(self.id_to_name(symbol)):
             assert self.de_bruijn_mask_handler is None
-            self.de_bruijn_mask_handler = DeBruijnMaskHandler(
-                self.tree_dist,
-                self.max_explicit_dbvar_index,
-                len(self.currently_defined_indices()),
-                self.handlers[-1].is_defining(position),
+            self.de_bruijn_mask_handler = default_handler(
+                position, symbol, self, self.currently_defined_indices(), self.config
             )
             return
         if self.de_bruijn_mask_handler is not None:

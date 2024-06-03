@@ -12,6 +12,7 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_as_leaf,
 )
+from imperative_stitch.utils.def_use_mask.handler import HandlerPuller
 from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
@@ -403,3 +404,18 @@ class DBVarSymbolPredicate(SpecialCaseSymbolPredicate):
 
     def compute(self, symbol: int, names: List[str]) -> bool:
         return len(names) > 0
+
+
+class DBVarHandlerPuller(HandlerPuller):
+    def __init__(self):
+        pass
+
+    def pull_handler(
+        self, position, symbol, mask, defined_production_idxs, config, handler_fn
+    ):
+        return DeBruijnMaskHandler(
+            mask.tree_dist,
+            mask.max_explicit_dbvar_index,
+            len(mask.currently_defined_indices()),
+            mask.handlers[-1].is_defining(position),
+        )
