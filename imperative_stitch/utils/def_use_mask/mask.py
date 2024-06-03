@@ -44,7 +44,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
     def __init__(self, tree_dist, dsl, dfa, abstrs):
         # pylint: disable=cyclic-import
-        # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import (
             compute_de_bruijn_limit,
             is_dbvar_wrapper_symbol,
