@@ -12,7 +12,7 @@ from imperative_stitch.utils.def_use_mask.extra_var import (
     canonicalized_python_name_leaf_regex,
 )
 from imperative_stitch.utils.def_use_mask.handler import DefaultHandler, HandlerPuller
-from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
+from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
     NameEPredicate,
