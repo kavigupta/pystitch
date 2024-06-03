@@ -24,7 +24,7 @@ def create_target_handler(
 
     symbol = root_symbol
     symbol = mask.id_to_name(symbol)
-    pulled = config.pull_handler(position, root_symbol, mask, defined_production_idxs)
+    pulled = config.pull_handler(position, symbol, mask, defined_production_idxs)
     if pulled is not None:
         return pulled
 
