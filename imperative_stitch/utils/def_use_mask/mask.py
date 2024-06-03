@@ -80,7 +80,7 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
         for pred in self.special_case_predicates:
             if pred.applies(symbol_id):
-                return pred.compute_mask(symbol_id, names)
+                return pred.compute(symbol_id, names)
         if self.idx_to_name[symbol_id] is None:
             return True
         return self.idx_to_name[symbol_id] in names

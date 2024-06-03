@@ -393,5 +393,5 @@ class DBVarSymbolPredicate(SpecialCaseSymbolPredicate):
     def applies(self, symbol: int) -> bool:
         return self.dbvars[symbol]
 
-    def compute_mask(self, symbol: int, names: List[str]) -> bool:
+    def compute(self, symbol: int, names: List[str]) -> bool:
         return len(names) > 0
