@@ -303,6 +303,27 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
             ],
         )
 
+    def test_likelihood_function(self):
+        fit_to = ["def f(x): pass\n"]
+        # this program is $0 = 2; $0 = $1; $1 = $2
+        test_program = fit_to[0]
+        # this program is $0 = 2; $0 = $1; $0 = $1
+        # should have a likelihood of
+        # (2/3)^3 [$0 on LHS]
+        # (1/3)^2 [$1 on RHS]
+        # (1/3)^1 [2 on LHS]
+
+        self.assertEqual(
+            self.compute_likelihood(fit_to, test_program),
+            [
+                (
+                    "(FunctionDef~S (dbvar~Name (dbvar-0~DBV)) (arguments~As (list~_A_~0) (list~_A_~1 (arg~A (dbvar~Name (dbvar-0~DBV)) (const-None~TA) (const-None~TC))) (const-None~A) (list~_A_~0) (list~_E_~0) (const-None~A) (list~_E_~0)) (/seq~seqS~1 (Pass~S)) (list~_E_~0) (const-None~TA) (const-None~TC))",
+                    Fraction(1, 2),
+                ),
+                ("(Pass~S)", Fraction(1, 2)),
+            ],
+        )
+
     def test_likelihood_more_lookback_zero(self):
 
         self.maxDiff = None
