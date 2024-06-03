@@ -21,7 +21,7 @@ class DefiningStatementHandler(ConstructHandler):
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         if position in self._targeted_positions:
-            return self.target_child(symbol)
+            return self.target_child(position, symbol)
         return super().on_child_enter(position, symbol)
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
