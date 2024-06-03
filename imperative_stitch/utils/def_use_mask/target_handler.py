@@ -8,6 +8,10 @@ def create_target_handler(
     Create a target handler for the given root symbol.
     """
 
+    pulled = config.pull_handler(position, root_symbol, mask, defined_production_idxs)
+    if pulled is not None:
+        return pulled
+
     targets_map = {
         "Name~L": NameTargetHandler,
         "arg~A": ArgTargetHandler,

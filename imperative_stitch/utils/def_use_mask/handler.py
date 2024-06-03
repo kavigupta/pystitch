@@ -165,17 +165,9 @@ def default_handler(
 
     assert isinstance(defined_production_idxs, list)
 
-    symbol = mask.id_to_name(symbol)
-    hook = config.get_hook(symbol)
-    if hook is not None:
-        return hook.pull_handler(
-            position,
-            symbol,
-            mask,
-            defined_production_idxs,
-            config,
-            handler_fn=default_handler,
-        )
+    pulled = config.pull_handler(position, symbol, mask, defined_production_idxs)
+    if pulled is not None:
+        return pulled
 
     return defining_statement_handlers().get(symbol, DefaultHandler)(
         mask, defined_production_idxs, config

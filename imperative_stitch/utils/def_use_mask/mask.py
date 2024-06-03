@@ -36,6 +36,26 @@ class DefUseMaskConfiguration:
         assert len(prefixes) == 1, f"Multiple hooks found for {symbol}: {prefixes}"
         return self.node_hooks[prefixes[0]]
 
+    def pull_handler(
+        self,
+        position: int,
+        symbol: int,
+        mask: "DefUseChainPreorderMask",
+        defined_production_idxs: List[int],
+    ):
+        symbol = mask.id_to_name(symbol)
+        hook = self.get_hook(symbol)
+        if hook is None:
+            return None
+        return hook.pull_handler(
+            position,
+            symbol,
+            mask,
+            defined_production_idxs,
+            self,
+            handler_fn=default_handler,
+        )
+
 
 class DefUseChainPreorderMask(ns.PreorderMask):
     """
