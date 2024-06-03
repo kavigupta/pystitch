@@ -4,12 +4,14 @@ from typing import Dict, List
 
 import neurosym as ns
 
-from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.utils.def_use_mask.abstraction_handler import (
+    AbstractionHandlerPuller,
+)
 from imperative_stitch.utils.def_use_mask.extra_var import (
     ExtraVar,
     canonicalized_python_name_leaf_regex,
 )
-from imperative_stitch.utils.def_use_mask.handler import DefaultHandler
+from imperative_stitch.utils.def_use_mask.handler import DefaultHandler, HandlerPuller
 from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX, NAME_REGEX
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 
@@ -17,7 +19,14 @@ from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 @dataclass
 class DefUseMaskConfiguration:
     dfa: Dict
-    abstractions: Dict[str, Abstraction]
+    node_hooks: Dict[str, HandlerPuller]
+
+    def get_hook(self, symbol):
+        prefixes = [x for x in self.node_hooks if symbol.startswith(x)]
+        if not prefixes:
+            return None
+        assert len(prefixes) == 1, f"Multiple hooks found for {symbol}: {prefixes}"
+        return self.node_hooks[prefixes[0]]
 
 
 class DefUseChainPreorderMask(ns.PreorderMask):
@@ -34,7 +43,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     """
 
     def __init__(self, tree_dist, dsl, dfa, abstrs):
-        # pylint: disable=cyclic-import
         # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import (
             compute_de_bruijn_limit,
@@ -59,7 +67,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         ]
 
         self.handlers = []
-        self.config = DefUseMaskConfiguration(dfa, {x.name: x for x in abstrs})
+        self.config = DefUseMaskConfiguration(
+            dfa, {"fn_": AbstractionHandlerPuller({x.name: x for x in abstrs})}
+        )
         self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
         self.de_bruijn_mask_handler = None
 

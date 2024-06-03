@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Callable
 
 import neurosym as ns
 
@@ -120,15 +121,25 @@ class DefaultHandler(Handler):
 
 def default_handler(symbol: int, mask, defined_production_idxs, config) -> Handler:
     # pylint: disable=cyclic-import
-    from .abstraction_handler import AbstractionHandler
     from .defining_statement_handler import defining_statement_handlers
 
     assert isinstance(defined_production_idxs, list)
 
     symbol = mask.id_to_name(symbol)
-    if symbol.startswith("fn_"):
-        return AbstractionHandler(mask, defined_production_idxs, config, symbol)
+    hook = config.get_hook(symbol)
+    if hook is not None:
+        return hook.pull_handler(
+            symbol, mask, defined_production_idxs, config, handler_fn=default_handler
+        )
 
     return defining_statement_handlers().get(symbol, DefaultHandler)(
         mask, defined_production_idxs, config
     )
+
+
+class HandlerPuller(ABC):
+    @abstractmethod
+    def pull_handler(
+        self, symbol: int, mask, defined_production_idxs, config, handler_fn: Callable
+    ) -> Handler:
+        pass

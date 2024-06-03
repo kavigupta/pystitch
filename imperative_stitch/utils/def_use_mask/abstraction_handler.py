@@ -2,7 +2,7 @@ import neurosym as ns
 
 from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX
 
-from .handler import Handler, default_handler
+from .handler import Handler, HandlerPuller, default_handler
 
 
 class AbstractionHandler(Handler):
@@ -35,6 +35,7 @@ class AbstractionHandler(Handler):
         defined_production_idxs,
         config,
         head_symbol,
+        abstraction,
         handler_fn=default_handler,
     ):
         super().__init__(mask, defined_production_idxs, config)
@@ -44,8 +45,6 @@ class AbstractionHandler(Handler):
         assert ordering is not None, f"No ordering found for {head_symbol}"
         self._traversal_order_stack = ordering[::-1]
 
-        head_symbol = "~".join(head_symbol.split("~")[:-1])
-        abstraction = config.abstractions[head_symbol]
         body = ns.to_type_annotated_ns_s_exp(
             abstraction.body, config.dfa, abstraction.dfa_root
         )
@@ -224,3 +223,14 @@ class CollectingHandler(Handler):
     @property
     def defined_symbols(self):
         return self.underlying_handler.defined_symbols
+
+
+class AbstractionHandlerPuller(HandlerPuller):
+    def __init__(self, abstractions):
+        self.abstractions = abstractions
+
+    def pull_handler(self, symbol, mask, defined_production_idxs, config, handler_fn):
+        abstraction = self.abstractions["~".join(symbol.split("~")[:-1])]
+        return AbstractionHandler(
+            mask, defined_production_idxs, config, symbol, abstraction, handler_fn
+        )
