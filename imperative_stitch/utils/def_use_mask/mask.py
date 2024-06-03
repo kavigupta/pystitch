@@ -73,18 +73,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
         self.de_bruijn_mask_handler = None
 
-    def _matches(self, names, symbol_id):
-        """
-        Whether or not the symbol matches the names.
-        """
-
-        for pred in self.special_case_predicates:
-            if pred.applies(symbol_id):
-                return pred.compute_mask(symbol_id, names)
-        if self.idx_to_name[symbol_id] is None:
-            return True
-        return self.idx_to_name[symbol_id] in names
-
     def currently_defined_indices(self):
         """
         Return the indices of the symbols that are currently defined.
@@ -98,13 +86,13 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             match the handler's names are valid.
         """
         handler = self.handlers[-1]
-        is_defn = handler.is_defining(position)
         if self.de_bruijn_mask_handler is not None:
-            return self.de_bruijn_mask_handler.compute_mask(symbols, is_defn)
-        if is_defn:
-            return [True] * len(symbols)
-        names = set(handler.currently_defined_names())
-        return [self._matches(names, symbol) for symbol in symbols]
+            return self.de_bruijn_mask_handler.compute_mask(
+                symbols, handler.is_defining(position)
+            )
+        return handler.compute_mask(
+            position, symbols, self.idx_to_name, self.special_case_predicates
+        )
 
     def on_entry(self, position: int, symbol: int):
         """

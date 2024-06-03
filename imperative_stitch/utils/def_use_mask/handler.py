@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, List
 
 import neurosym as ns
 
 from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX, match_either
+from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
+    SpecialCaseSymbolPredicate,
+)
 
 
 class Handler(ABC):
@@ -89,6 +92,38 @@ class Handler(ABC):
         return create_target_handler(
             symbol, self.mask, self.currently_defined_indices(), self.config
         )
+
+    def _matches(self, names, symbol_id, special_case_predicates, idx_to_name):
+        """
+        Whether or not the symbol matches the names.
+        """
+
+        for pred in special_case_predicates:
+            if pred.applies(symbol_id):
+                return pred.compute_mask(symbol_id, names)
+        if idx_to_name[symbol_id] is None:
+            return True
+        return idx_to_name[symbol_id] in names
+
+    def compute_mask(
+        self,
+        position: int,
+        symbols: List[int],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
+        idx_to_name: List[str],
+    ):
+        """
+        Compute the mask for the given names. If the context is defining,
+            then all symbols are valid. Otherwise, only the symbols that
+            match the names are valid.
+        """
+        if self.is_defining(position):
+            return [True] * len(symbols)
+        names = set(self.currently_defined_names())
+        return [
+            self._matches(names, symbol, special_case_predicates, idx_to_name)
+            for symbol in symbols
+        ]
 
 
 class ConstructHandler(Handler):
