@@ -24,20 +24,16 @@ def create_target_handler(
 
     symbol = root_symbol
     symbol = mask.id_to_name(symbol)
-    pulled = config.pull_handler(position, symbol, mask, defined_production_idxs)
+    pulled = config.pull_handler(
+        position,
+        symbol,
+        mask,
+        defined_production_idxs,
+        handler_fn=create_target_handler,
+    )
     if pulled is not None:
         return pulled
 
-    hook = config.get_hook(symbol)
-    if hook is not None:
-        return hook.pull_handler(
-            position,
-            symbol,
-            mask,
-            defined_production_idxs,
-            config,
-            handler_fn=create_target_handler,
-        )
     if symbol.startswith("list"):
         return PassthroughLHSHandler(mask, defined_production_idxs, config)
     return targets_map[symbol](mask, defined_production_idxs, config)
