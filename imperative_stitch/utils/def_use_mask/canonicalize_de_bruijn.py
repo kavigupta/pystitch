@@ -362,8 +362,6 @@ class DeBruijnMaskState:
         self.level_nesting -= 1
         if self.level_nesting > 1:
             return None
-        # sym = self.tree_dist.symbols[symbol][0]
-        # assert is_dbvar_wrapper_symbol(sym)
         symbol = ExtraVar(self.num_available_symbols - self.dbvar_value)
         return symbol
 
