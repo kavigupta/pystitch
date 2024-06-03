@@ -12,6 +12,9 @@ class SpecialCaseSymbolPredicate(ABC):
         a predicate that applies only in special cases.
     """
 
+    def __init__(self, tree_dist: ns.TreeDistribution):
+        self.tree_dist = tree_dist
+
     @abstractmethod
     def applies(self, symbol: int) -> bool:
         """
@@ -31,6 +34,7 @@ class NameEPredicate(SpecialCaseSymbolPredicate):
     """
 
     def __init__(self, tree_dist: ns.TreeDistribution):
+        super().__init__(tree_dist)
         self.has_global_available = any(
             GLOBAL_REGEX.match(x) for x, _ in tree_dist.symbols
         )

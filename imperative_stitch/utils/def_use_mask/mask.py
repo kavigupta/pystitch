@@ -48,8 +48,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     def __init__(self, tree_dist, dsl, dfa, abstrs):
         # pylint: disable=cyclic-import
         from .canonicalize_de_bruijn import (
+            DBVarSymbolPredicate,
             compute_de_bruijn_limit,
-            is_dbvar_wrapper_symbol,
         )
 
         super().__init__(tree_dist)
@@ -61,9 +61,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             mat = NAME_REGEX.match(x)
             self.idx_to_name.append(mat.group("name") if mat else None)
 
-        self.special_case_predicates = [NameEPredicate(self.tree_dist)]
-        self.dbvars = [
-            is_dbvar_wrapper_symbol(symbol) for symbol, _ in self.tree_dist.symbols
+        self.special_case_predicates = [
+            NameEPredicate(self.tree_dist),
+            DBVarSymbolPredicate(self.tree_dist),
         ]
 
         self.handlers = []
@@ -81,10 +81,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         for pred in self.special_case_predicates:
             if pred.applies(symbol_id):
                 return pred.compute_mask(symbol_id, names)
-
-        if self.dbvars[symbol_id]:
-            assert self.de_bruijn_mask_handler is None
-            return len(names) > 0
         if self.idx_to_name[symbol_id] is None:
             return True
         return self.idx_to_name[symbol_id] in names
