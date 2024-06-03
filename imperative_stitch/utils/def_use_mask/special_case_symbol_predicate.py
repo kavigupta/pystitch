@@ -22,7 +22,7 @@ class SpecialCaseSymbolPredicate(ABC):
         """
 
     @abstractmethod
-    def compute_mask(self, symbol: int, names: List[str]) -> bool:
+    def compute(self, symbol: int, names: List[str]) -> bool:
         """
         Compute the mask for the given symbol.
         """
@@ -43,5 +43,5 @@ class NameEPredicate(SpecialCaseSymbolPredicate):
     def applies(self, symbol: int) -> bool:
         return symbol == self.name_e
 
-    def compute_mask(self, symbol: int, names: List[str]) -> bool:
+    def compute(self, symbol: int, names: List[str]) -> bool:
         return self.has_global_available or len(names) > 0
