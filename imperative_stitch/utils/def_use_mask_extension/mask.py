@@ -7,6 +7,7 @@ from .abstraction_handler import AbstractionHandlerPuller
 
 
 def def_use_mask(tree_dist, dsl, dfa, abstrs):
+    # pylint: disable=cyclic-import
     from .canonicalize_de_bruijn import DBVarHandlerPuller, DBVarSymbolPredicate
     assert isinstance(abstrs, (list, tuple))
     config = DefUseMaskConfiguration(

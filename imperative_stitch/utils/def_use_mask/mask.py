@@ -4,8 +4,6 @@ from typing import Dict, List
 
 import neurosym as ns
 
-from imperative_stitch.utils.types import SEPARATOR
-
 from .extra_var import ExtraVar, canonicalized_python_name_leaf_regex
 from .handler import DefaultHandler, HandlerPuller, default_handler
 from .names import NAME_REGEX
