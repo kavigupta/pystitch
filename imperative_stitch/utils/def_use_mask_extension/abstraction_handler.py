@@ -1,16 +1,12 @@
+import re
 from typing import List
 
 import neurosym as ns
 
-from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX
-from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
-    SpecialCaseSymbolPredicate,
-)
-
-from ..def_use_mask.handler import Handler, HandlerPuller, default_handler
+VARIABLE_REGEX = re.compile(r"var-.*")
 
 
-class AbstractionHandler(Handler):
+class AbstractionHandler(ns.python_def_use_mask.Handler):
     """
     Handler for an abstraction node. This effectively runs through
         the body of the abstraction, pausing at each abstraction variable
@@ -42,7 +38,7 @@ class AbstractionHandler(Handler):
         head_symbol,
         abstraction,
         position,
-        handler_fn=default_handler,
+        handler_fn=ns.python_def_use_mask.default_handler,
     ):
         super().__init__(mask, defined_production_idxs, config)
         ordering = self.mask.tree_dist.ordering.compute_order(
@@ -64,7 +60,9 @@ class AbstractionHandler(Handler):
             ),
         )
 
-    def on_child_enter(self, position: int, symbol: int) -> "Handler":
+    def on_child_enter(
+        self, position: int, symbol: int
+    ) -> ns.python_def_use_mask.Handler:
         """
         Make sure to collect the children of the abstraction, so it can
             be iterated once the abstraction is fully processed.
@@ -77,7 +75,9 @@ class AbstractionHandler(Handler):
         )
         return CollectingHandler(symbol, underlying)
 
-    def on_child_exit(self, position: int, symbol: int, child: "Handler"):
+    def on_child_exit(
+        self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
+    ):
         self.traverser.last_handler.on_child_exit(
             self.traverser.current_position, symbol, child
         )
@@ -183,7 +183,7 @@ class AbstractionBodyTraverser:
             pass
 
 
-class CollectingHandler(Handler):
+class CollectingHandler(ns.python_def_use_mask.Handler):
     """
     Wrapper around another handler that collects the node as it is being created.
     """
@@ -214,12 +214,16 @@ class CollectingHandler(Handler):
     def on_exit(self):
         self.underlying_handler.on_exit()
 
-    def on_child_enter(self, position: int, symbol: int) -> Handler:
+    def on_child_enter(
+        self, position: int, symbol: int
+    ) -> ns.python_def_use_mask.Handler:
         return CollectingHandler(
             symbol, self.underlying_handler.on_child_enter(position, symbol)
         )
 
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
+    def on_child_exit(
+        self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
+    ):
         self.children[position] = child
         self.underlying_handler.on_child_exit(position, symbol, child)
 
@@ -235,14 +239,16 @@ class CollectingHandler(Handler):
         position: int,
         symbols: List[int],
         idx_to_name: List[str],
-        special_case_predicates: List[SpecialCaseSymbolPredicate],
+        special_case_predicates: List[
+            ns.python_def_use_mask.SpecialCaseSymbolPredicate
+        ],
     ):
         return self.underlying_handler.compute_mask(
             position, symbols, idx_to_name, special_case_predicates
         )
 
 
-class AbstractionHandlerPuller(HandlerPuller):
+class AbstractionHandlerPuller(ns.python_def_use_mask.HandlerPuller):
     def __init__(self, abstractions):
         self.abstractions = abstractions
 

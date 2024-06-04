@@ -9,19 +9,10 @@ import neurosym as ns
 from imperative_stitch.compress.manipulate_abstraction import (
     abstraction_calls_to_bodies,
 )
-from imperative_stitch.utils.def_use_mask.extra_var import (
-    ExtraVar,
-    canonicalized_python_name_as_leaf,
-)
-from imperative_stitch.utils.def_use_mask.handler import Handler, HandlerPuller
-from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
-from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
-from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
-    SpecialCaseSymbolPredicate,
-)
-from imperative_stitch.utils.def_use_mask.target_handler import TargetHandler
 from imperative_stitch.utils.def_use_mask_extension.mask import def_use_mask
+from imperative_stitch.utils.def_use_mask_extension.ordering import (
+    PythonWithAbstractionsNodeOrdering,
+)
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.types import SEPARATOR, get_dfa_state
 
@@ -131,7 +122,7 @@ def canonicalize_de_bruijn_batched(
                 lambda dist, dsl: def_use_mask(dist, dsl, dfa=dfa, abstrs=abstrs)
             ],
             include_type_preorder_mask=False,
-            node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
+            node_ordering=lambda dist: PythonWithAbstractionsNodeOrdering(dist, abstrs),
         ).tree_distribution_skeleton
         for root, dsl in dsl_by_root.items()
     }
@@ -174,7 +165,7 @@ def canonicalize_de_bruijn_from_tree_dist(tree_dist, s_exp, max_explicit_dbvar_i
     id_to_new = {}
     for node, _, mask in ns.collect_preorder_symbols(s_exp, tree_dist):
         node_sym = tree_dist.symbol_to_index[node.symbol]
-        mat = NAME_REGEX.match(node.symbol)
+        mat = ns.python_def_use_mask.NAME_REGEX.match(node.symbol)
         if not mat:
             continue
         assert not node.children
@@ -203,7 +194,7 @@ def get_def_use_chain_mask(mask):
     assert isinstance(mask, ns.ConjunctionPreorderMask)
     assert len(mask.masks) == 1
     mask = mask.masks[-1]
-    assert isinstance(mask, DefUseChainPreorderMask)
+    assert isinstance(mask, ns.python_def_use_mask.DefUseChainPreorderMask)
     return mask
 
 
@@ -238,7 +229,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
             lambda dist, dsl: def_use_mask(dist, dsl, dfa=dfa, abstrs=abstrs)
         ],
         include_type_preorder_mask=False,
-        node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
+        node_ordering=lambda dist: PythonWithAbstractionsNodeOrdering(dist, abstrs),
     )
     tree_dist = fam.tree_distribution_skeleton
 
@@ -253,7 +244,10 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
         idx = get_idx(node)
         if idx == 0:
             result = ns.SExpression(
-                canonicalized_python_name_as_leaf(count_vars, use_type=typ), ()
+                ns.python_def_use_mask.canonicalized_python_name_as_leaf(
+                    count_vars, typ
+                ),
+                (),
             )
             count_vars += 1
             return result
@@ -317,7 +311,7 @@ class DeBruijnMaskState:
         )
 
 
-class DeBruijnHandler(Handler):
+class DeBruijnHandler(ns.python_def_use_mask.Handler):
     def __init__(self, mask, defined_production_idxs, config, state, dbvar_components):
         super().__init__(mask, defined_production_idxs, config)
         self.state = state
@@ -331,7 +325,9 @@ class DeBruijnHandler(Handler):
         position: int,
         symbols: List[int],
         idx_to_name: List[str],
-        special_case_predicates: List[SpecialCaseSymbolPredicate],
+        special_case_predicates: List[
+            ns.python_def_use_mask.SpecialCaseSymbolPredicate
+        ],
     ):
         """
         Compute the mask for the given symbols.
@@ -345,7 +341,9 @@ class DeBruijnHandler(Handler):
     def compute_dict_mask(self):
         pass
 
-    def on_child_enter(self, position: int, symbol: int) -> Handler:
+    def on_child_enter(
+        self, position: int, symbol: int
+    ) -> ns.python_def_use_mask.Handler:
         state = self.state
         if self.mask.tree_dist.symbols[symbol][0] == dbvar_successor_symbol:
             state = state.one_less_symbol()
@@ -371,7 +369,9 @@ class DeBruijnVarHandler(DeBruijnHandler):
     def compute_dict_mask(self):
         raise NotImplementedError
 
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
+    def on_child_exit(
+        self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
+    ):
         pass
 
 
@@ -384,11 +384,13 @@ class DeBruijnVarSuccessorHandler(DeBruijnHandler):
             mask[dbvar_successor_symbol] = True
         return mask
 
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
+    def on_child_exit(
+        self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
+    ):
         pass
 
 
-class DBVarWrapperHandler(DeBruijnHandler, TargetHandler):
+class DBVarWrapperHandler(DeBruijnHandler, ns.python_def_use_mask.TargetHandler):
     def __init__(
         self,
         mask,
@@ -398,7 +400,9 @@ class DBVarWrapperHandler(DeBruijnHandler, TargetHandler):
         num_available_symbols: int,
         is_defn: bool,
     ):
-        TargetHandler.__init__(self, mask, defined_production_idxs, config)
+        ns.python_def_use_mask.TargetHandler.__init__(
+            self, mask, defined_production_idxs, config
+        )
         DeBruijnHandler.__init__(
             self,
             mask,
@@ -420,8 +424,12 @@ class DBVarWrapperHandler(DeBruijnHandler, TargetHandler):
             mask[dbvar_symbol(i)] = True
         return mask
 
-    def on_child_exit(self, position: int, symbol: int, child: Handler):
-        symbol = ExtraVar(self.num_available_symbols - sum(self.dbvar_components))
+    def on_child_exit(
+        self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
+    ):
+        symbol = ns.python_def_use_mask.ExtraVar(
+            self.num_available_symbols - sum(self.dbvar_components)
+        )
         if symbol is not None and symbol not in self.defined_symbols:
             self.defined_symbols.append(symbol)
 
@@ -447,7 +455,7 @@ def add_dbvar_additional_productions(dslf):
         dslf.concrete(sym, f"DBV -> {root_type}", None)
 
 
-class DBVarSymbolPredicate(SpecialCaseSymbolPredicate):
+class DBVarSymbolPredicate(ns.python_def_use_mask.SpecialCaseSymbolPredicate):
     """
     Predicate that applies to the DBVar symbol.
     """
@@ -465,7 +473,7 @@ class DBVarSymbolPredicate(SpecialCaseSymbolPredicate):
         return len(names) > 0
 
 
-class DBVarHandlerPuller(HandlerPuller):
+class DBVarHandlerPuller(ns.python_def_use_mask.HandlerPuller):
     def __init__(self):
         pass
 
