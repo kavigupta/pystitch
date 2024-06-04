@@ -312,78 +312,45 @@ class DeBruijnMaskState:
     num_available_symbols: int
     is_defn: bool
     inside_successor: bool = False
-    dbvar_value: int = 0
 
-    def compute_mask(
-        self,
-        position: int,
-        symbols: List[int],
-        idx_to_name: List[str],
-        special_case_predicates: List[SpecialCaseSymbolPredicate],
-    ):
-        """
-        Compute the mask for the given symbols.
-        """
-        del position, idx_to_name, special_case_predicates
-        mask = {}
-        if self.inside_successor:
-            # We are inside a successor, so the de bruijn limit is valid, as is successor
-            mask[dbvar_symbol(self.max_explicit_dbvar_index)] = True
-            if self.num_available_symbols - self.dbvar_value > self.max_explicit_dbvar_index:
-                mask[dbvar_successor_symbol] = True
-        else:
-            # We are not inside a successor, so we need to iterate upwards
-            start_at = 0 if self.is_defn else 1
-            for i in range(start_at, self.num_available_symbols - self.dbvar_value + 1):
-                if i > self.max_explicit_dbvar_index:
-                    mask[dbvar_successor_symbol] = True
-                    break
-                mask[dbvar_symbol(i)] = True
-        mask = [mask.get(self.tree_dist.symbols[sym][0], False) for sym in symbols]
-        return mask
 
-    def on_entry(self, symbol):
-        """
-        Handle the entry of a symbol.
-        """
-        if self.tree_dist.symbols[symbol][0] == dbvar_successor_symbol:
-            self.inside_successor = True
-            self.dbvar_value += 1
-            return
-        self.dbvar_value += int(
-            self.tree_dist.symbols[symbol][0].split("-")[-1].split("~")[0]
+def target_dbvar(
+    state, symbol, dbvar_components, mask, defined_production_idxs, config
+):
+    """
+    Handle the entry of a symbol.
+    """
+    if state.tree_dist.symbols[symbol][0] == dbvar_successor_symbol:
+        state.inside_successor = True
+        state.num_available_symbols -= 1
+        dbvar_components.append(1)
+        return DeBruijnVarSuccessorHandler(
+            mask,
+            defined_production_idxs,
+            config,
+            state,
+            dbvar_components,
         )
-
-
-# class DeBruijnVariableHandler(Handler):
-#     def __init__(self, mask, defined_production_idxs, config, number):
-#         super().__init__(mask, defined_production_idxs, config)
-#         self.number = number
-
-#     def compute_mask(
-#         self,
-#         position: int,
-#         symbols: List[int],
-#         idx_to_name: List[str],
-#         special_case_predicates: List[SpecialCaseSymbolPredicate],
-#     ):
-#         raise NotImplementedError("should have no children")
-
-#     def is_defining(self, position: int) -> bool:
-#         raise NotImplementedError("should have no children")
-
-#     def on_child_enter(self, position: int, symbol: int) -> Handler:
-#         raise NotImplementedError("should have no children")
-
-#     def on_child_exit(self, position: int, symbol: int, child: Handler):
-#         raise NotImplementedError("should have no children")
+    index = int(state.tree_dist.symbols[symbol][0].split("-")[-1].split("~")[0])
+    dbvar_components.append(index)
+    return DeBruijnVarHandler(
+        mask, defined_production_idxs, config, state, dbvar_components
+    )
 
 
 class DeBruijnVarHandler(Handler):
 
-    def __init__(self, mask, defined_production_idxs, config, state):
+    def __init__(
+        self,
+        mask,
+        defined_production_idxs,
+        config,
+        state,
+        dbvar_components,
+    ):
         super().__init__(mask, defined_production_idxs, config)
         self.state = state
+        self.dbvar_components = dbvar_components
 
     def compute_mask(
         self,
@@ -400,8 +367,66 @@ class DeBruijnVarHandler(Handler):
         raise NotImplementedError
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        self.state.on_entry(symbol)
-        return self
+        return target_dbvar(
+            self.state,
+            symbol,
+            self.dbvar_components,
+            self.mask,
+            self.defined_production_idxs,
+            self.config,
+        )
+
+    def on_child_exit(self, position: int, symbol: int, child: Handler):
+        pass
+
+
+class DeBruijnVarSuccessorHandler(Handler):
+
+    def __init__(self, mask, defined_production_idxs, config, state, dbvar_components):
+        super().__init__(mask, defined_production_idxs, config)
+        self.state = state
+        self.dbvar_components = dbvar_components
+
+    def compute_mask(
+        self,
+        position: int,
+        symbols: List[int],
+        idx_to_name: List[str],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
+    ):
+        """
+        Compute the mask for the given symbols.
+        """
+        del position, idx_to_name, special_case_predicates
+        mask = {}
+        if self.state.inside_successor:
+            # We are inside a successor, so the de bruijn limit is valid, as is successor
+            mask[dbvar_symbol(self.state.max_explicit_dbvar_index)] = True
+            if self.state.num_available_symbols > self.state.max_explicit_dbvar_index:
+                mask[dbvar_successor_symbol] = True
+        else:
+            # We are not inside a successor, so we need to iterate upwards
+            start_at = 0 if self.state.is_defn else 1
+            for i in range(start_at, self.state.num_available_symbols + 1):
+                if i > self.state.max_explicit_dbvar_index:
+                    mask[dbvar_successor_symbol] = True
+                    break
+                mask[dbvar_symbol(i)] = True
+        mask = [mask.get(self.state.tree_dist.symbols[sym][0], False) for sym in symbols]
+        return mask
+
+    def is_defining(self, position: int) -> bool:
+        raise NotImplementedError
+
+    def on_child_enter(self, position: int, symbol: int) -> Handler:
+        return target_dbvar(
+            self.state,
+            symbol,
+            self.dbvar_components,
+            self.mask,
+            self.defined_production_idxs,
+            self.config,
+        )
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         pass
@@ -419,9 +444,11 @@ class DBVarWrapperHandler(TargetHandler):
         is_defn: bool,
     ):
         super().__init__(mask, defined_production_idxs, config)
+        self.num_available_symbols = num_available_symbols
         self.state = DeBruijnMaskState(
             tree_dist, max_explicit_dbvar_index, num_available_symbols, is_defn
         )
+        self.dbvar_components = []
 
     def compute_mask(
         self,
@@ -430,21 +457,42 @@ class DBVarWrapperHandler(TargetHandler):
         idx_to_name: List[str],
         special_case_predicates: List[SpecialCaseSymbolPredicate],
     ):
-        return self.state.compute_mask(
-            position, symbols, idx_to_name, special_case_predicates
-        )
+        """
+        Compute the mask for the given symbols.
+        """
+        del position, idx_to_name, special_case_predicates
+        mask = {}
+        if self.state.inside_successor:
+            # We are inside a successor, so the de bruijn limit is valid, as is successor
+            mask[dbvar_symbol(self.state.max_explicit_dbvar_index)] = True
+            if self.state.num_available_symbols > self.state.max_explicit_dbvar_index:
+                mask[dbvar_successor_symbol] = True
+        else:
+            # We are not inside a successor, so we need to iterate upwards
+            start_at = 0 if self.state.is_defn else 1
+            for i in range(start_at, self.state.num_available_symbols + 1):
+                if i > self.state.max_explicit_dbvar_index:
+                    mask[dbvar_successor_symbol] = True
+                    break
+                mask[dbvar_symbol(i)] = True
+        mask = [mask.get(self.state.tree_dist.symbols[sym][0], False) for sym in symbols]
+        return mask
 
     def is_defining(self, position: int) -> bool:
         raise NotImplementedError
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
-        self.state.on_entry(symbol)
-        return DeBruijnVarHandler(
-            self.mask, self.defined_production_idxs, self.config, self.state
+        return target_dbvar(
+            self.state,
+            symbol,
+            self.dbvar_components,
+            self.mask,
+            self.defined_production_idxs,
+            self.config,
         )
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
-        symbol = ExtraVar(self.state.num_available_symbols - self.state.dbvar_value)
+        symbol = ExtraVar(self.num_available_symbols - sum(self.dbvar_components))
         if symbol is not None and symbol not in self.defined_symbols:
             self.defined_symbols.append(symbol)
 
