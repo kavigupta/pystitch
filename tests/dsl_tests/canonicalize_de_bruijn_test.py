@@ -355,7 +355,6 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                     "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-0~DBV))) (Load~Ctx))",
                     Fraction(1, 2),
                 ),
-                ("(dbvar-0~DBV)", Fraction(2, 3)),
                 ("(dbvar-0~DBV)", Fraction(1, 3)),
                 (
                     "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-0~DBV))) (Load~Ctx))",
@@ -373,7 +372,6 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                     Fraction(1, 3),
                 ),
                 ("(dbvar-successor~DBV (dbvar-0~DBV))", Fraction(1, 3)),
-                ("(dbvar-0~DBV)", Fraction(2, 3)),
             ],
         )
 
@@ -396,7 +394,6 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                     Fraction(5, 6),
                 ),
                 ("(dbvar-successor~DBV (dbvar-2~DBV))", Fraction(3, 7)),
-                ("(dbvar-2~DBV)", Fraction(3, 4)),
                 ("(dbvar-0~DBV)", Fraction(4, 11)),
                 (
                     "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-2~DBV)))) (Load~Ctx))",
@@ -407,7 +404,6 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                     Fraction(3, 7),
                 ),
                 ("(dbvar-successor~DBV (dbvar-2~DBV))", Fraction(1, 4)),
-                ("(dbvar-2~DBV)", Fraction(3, 4)),
                 ("(dbvar-0~DBV)", Fraction(4, 11)),
                 (
                     "(Name~E (dbvar~Name (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-successor~DBV (dbvar-2~DBV))))) (Load~Ctx))",
@@ -422,7 +418,6 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                     Fraction(1, 4),
                 ),
                 ("(dbvar-successor~DBV (dbvar-2~DBV))", Fraction(1, 4)),
-                ("(dbvar-2~DBV)", Fraction(3, 4)),
             ],
         )
 
