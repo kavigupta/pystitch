@@ -58,19 +58,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         abstrs: The abstractions of the DSL
     """
 
-    def __init__(self, tree_dist, dsl, dfa, abstrs):
-        # pylint: disable=cyclic-import
-        from ..def_use_mask_extension.abstraction_handler import (
-            AbstractionHandlerPuller,
-        )
-        from ..def_use_mask_extension.canonicalize_de_bruijn import (
-            DBVarHandlerPuller,
-            DBVarSymbolPredicate,
-            compute_de_bruijn_limit,
-        )
+    def __init__(self, tree_dist, dsl, config, special_case_predicate_fns=()):
 
         super().__init__(tree_dist)
-        assert isinstance(abstrs, (list, tuple))
         self.dsl = dsl
         self.idx_to_name = []
         for x, _ in self.tree_dist.symbols:
@@ -78,19 +68,11 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             self.idx_to_name.append(mat.group("name") if mat else None)
 
         self.special_case_predicates = [
-            NameEPredicate(self.tree_dist),
-            DBVarSymbolPredicate(self.tree_dist),
+            fn(self.tree_dist) for fn in (NameEPredicate, *special_case_predicate_fns)
         ]
 
         self.handlers = []
-        self.config = DefUseMaskConfiguration(
-            dfa,
-            {
-                "fn_": AbstractionHandlerPuller({x.name: x for x in abstrs}),
-                "dbvar" + SEPARATOR: DBVarHandlerPuller(),
-            },
-        )
-        self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
+        self.config = config
 
     def currently_defined_indices(self):
         """

@@ -1,8 +1,8 @@
 import neurosym as ns
 
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask import DefUseChainPreorderMask
 from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.def_use_mask_extension.mask import def_use_mask
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 
 
@@ -32,9 +32,7 @@ def fit_to(
         root,
     )
     smooth_mask = dsl.create_smoothing_mask(dsl_subset)
-    apms = [
-        lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
-    ]
+    apms = [lambda dist, dsl: def_use_mask(dist, dsl, dfa=dfa, abstrs=abstrs)]
     node_ordering = (
         (lambda dist: PythonNodeOrdering(dist, abstrs))
         if use_node_ordering

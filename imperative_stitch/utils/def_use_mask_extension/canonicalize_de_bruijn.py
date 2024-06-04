@@ -21,6 +21,7 @@ from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
     SpecialCaseSymbolPredicate,
 )
 from imperative_stitch.utils.def_use_mask.target_handler import TargetHandler
+from imperative_stitch.utils.def_use_mask_extension.mask import def_use_mask
 from imperative_stitch.utils.dsl_with_abstraction import add_abstractions
 from imperative_stitch.utils.types import SEPARATOR, get_dfa_state
 
@@ -127,9 +128,7 @@ def canonicalize_de_bruijn_batched(
         root: ns.BigramProgramDistributionFamily(
             dsl,
             additional_preorder_masks=[
-                lambda dist, dsl: DefUseChainPreorderMask(
-                    dist, dsl, dfa=dfa, abstrs=abstrs
-                )
+                lambda dist, dsl: def_use_mask(dist, dsl, dfa=dfa, abstrs=abstrs)
             ],
             include_type_preorder_mask=False,
             node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
@@ -236,7 +235,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
     fam = ns.BigramProgramDistributionFamily(
         dsl,
         additional_preorder_masks=[
-            lambda dist, dsl: DefUseChainPreorderMask(dist, dsl, dfa=dfa, abstrs=abstrs)
+            lambda dist, dsl: def_use_mask(dist, dsl, dfa=dfa, abstrs=abstrs)
         ],
         include_type_preorder_mask=False,
         node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
@@ -477,7 +476,7 @@ class DBVarHandlerPuller(HandlerPuller):
             mask,
             defined_production_idxs,
             config,
-            mask.max_explicit_dbvar_index,
+            compute_de_bruijn_limit(mask.tree_dist),
             len(mask.currently_defined_indices()),
             mask.handlers[-1].is_defining(position),
         )
