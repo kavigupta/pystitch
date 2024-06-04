@@ -124,7 +124,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         """
         Updates the stack of handlers when entering a node.
         """
-        # pylint: disable=cyclic-import
         if not self.handlers:
             assert position == symbol == 0
             self.handlers.append(DefaultHandler(self, [], self.config))
