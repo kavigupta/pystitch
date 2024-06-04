@@ -4,24 +4,10 @@ from typing import Dict, List
 
 import neurosym as ns
 
-from imperative_stitch.utils.def_use_mask.abstraction_handler import (
-    AbstractionHandlerPuller,
-)
-from imperative_stitch.utils.def_use_mask.extra_var import (
-    ExtraVar,
-    canonicalized_python_name_leaf_regex,
-)
-from imperative_stitch.utils.def_use_mask.handler import (
-    DefaultHandler,
-    HandlerPuller,
-    default_handler,
-)
-from imperative_stitch.utils.def_use_mask.names import NAME_REGEX
-from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
-from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
-    NameEPredicate,
-)
-from imperative_stitch.utils.types import SEPARATOR
+from .extra_var import ExtraVar, canonicalized_python_name_leaf_regex
+from .handler import DefaultHandler, HandlerPuller, default_handler
+from .names import NAME_REGEX
+from .special_case_symbol_predicate import NameEPredicate
 
 
 @dataclass
@@ -70,17 +56,8 @@ class DefUseChainPreorderMask(ns.PreorderMask):
         abstrs: The abstractions of the DSL
     """
 
-    def __init__(self, tree_dist, dsl, dfa, abstrs):
-        # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import (
-            DBVarHandlerPuller,
-            DBVarSymbolPredicate,
-            compute_de_bruijn_limit,
-        )
-
+    def __init__(self, tree_dist, dsl, config, special_case_predicate_fns=()):
         super().__init__(tree_dist)
-        assert isinstance(tree_dist.ordering, PythonNodeOrdering)
-        assert isinstance(abstrs, (list, tuple))
         self.dsl = dsl
         self.idx_to_name = []
         for x, _ in self.tree_dist.symbols:
@@ -88,19 +65,11 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             self.idx_to_name.append(mat.group("name") if mat else None)
 
         self.special_case_predicates = [
-            NameEPredicate(self.tree_dist),
-            DBVarSymbolPredicate(self.tree_dist),
+            fn(self.tree_dist) for fn in (NameEPredicate, *special_case_predicate_fns)
         ]
 
         self.handlers = []
-        self.config = DefUseMaskConfiguration(
-            dfa,
-            {
-                "fn_": AbstractionHandlerPuller({x.name: x for x in abstrs}),
-                "dbvar" + SEPARATOR: DBVarHandlerPuller(),
-            },
-        )
-        self.max_explicit_dbvar_index = compute_de_bruijn_limit(tree_dist)
+        self.config = config
 
     def currently_defined_indices(self):
         """

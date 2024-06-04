@@ -7,7 +7,7 @@ from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
     SpecialCaseSymbolPredicate,
 )
 
-from .handler import Handler, HandlerPuller, default_handler
+from ..def_use_mask.handler import Handler, HandlerPuller, default_handler
 
 
 class AbstractionHandler(Handler):

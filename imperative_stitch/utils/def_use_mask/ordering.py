@@ -7,7 +7,7 @@ def field_order(node, fields):
     return [node_fields.index(f) for f in fields]
 
 
-def python_node_dictionary():
+def python_ordering_dictionary():
     fields = [
         ("ListComp~E", ["generators", "elt"]),
         ("GeneratorExp~E", ["generators", "elt"]),
@@ -22,7 +22,7 @@ def python_node_dictionary():
 
 
 def python_node_ordering_with_abstractions(abstrs):
-    result = python_node_dictionary()
+    result = python_ordering_dictionary()
     for i, abstr in enumerate(abstrs):
         ann_name = abstr.name + "~" + ns.python_ast_tools.clean_type(abstr.dfa_root)
         result[ann_name] = abstr.arguments_traversal_order(
