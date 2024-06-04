@@ -329,7 +329,10 @@ class DeBruijnMaskHandler:
         if self.inside_successor:
             # We are inside a successor, so the de bruijn limit is valid, as is successor
             mask[dbvar_symbol(self.max_explicit_dbvar_index)] = True
-            if self.num_available_symbols - self.dbvar_value > self.max_explicit_dbvar_index:
+            if (
+                self.num_available_symbols - self.dbvar_value
+                > self.max_explicit_dbvar_index
+            ):
                 mask[dbvar_successor_symbol] = True
         else:
             # We are not inside a successor, so we need to iterate upwards
