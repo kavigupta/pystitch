@@ -1,6 +1,11 @@
+from typing import List
+
 import neurosym as ns
 
 from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX
+from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
+    SpecialCaseSymbolPredicate,
+)
 
 from .handler import Handler, HandlerPuller, default_handler
 
@@ -224,6 +229,17 @@ class CollectingHandler(Handler):
     @property
     def defined_symbols(self):
         return self.underlying_handler.defined_symbols
+
+    def compute_mask(
+        self,
+        position: int,
+        symbols: List[int],
+        idx_to_name: List[str],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
+    ):
+        return self.underlying_handler.compute_mask(
+            position, symbols, idx_to_name, special_case_predicates
+        )
 
 
 class AbstractionHandlerPuller(HandlerPuller):
