@@ -57,7 +57,6 @@ class DefUseChainPreorderMask(ns.PreorderMask):
     """
 
     def __init__(self, tree_dist, dsl, config, special_case_predicate_fns=()):
-
         super().__init__(tree_dist)
         self.dsl = dsl
         self.idx_to_name = []
