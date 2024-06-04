@@ -16,7 +16,6 @@ from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import abstraction_calls_to_stubs
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.def_use_mask_extension.canonicalize_de_bruijn import (
     add_dbvar_additional_productions,
     canonicalize_de_bruijn,
@@ -24,6 +23,9 @@ from imperative_stitch.utils.def_use_mask_extension.canonicalize_de_bruijn impor
     uncanonicalize_de_bruijn,
 )
 from imperative_stitch.utils.def_use_mask_extension.mask import def_use_mask
+from imperative_stitch.utils.def_use_mask_extension.ordering import (
+    PythonWithAbstractionsNodeOrdering,
+)
 from tests.utils import (
     cwq,
     expand_with_slow_tests,
@@ -235,7 +237,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
                 lambda dist, dsl: def_use_mask(dist, dsl, dfa=dfa, abstrs=abstrs)
             ],  # note: no need if we are using de bruijn
             include_type_preorder_mask=True,
-            node_ordering=lambda dist: PythonNodeOrdering(dist, abstrs),
+            node_ordering=lambda dist: PythonWithAbstractionsNodeOrdering(dist, abstrs),
         )
         counts = fam.count_programs([fit_to_prog])
         dist = fam.counts_to_distribution(counts)[0]

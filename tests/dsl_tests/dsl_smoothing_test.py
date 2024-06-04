@@ -4,7 +4,6 @@ import neurosym as ns
 import numpy as np
 
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from imperative_stitch.utils.def_use_mask_extension.mask import def_use_mask
 
 
@@ -43,7 +42,7 @@ class DSLSmoothingTest(unittest.TestCase):
             additional_preorder_masks=[
                 lambda dist, dsl: def_use_mask(dist, dsl, dfa, ())
             ],
-            node_ordering=lambda dist: PythonNodeOrdering(dist, ()),
+            node_ordering=ns.python_def_use_mask.PythonNodeOrdering,
         )
         counts = fam.count_programs(
             [

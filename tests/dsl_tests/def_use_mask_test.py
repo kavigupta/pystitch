@@ -16,7 +16,6 @@ from imperative_stitch.data.stitch_output_set import (
 )
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.names import match_either
 from tests.dsl_tests.utils import fit_to
 from tests.utils import (
     cwq,
@@ -30,14 +29,14 @@ from tests.utils import (
 class DefUseMaskTestGeneric(unittest.TestCase):
     def annotate_alternates(self, chosen, alts):
         self.assertIn(chosen, alts)
-        mat = match_either(chosen)
+        mat = ns.python_def_use_mask.match_either_name_or_global(chosen)
         if not mat:
             return chosen
         name, scope = mat.group("name"), (
             mat.group("scope") if mat.group("typ") == "&" else "0"
         )
         # print(alts)
-        alts = [match_either(alt) for alt in alts]
+        alts = [ns.python_def_use_mask.match_either_name_or_global(alt) for alt in alts]
         # print([x for x in alts if x])
         alts = {x.group("name") for x in alts if x}
         alts.remove(name)
