@@ -24,7 +24,12 @@ class DefiningConstructHandler(ChildFrameCreatorHandler):
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
         if self.is_construct_name_field(position):
-            self.defined_symbols += child.defined_symbols
+            print(self, [self.mask.id_to_name(x) for x in child.defined_symbols])
+            for idx_list in (
+                self.original_defined_production_idxs,
+                self.defined_production_idxs,
+            ):
+                idx_list += [x for x in child.defined_symbols if x not in idx_list]
         super().on_child_exit(position, symbol, child)
 
     def is_construct_name_field(self, position):
