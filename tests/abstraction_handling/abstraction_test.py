@@ -19,8 +19,8 @@ from imperative_stitch.data.stitch_output_set import (
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import (
-    python_ordering_dictionary,
     python_node_ordering_with_abstractions,
+    python_ordering_dictionary,
 )
 from tests.utils import (
     expand_with_slow_tests,
@@ -499,7 +499,8 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
         # order is #0 %1 %2 %3 %4 ?0
         self.assertEqual(
-            fn_2.arguments_traversal_order(python_ordering_dictionary()), [2, 3, 1, 5, 4, 0]
+            fn_2.arguments_traversal_order(python_ordering_dictionary()),
+            [2, 3, 1, 5, 4, 0],
         )
 
     def test_in_order_comprehension(self):

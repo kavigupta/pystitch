@@ -6,7 +6,6 @@ import neurosym as ns
 
 from imperative_stitch.utils.types import SEPARATOR
 
-from .abstraction_handler import AbstractionHandlerPuller
 from .extra_var import ExtraVar, canonicalized_python_name_leaf_regex
 from .handler import DefaultHandler, HandlerPuller, default_handler
 from .names import NAME_REGEX
@@ -61,7 +60,10 @@ class DefUseChainPreorderMask(ns.PreorderMask):
 
     def __init__(self, tree_dist, dsl, dfa, abstrs):
         # pylint: disable=cyclic-import
-        from .canonicalize_de_bruijn import (
+        from ..def_use_mask_extension.abstraction_handler import (
+            AbstractionHandlerPuller,
+        )
+        from ..def_use_mask_extension.canonicalize_de_bruijn import (
             DBVarHandlerPuller,
             DBVarSymbolPredicate,
             compute_de_bruijn_limit,

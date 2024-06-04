@@ -16,14 +16,14 @@ from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import abstraction_calls_to_stubs
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.canonicalize_de_bruijn import (
+from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
+from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
+from imperative_stitch.utils.def_use_mask_extension.canonicalize_de_bruijn import (
     add_dbvar_additional_productions,
     canonicalize_de_bruijn,
     dsl_subset_from_dbprograms,
     uncanonicalize_de_bruijn,
 )
-from imperative_stitch.utils.def_use_mask.mask import DefUseChainPreorderMask
-from imperative_stitch.utils.def_use_mask.ordering import PythonNodeOrdering
 from tests.utils import (
     cwq,
     expand_with_slow_tests,
