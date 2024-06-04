@@ -311,7 +311,6 @@ class DeBruijnMaskState:
     max_explicit_dbvar_index: int
     num_available_symbols: int
     is_defn: bool
-    level_nesting: int = 1
     inside_successor: bool = False
     dbvar_value: int = 0
 
@@ -346,7 +345,6 @@ class DeBruijnMaskState:
         """
         Handle the entry of a symbol.
         """
-        self.level_nesting += 1
         if self.tree_dist.symbols[symbol][0] == dbvar_successor_symbol:
             self.inside_successor = True
             self.dbvar_value += 1
@@ -355,18 +353,60 @@ class DeBruijnMaskState:
             self.tree_dist.symbols[symbol][0].split("-")[-1].split("~")[0]
         )
 
-    def on_exit(self, symbol):
-        """
-        Handle the exit of a symbol.
-        """
-        self.level_nesting -= 1
-        if self.level_nesting > 1:
-            return None
-        symbol = ExtraVar(self.num_available_symbols - self.dbvar_value)
-        return symbol
+
+# class DeBruijnVariableHandler(Handler):
+#     def __init__(self, mask, defined_production_idxs, config, number):
+#         super().__init__(mask, defined_production_idxs, config)
+#         self.number = number
+
+#     def compute_mask(
+#         self,
+#         position: int,
+#         symbols: List[int],
+#         idx_to_name: List[str],
+#         special_case_predicates: List[SpecialCaseSymbolPredicate],
+#     ):
+#         raise NotImplementedError("should have no children")
+
+#     def is_defining(self, position: int) -> bool:
+#         raise NotImplementedError("should have no children")
+
+#     def on_child_enter(self, position: int, symbol: int) -> Handler:
+#         raise NotImplementedError("should have no children")
+
+#     def on_child_exit(self, position: int, symbol: int, child: Handler):
+#         raise NotImplementedError("should have no children")
 
 
-class DeBruijnMaskHandler(TargetHandler):
+class DeBruijnVarHandler(Handler):
+
+    def __init__(self, mask, defined_production_idxs, config, state):
+        super().__init__(mask, defined_production_idxs, config)
+        self.state = state
+
+    def compute_mask(
+        self,
+        position: int,
+        symbols: List[int],
+        idx_to_name: List[str],
+        special_case_predicates: List[SpecialCaseSymbolPredicate],
+    ):
+        return self.state.compute_mask(
+            position, symbols, idx_to_name, special_case_predicates
+        )
+
+    def is_defining(self, position: int) -> bool:
+        raise NotImplementedError
+
+    def on_child_enter(self, position: int, symbol: int) -> Handler:
+        self.state.on_entry(symbol)
+        return self
+
+    def on_child_exit(self, position: int, symbol: int, child: Handler):
+        pass
+
+
+class DBVarWrapperHandler(TargetHandler):
     def __init__(
         self,
         mask,
@@ -394,17 +434,18 @@ class DeBruijnMaskHandler(TargetHandler):
         )
 
     def is_defining(self, position: int) -> bool:
-        assert position == 0
-        return self.state.is_defn
+        raise NotImplementedError
 
     def on_child_enter(self, position: int, symbol: int) -> Handler:
         self.state.on_entry(symbol)
-        return self
+        return DeBruijnVarHandler(
+            self.mask, self.defined_production_idxs, self.config, self.state
+        )
 
     def on_child_exit(self, position: int, symbol: int, child: Handler):
-        result = self.state.on_exit(symbol)
-        if result is not None and result not in self.defined_symbols:
-            self.defined_symbols.append(result)
+        symbol = ExtraVar(self.state.num_available_symbols - self.state.dbvar_value)
+        if symbol is not None and symbol not in self.defined_symbols:
+            self.defined_symbols.append(symbol)
 
 
 def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar_index):
@@ -453,7 +494,7 @@ class DBVarHandlerPuller(HandlerPuller):
     def pull_handler(
         self, position, symbol, mask, defined_production_idxs, config, handler_fn
     ):
-        return DeBruijnMaskHandler(
+        return DBVarWrapperHandler(
             mask,
             defined_production_idxs,
             config,
