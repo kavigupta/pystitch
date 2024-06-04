@@ -114,11 +114,9 @@ class DefUseChainPreorderMask(ns.PreorderMask):
             defining, then all symbols are valid. Otherwise, only the symbols that
             match the handler's names are valid.
         """
-        handler = self.handlers[-1]
-        m = handler.compute_mask(
+        return self.handlers[-1].compute_mask(
             position, symbols, self.idx_to_name, self.special_case_predicates
         )
-        return m
 
     def on_entry(self, position: int, symbol: int):
         """
