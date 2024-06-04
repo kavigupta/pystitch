@@ -485,7 +485,7 @@ class LikelihoodDeBruijnTest(unittest.TestCase):
 
 
 def parse_and_check(code_original, do_actual_check=True):
-    from .def_use_mask_test import DefUseMaskTest
+    from .def_use_mask_test import DefUseMaskTestGeneric
 
     try:
         check_banned_components(ast.parse(code_original))
@@ -500,7 +500,7 @@ def parse_and_check(code_original, do_actual_check=True):
         return None, None
     if do_actual_check:
         try:
-            DefUseMaskTest().annotate_program(code_original)
+            DefUseMaskTestGeneric().annotate_program(code_original)
         except AssertionError:
             return None, None
     return pa, se
