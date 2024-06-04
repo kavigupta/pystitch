@@ -3,7 +3,7 @@ from typing import List
 
 import neurosym as ns
 
-from imperative_stitch.utils.def_use_mask.names import GLOBAL_REGEX
+from .names import GLOBAL_REGEX
 
 
 class SpecialCaseSymbolPredicate(ABC):

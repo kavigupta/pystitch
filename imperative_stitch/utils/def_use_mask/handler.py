@@ -3,10 +3,8 @@ from typing import Callable, List
 
 import neurosym as ns
 
-from imperative_stitch.utils.def_use_mask.names import VARIABLE_REGEX, match_either
-from imperative_stitch.utils.def_use_mask.special_case_symbol_predicate import (
-    SpecialCaseSymbolPredicate,
-)
+from .names import VARIABLE_REGEX, match_either
+from .special_case_symbol_predicate import SpecialCaseSymbolPredicate
 
 
 class Handler(ABC):

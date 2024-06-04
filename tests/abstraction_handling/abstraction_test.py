@@ -19,7 +19,7 @@ from imperative_stitch.data.stitch_output_set import (
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.utils.def_use_mask.ordering import (
-    python_node_dictionary,
+    python_ordering_dictionary,
     python_node_ordering_with_abstractions,
 )
 from tests.utils import (
@@ -486,20 +486,20 @@ class AbstractionRenderingTest(unittest.TestCase):
 
     def test_in_order_simple(self):
         self.assertEqual(
-            fn_1.variables_in_order(python_node_dictionary()), ["%1", "%2"]
+            fn_1.variables_in_order(python_ordering_dictionary()), ["%1", "%2"]
         )
         self.assertEqual(
-            fn_1.arguments_traversal_order(python_node_dictionary()), [0, 1]
+            fn_1.arguments_traversal_order(python_ordering_dictionary()), [0, 1]
         )
 
     def test_in_order_multi(self):
         self.assertEqual(
-            fn_2.variables_in_order(python_node_dictionary()),
+            fn_2.variables_in_order(python_ordering_dictionary()),
             ["%2", "%3", "%1", "?0", "%4", "#0"],
         )
         # order is #0 %1 %2 %3 %4 ?0
         self.assertEqual(
-            fn_2.arguments_traversal_order(python_node_dictionary()), [2, 3, 1, 5, 4, 0]
+            fn_2.arguments_traversal_order(python_ordering_dictionary()), [2, 3, 1, 5, 4, 0]
         )
 
     def test_in_order_comprehension(self):
@@ -524,7 +524,7 @@ class AbstractionRenderingTest(unittest.TestCase):
             dfa_metavars=["E", "E"],
         )
         self.assertEqual(
-            fn.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
+            fn.variables_in_order(python_ordering_dictionary()), ["%1", "#1", "#0"]
         )
 
     def check_abstraction_bodies_in(self, x):
