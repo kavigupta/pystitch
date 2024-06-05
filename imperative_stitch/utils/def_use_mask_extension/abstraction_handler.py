@@ -137,25 +137,25 @@ class AbstractionBodyTraverser:
         assert self._is_defining is not None
         return self._is_defining
 
-    def task_coroutine(self):
+    def process_until_variable(self):
         while self._task_stack:
             task_type = self._task_stack[-1][0]
             if task_type == "traverse":
-                done = self.body_traversal_coroutine()
-                if done:
-                    return
+                out = self.traverse_body()
+                if out is not None:
+                    return out
             elif task_type == "exit":
-                self.exit_coroutine()
+                self.exit()
             else:
                 raise ValueError(f"Unrecognized task type {task_type}")
 
-    def body_traversal_coroutine(self):
+    def traverse_body(self):
         _, node, position = self._task_stack.pop()
         if VARIABLE_REGEX.match(node.symbol):
             assert (
                 self._mask_copy is not None
             ), "We do not support the identity abstraction"
-            return self.handle_variable(node, position)
+            return self.traverse_variable(node, position)
         sym = self.mask.name_to_id(node.symbol)
         root = self._mask_copy is None
         if root:
@@ -169,21 +169,20 @@ class AbstractionBodyTraverser:
             self._task_stack.append(("exit", sym, position))
         for i in order[::-1]:
             self._task_stack.append(("traverse", node.children[i], i))
-        return False
+        return None
 
-    def handle_variable(self, node, position):
+    def traverse_variable(self, node, position):
         # If the node is a variable, check if it is one that has already been processed
         name = node.symbol
         if name in self._variables_to_reuse:
             self._task_stack.append(
                 ("traverse", self._variables_to_reuse[name], position)
             )
-            return False
+            return None
         is_defining = self._mask_copy.handlers[-1].is_defining(position)
-        self._is_defining, self._position, self._name = is_defining, position, name
-        return True
+        return is_defining, position, name
 
-    def exit_coroutine(self):
+    def exit(self):
         _, sym, position = self._task_stack.pop()
         self._mask_copy.on_exit(position, sym)
 
@@ -197,10 +196,10 @@ class AbstractionBodyTraverser:
         """
         if self._name is not None:
             self._variables_to_reuse[self._name] = node
-        try:
-            self.task_coroutine()
-        except StopIteration:
-            pass
+        out = self.process_until_variable()
+        if out is None:
+            return
+        self._is_defining, self._position, self._name = out
 
 
 class CollectingHandler(ns.python_def_use_mask.Handler):
