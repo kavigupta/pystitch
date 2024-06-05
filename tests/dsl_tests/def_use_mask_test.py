@@ -2,6 +2,7 @@ import copy
 import unittest
 
 import neurosym as ns
+from increase_recursionlimit import increase_recursionlimit
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import (
@@ -72,38 +73,40 @@ class DefUseMaskTestGeneric(unittest.TestCase):
     def assertAbstractionAnnotation(
         self, code, rewritten, abstractions, convert_to_python=True
     ):
-        print("*" * 80)
-        for abstr in abstractions:
-            print(ns.render_s_expression(abstr.body.to_ns_s_exp()))
-        print("*" * 80)
-        print(
-            abstraction_calls_to_stubs(
-                converter.s_exp_to_python_ast(code), {x.name: x for x in abstractions}
-            ).to_python()
-        )
-        print("*" * 80)
-        if convert_to_python:
+        with increase_recursionlimit():
+            print("*" * 80)
+            for abstr in abstractions:
+                print(ns.render_s_expression(abstr.body.to_ns_s_exp()))
+            print("*" * 80)
             print(
                 abstraction_calls_to_stubs(
-                    converter.s_exp_to_python_ast(rewritten),
+                    converter.s_exp_to_python_ast(code),
                     {x.name: x for x in abstractions},
                 ).to_python()
             )
-        print("*" * 80)
-        try:
+            print("*" * 80)
+            if convert_to_python:
+                print(
+                    abstraction_calls_to_stubs(
+                        converter.s_exp_to_python_ast(rewritten),
+                        {x.name: x for x in abstractions},
+                    ).to_python()
+                )
+            print("*" * 80)
+            try:
+                self.annotate_program(
+                    code,
+                    parser=converter.s_exp_to_python_ast,
+                    abstrs=abstractions,
+                )
+            except AssertionError:
+                return
             self.annotate_program(
-                code,
+                rewritten,
                 parser=converter.s_exp_to_python_ast,
                 abstrs=abstractions,
+                convert_to_python=convert_to_python,
             )
-        except AssertionError:
-            return
-        self.annotate_program(
-            rewritten,
-            parser=converter.s_exp_to_python_ast,
-            abstrs=abstractions,
-            convert_to_python=convert_to_python,
-        )
 
 
 class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):

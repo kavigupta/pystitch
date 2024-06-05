@@ -138,6 +138,7 @@ class AbstractionBodyTraverser:
         return self._is_defining
 
     def task_coroutine(self):
+        print(self._task_stack)
         while self._task_stack:
             task_type = self._task_stack[-1][0]
             if task_type == "traverse":
@@ -164,22 +165,29 @@ class AbstractionBodyTraverser:
         else:
             self._mask_copy.on_entry(position, sym)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
-        for i in order:
-            self._task_stack.append(("traverse", node.children[i], i))
-            yield from self.body_traversal_coroutine()
         if not root:
-            self._mask_copy.on_exit(position, sym)
+            self._task_stack.append(("exit", sym, position))
+        for i in order[::-1]:
+            self._task_stack.append(("traverse", node.children[i], i))
+        yield from self.task_coroutine()
 
     def handle_variable(self, node, position):
         # If the node is a variable, check if it is one that has already been processed
         name = node.symbol
         if name in self._variables_to_reuse:
-            self._task_stack.append(("traverse", self._variables_to_reuse[name], position))
+            self._task_stack.append(
+                ("traverse", self._variables_to_reuse[name], position)
+            )
             yield from self.body_traversal_coroutine()
         else:
             is_defining = self._mask_copy.handlers[-1].is_defining(position)
             node = yield is_defining, position
             self._variables_to_reuse[name] = node
+
+    def exit_coroutine(self):
+        _, sym, position = self._task_stack.pop()
+        self._mask_copy.on_exit(position, sym)
+        yield from []
 
     def new_argument(self, node):
         """
