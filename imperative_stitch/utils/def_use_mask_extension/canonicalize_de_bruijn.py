@@ -257,7 +257,7 @@ def uncanonicalize_de_bruijn(dfa, s_exp_de_bruijn, abstrs):
 
     id_to_new = {}
 
-    def traverse_replacer(node, mask):
+    def traverse_replacer(node, mask, _1, _2):
         if is_dbvar_wrapper_symbol(node.symbol):
             assert len(node.children) == 1
             new_node = replace_de_bruijn(
