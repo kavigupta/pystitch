@@ -115,7 +115,7 @@ class AbstractionBodyTraverser:
         self.create_handler = create_handler
 
         self._task_stack = [("traverse", body, 0)]
-        self._body_handler = self.task_coroutine()
+        self._name = None
         self._mask_copy = None
         self._is_defining = None
         self._position = None
@@ -141,7 +141,9 @@ class AbstractionBodyTraverser:
         while self._task_stack:
             task_type = self._task_stack[-1][0]
             if task_type == "traverse":
-                yield from self.body_traversal_coroutine()
+                done = self.body_traversal_coroutine()
+                if done:
+                    return
             elif task_type == "exit":
                 self.exit_coroutine()
             else:
@@ -167,7 +169,7 @@ class AbstractionBodyTraverser:
             self._task_stack.append(("exit", sym, position))
         for i in order[::-1]:
             self._task_stack.append(("traverse", node.children[i], i))
-        return []
+        return False
 
     def handle_variable(self, node, position):
         # If the node is a variable, check if it is one that has already been processed
@@ -176,10 +178,10 @@ class AbstractionBodyTraverser:
             self._task_stack.append(
                 ("traverse", self._variables_to_reuse[name], position)
             )
-        else:
-            is_defining = self._mask_copy.handlers[-1].is_defining(position)
-            node = yield is_defining, position
-            self._variables_to_reuse[name] = node
+            return False
+        is_defining = self._mask_copy.handlers[-1].is_defining(position)
+        self._is_defining, self._position, self._name = is_defining, position, name
+        return True
 
     def exit_coroutine(self):
         _, sym, position = self._task_stack.pop()
@@ -193,8 +195,10 @@ class AbstractionBodyTraverser:
             node: The node to send to the coroutine. None if the coroutine is just starting,
                 otherwise the argument that was just processed.
         """
+        if self._name is not None:
+            self._variables_to_reuse[self._name] = node
         try:
-            self._is_defining, self._position = self._body_handler.send(node)
+            self.task_coroutine()
         except StopIteration:
             pass
 
