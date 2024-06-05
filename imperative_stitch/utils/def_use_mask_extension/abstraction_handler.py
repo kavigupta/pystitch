@@ -115,7 +115,7 @@ class AbstractionBodyTraverser:
         self.create_handler = create_handler
 
         self._task_stack = [("traverse", body, 0)]
-        self._body_handler = self.body_traversal_coroutine()
+        self._body_handler = self.task_coroutine()
         self._mask_copy = None
         self._is_defining = None
         self._position = None
@@ -169,7 +169,6 @@ class AbstractionBodyTraverser:
             self._task_stack.append(("exit", sym, position))
         for i in order[::-1]:
             self._task_stack.append(("traverse", node.children[i], i))
-        yield from self.task_coroutine()
 
     def handle_variable(self, node, position):
         # If the node is a variable, check if it is one that has already been processed
@@ -178,7 +177,6 @@ class AbstractionBodyTraverser:
             self._task_stack.append(
                 ("traverse", self._variables_to_reuse[name], position)
             )
-            yield from self.body_traversal_coroutine()
         else:
             is_defining = self._mask_copy.handlers[-1].is_defining(position)
             node = yield is_defining, position
