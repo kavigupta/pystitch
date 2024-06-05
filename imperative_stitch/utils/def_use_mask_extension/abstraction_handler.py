@@ -144,7 +144,7 @@ class AbstractionBodyTraverser:
             if task_type == "traverse":
                 yield from self.body_traversal_coroutine()
             elif task_type == "exit":
-                yield from self.exit_coroutine()
+                self.exit_coroutine()
             else:
                 raise ValueError(f"Unrecognized task type {task_type}")
 
@@ -154,8 +154,7 @@ class AbstractionBodyTraverser:
             assert (
                 self._mask_copy is not None
             ), "We do not support the identity abstraction"
-            yield from self.handle_variable(node, position)
-            return
+            return self.handle_variable(node, position)
         sym = self.mask.name_to_id(node.symbol)
         root = self._mask_copy is None
         if root:
@@ -169,6 +168,7 @@ class AbstractionBodyTraverser:
             self._task_stack.append(("exit", sym, position))
         for i in order[::-1]:
             self._task_stack.append(("traverse", node.children[i], i))
+        return []
 
     def handle_variable(self, node, position):
         # If the node is a variable, check if it is one that has already been processed
@@ -185,7 +185,6 @@ class AbstractionBodyTraverser:
     def exit_coroutine(self):
         _, sym, position = self._task_stack.pop()
         self._mask_copy.on_exit(position, sym)
-        yield from []
 
     def new_argument(self, node):
         """
