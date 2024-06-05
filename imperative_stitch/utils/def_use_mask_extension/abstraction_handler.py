@@ -138,7 +138,6 @@ class AbstractionBodyTraverser:
         return self._is_defining
 
     def task_coroutine(self):
-        print(self._task_stack)
         while self._task_stack:
             task_type = self._task_stack[-1][0]
             if task_type == "traverse":
