@@ -4,7 +4,6 @@ import unittest
 import neurosym as ns
 
 from imperative_stitch.compress.abstraction import Abstraction
-
 from imperative_stitch.data.stitch_output_set import load_stitch_output_set
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.def_use_mask_extension.abstraction_handler import (
