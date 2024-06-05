@@ -148,6 +148,7 @@ class AbstractionBodyTraverser:
                 self.exit()
             else:
                 raise ValueError(f"Unrecognized task type {task_type}")
+        return None
 
     def traverse_body(self):
         _, node, position = self._task_stack.pop()
