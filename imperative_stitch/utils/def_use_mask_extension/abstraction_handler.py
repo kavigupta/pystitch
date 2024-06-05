@@ -114,7 +114,8 @@ class AbstractionBodyTraverser:
         self.config = config
         self.create_handler = create_handler
 
-        self._body_handler = self.body_traversal_coroutine(body, 0)
+        self._body_handler = self.body_traversal_coroutine()
+        self._body_stack = [(body, 0)]
         self._mask_copy = None
         self._is_defining = None
         self._position = None
@@ -136,7 +137,8 @@ class AbstractionBodyTraverser:
         assert self._is_defining is not None
         return self._is_defining
 
-    def body_traversal_coroutine(self, node, position):
+    def body_traversal_coroutine(self):
+        node, position = self._body_stack.pop()
         if VARIABLE_REGEX.match(node.symbol):
             assert (
                 self._mask_copy is not None
@@ -153,7 +155,8 @@ class AbstractionBodyTraverser:
             self._mask_copy.on_entry(position, sym)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
         for i in order:
-            yield from self.body_traversal_coroutine(node.children[i], i)
+            self._body_stack.append((node.children[i], i))
+            yield from self.body_traversal_coroutine()
         if not root:
             self._mask_copy.on_exit(position, sym)
 
@@ -161,9 +164,8 @@ class AbstractionBodyTraverser:
         # If the node is a variable, check if it is one that has already been processed
         name = node.symbol
         if name in self._variables_to_reuse:
-            yield from self.body_traversal_coroutine(
-                self._variables_to_reuse[name], position
-            )
+            self._body_stack.append((self._variables_to_reuse[name], position))
+            yield from self.body_traversal_coroutine()
         else:
             is_defining = self._mask_copy.handlers[-1].is_defining(position)
             node = yield is_defining, position
