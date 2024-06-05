@@ -60,6 +60,9 @@ class AbstractionHandler(ns.python_def_use_mask.Handler):
             ),
         )
 
+    def __undo__init__(self):
+        self.traverser.undo()
+
     def on_child_enter(
         self, position: int, symbol: int
     ) -> ns.python_def_use_mask.Handler:
@@ -67,13 +70,13 @@ class AbstractionHandler(ns.python_def_use_mask.Handler):
         Make sure to collect the children of the abstraction, so it can
             be iterated once the abstraction is fully processed.
         """
-        assert (
-            self._traversal_order_stack.pop() == position
-        ), "Incorrect traversal order"
-        underlying, undo = self.traverser.last_handler.on_child_enter(
+        order_pos = self._traversal_order_stack.pop()
+        undo_1 = lambda: self._traversal_order_stack.append(order_pos)
+        assert order_pos == position, "Incorrect traversal order"
+        underlying, undo_2 = self.traverser.last_handler.on_child_enter(
             self.traverser.current_position, symbol
         )
-        return CollectingHandler(symbol, underlying), undo
+        return CollectingHandler(symbol, underlying), ns.chain_undos([undo_1, undo_2])
 
     def on_child_exit(
         self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
@@ -123,7 +126,7 @@ class AbstractionBodyTraverser:
         self._position = None
         self._variables_to_reuse = {}
 
-        self.new_argument(None)
+        self.undo = self.new_argument(None)
 
     @property
     def last_handler(self):
@@ -205,20 +208,31 @@ class AbstractionBodyTraverser:
             node: The node to assign to the last variable. None if we are just starting,
                 otherwise the argument that was just processed.
         """
-        if self._name is not None:
-            self._variables_to_reuse[self._name] = node
-        out, undos = self.process_until_variable()
-        undo = ns.chain_undos(undos)
+        undos = []
+        name = self._name
+        if name is not None:
+            self._variables_to_reuse[name] = node
+            undos.append(lambda: self._variables_to_reuse.pop(name))
+        out, undos_rest = self.process_until_variable()
+        undos += undos_rest
         if out is None:
-            return undo
+            return ns.chain_undos(undos)
+        previous = self._is_defining, self._position, self._name
+
+        def undo():
+            self._is_defining, self._position, self._name = previous
+
+        undos.append(undo)
         self._is_defining, self._position, self._name = out
-        return undo
+        return ns.chain_undos(undos)
 
 
 class CollectingHandler(ns.python_def_use_mask.Handler):
     """
     Wrapper around another handler that collects the node as it is being created.
     """
+
+    disable_arity_check = False  # for testing purposes only
 
     def __init__(self, sym, underlying_handler):
         super().__init__(
@@ -233,9 +247,10 @@ class CollectingHandler(ns.python_def_use_mask.Handler):
     @property
     def node(self):
         sym, arity = self.mask.id_to_name_and_arity(self.sym)
-        assert (
-            len(self.children) == arity
-        ), f"{sym} expected {arity} children, got {len(self.children)}"
+        if not self.disable_arity_check:
+            assert (
+                len(self.children) == arity
+            ), f"{sym} expected {arity} children, got {len(self.children)}"
         return ns.SExpression(
             sym, [self.children[i].node for i in range(len(self.children))]
         )
@@ -244,7 +259,7 @@ class CollectingHandler(ns.python_def_use_mask.Handler):
         self.underlying_handler.on_enter()
 
     def on_exit(self):
-        self.underlying_handler.on_exit()
+        return self.underlying_handler.on_exit()
 
     def on_child_enter(
         self, position: int, symbol: int
@@ -255,6 +270,7 @@ class CollectingHandler(ns.python_def_use_mask.Handler):
     def on_child_exit(
         self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
     ):
+        assert position not in self.children, f"Position {position} already filled"
         self.children[position] = child
 
         def undo():
