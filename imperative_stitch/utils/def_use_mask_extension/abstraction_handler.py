@@ -97,13 +97,14 @@ class AbstractionHandler(ns.python_def_use_mask.Handler):
 
 class AbstractionBodyTraverser:
     """
-    This class is a coroutine that traverses the body of an abstraction.
-        It does so via the ._body_handler coroutine, which is a generator that yields a
-        boolean value indicating whether the current argument is defining a variable,
-        and is sent the next node in the tree to process. This is done via a coroutine
-        because that is the simplest way to have a recursive function that can pause.
+    This class handles traversal of the body of an abstraction.
+        It does so via the the _task_stack, which contains a list of tasks, which are
+        either to traverse a node or to exit a node. When a node is traversed, the
+        task is popped off the stack, and the node is processed. If the node is a
+        variable, we are done with adding an argument. If the node is a symbol, we
+        add the symbol to the mask copy, and add the children to the stack.
 
-    The coroutine iterates on a copy of the def-use mask, which is important because
+    We iterate on a copy of the def-use mask, which is important because
         the original mask used to create the AbstractionHandler will be modified
         as the arguments to the abstraction are processed. The copy is created with
         a single handler, which is a default handler for the body.
@@ -192,7 +193,7 @@ class AbstractionBodyTraverser:
         Iterate through the body of the abstraction, and set the _is_defining and _position values.
 
         Args:
-            node: The node to send to the coroutine. None if the coroutine is just starting,
+            node: The node to assign to the last variable. None if we are just starting,
                 otherwise the argument that was just processed.
         """
         if self._name is not None:
