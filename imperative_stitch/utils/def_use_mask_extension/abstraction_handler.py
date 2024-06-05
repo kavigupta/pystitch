@@ -97,13 +97,14 @@ class AbstractionHandler(ns.python_def_use_mask.Handler):
 
 class AbstractionBodyTraverser:
     """
-    This class is a coroutine that traverses the body of an abstraction.
-        It does so via the ._body_handler coroutine, which is a generator that yields a
-        boolean value indicating whether the current argument is defining a variable,
-        and is sent the next node in the tree to process. This is done via a coroutine
-        because that is the simplest way to have a recursive function that can pause.
+    This class handles traversal of the body of an abstraction.
+        It does so via the the _task_stack, which contains a list of tasks, which are
+        either to traverse a node or to exit a node. When a node is traversed, the
+        task is popped off the stack, and the node is processed. If the node is a
+        variable, we are done with adding an argument. If the node is a symbol, we
+        add the symbol to the mask copy, and add the children to the stack.
 
-    The coroutine iterates on a copy of the def-use mask, which is important because
+    We iterate on a copy of the def-use mask, which is important because
         the original mask used to create the AbstractionHandler will be modified
         as the arguments to the abstraction are processed. The copy is created with
         a single handler, which is a default handler for the body.
@@ -114,7 +115,8 @@ class AbstractionBodyTraverser:
         self.config = config
         self.create_handler = create_handler
 
-        self._body_handler = self.body_traversal_coroutine(body, 0)
+        self._task_stack = [("traverse", body, 0)]
+        self._name = None
         self._mask_copy = None
         self._is_defining = None
         self._position = None
@@ -136,13 +138,26 @@ class AbstractionBodyTraverser:
         assert self._is_defining is not None
         return self._is_defining
 
-    def body_traversal_coroutine(self, node, position):
+    def process_until_variable(self):
+        while self._task_stack:
+            task_type = self._task_stack[-1][0]
+            if task_type == "traverse":
+                out = self.traverse_body()
+                if out is not None:
+                    return out
+            elif task_type == "exit":
+                self.exit()
+            else:
+                raise ValueError(f"Unrecognized task type {task_type}")
+        return None
+
+    def traverse_body(self):
+        _, node, position = self._task_stack.pop()
         if VARIABLE_REGEX.match(node.symbol):
             assert (
                 self._mask_copy is not None
             ), "We do not support the identity abstraction"
-            yield from self.handle_variable(node, position)
-            return
+            return self.traverse_variable(node, position)
         sym = self.mask.name_to_id(node.symbol)
         root = self._mask_copy is None
         if root:
@@ -152,35 +167,41 @@ class AbstractionBodyTraverser:
         else:
             self._mask_copy.on_entry(position, sym)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
-        for i in order:
-            yield from self.body_traversal_coroutine(node.children[i], i)
         if not root:
-            self._mask_copy.on_exit(position, sym)
+            self._task_stack.append(("exit", sym, position))
+        for i in order[::-1]:
+            self._task_stack.append(("traverse", node.children[i], i))
+        return None
 
-    def handle_variable(self, node, position):
+    def traverse_variable(self, node, position):
         # If the node is a variable, check if it is one that has already been processed
         name = node.symbol
         if name in self._variables_to_reuse:
-            yield from self.body_traversal_coroutine(
-                self._variables_to_reuse[name], position
+            self._task_stack.append(
+                ("traverse", self._variables_to_reuse[name], position)
             )
-        else:
-            is_defining = self._mask_copy.handlers[-1].is_defining(position)
-            node = yield is_defining, position
-            self._variables_to_reuse[name] = node
+            return None
+        is_defining = self._mask_copy.handlers[-1].is_defining(position)
+        return is_defining, position, name
+
+    def exit(self):
+        _, sym, position = self._task_stack.pop()
+        self._mask_copy.on_exit(position, sym)
 
     def new_argument(self, node):
         """
         Iterate through the body of the abstraction, and set the _is_defining and _position values.
 
         Args:
-            node: The node to send to the coroutine. None if the coroutine is just starting,
+            node: The node to assign to the last variable. None if we are just starting,
                 otherwise the argument that was just processed.
         """
-        try:
-            self._is_defining, self._position = self._body_handler.send(node)
-        except StopIteration:
-            pass
+        if self._name is not None:
+            self._variables_to_reuse[self._name] = node
+        out = self.process_until_variable()
+        if out is None:
+            return
+        self._is_defining, self._position, self._name = out
 
 
 class CollectingHandler(ns.python_def_use_mask.Handler):
