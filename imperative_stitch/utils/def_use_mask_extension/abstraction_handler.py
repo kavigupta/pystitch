@@ -70,18 +70,19 @@ class AbstractionHandler(ns.python_def_use_mask.Handler):
         assert (
             self._traversal_order_stack.pop() == position
         ), "Incorrect traversal order"
-        underlying = self.traverser.last_handler.on_child_enter(
+        underlying, undo = self.traverser.last_handler.on_child_enter(
             self.traverser.current_position, symbol
         )
-        return CollectingHandler(symbol, underlying)
+        return CollectingHandler(symbol, underlying), undo
 
     def on_child_exit(
         self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
     ):
-        self.traverser.last_handler.on_child_exit(
+        undo_1 = self.traverser.last_handler.on_child_exit(
             self.traverser.current_position, symbol, child
         )
-        self.traverser.new_argument(child.node)
+        undo_2 = self.traverser.new_argument(child.node)
+        return ns.chain_undos([undo_1, undo_2])
 
     def is_defining(self, position: int) -> bool:
         return self.traverser.is_defining
@@ -139,54 +140,62 @@ class AbstractionBodyTraverser:
         return self._is_defining
 
     def process_until_variable(self):
+        undos = []
         while self._task_stack:
             task_type = self._task_stack[-1][0]
             if task_type == "traverse":
-                out = self.traverse_body()
+                out = self.traverse_body(undos)
                 if out is not None:
-                    return out
+                    return out, undos
             elif task_type == "exit":
-                self.exit()
+                self.exit(undos)
             else:
                 raise ValueError(f"Unrecognized task type {task_type}")
-        return None
+        return None, undos
 
-    def traverse_body(self):
+    def traverse_body(self, undos):
         _, node, position = self._task_stack.pop()
+        undos.append(lambda: self._task_stack.append(("traverse", node, position)))
         if VARIABLE_REGEX.match(node.symbol):
             assert (
                 self._mask_copy is not None
             ), "We do not support the identity abstraction"
-            return self.traverse_variable(node, position)
+            return self.traverse_variable(node, position, undos)
         sym = self.mask.name_to_id(node.symbol)
         root = self._mask_copy is None
         if root:
             self._mask_copy = self.mask.with_handler(
                 lambda mask_copy: self.create_handler(mask_copy, sym)
             )
+            undos.append(lambda: setattr(self, "_mask_copy", None))
         else:
-            self._mask_copy.on_entry(position, sym)
+            undo = self._mask_copy.on_entry(position, sym)
+            undos.append(undo)
         order = self.mask.tree_dist.ordering.order(sym, len(node.children))
         if not root:
             self._task_stack.append(("exit", sym, position))
+            undos.append(self._task_stack.pop)
         for i in order[::-1]:
             self._task_stack.append(("traverse", node.children[i], i))
+            undos.append(self._task_stack.pop)
         return None
 
-    def traverse_variable(self, node, position):
+    def traverse_variable(self, node, position, undos):
         # If the node is a variable, check if it is one that has already been processed
         name = node.symbol
         if name in self._variables_to_reuse:
             self._task_stack.append(
                 ("traverse", self._variables_to_reuse[name], position)
             )
+            undos.append(self._task_stack.pop)
             return None
         is_defining = self._mask_copy.handlers[-1].is_defining(position)
         return is_defining, position, name
 
-    def exit(self):
+    def exit(self, undos):
         _, sym, position = self._task_stack.pop()
-        self._mask_copy.on_exit(position, sym)
+        undos.append(lambda: self._task_stack.append(("exit", sym, position)))
+        undos.append(self._mask_copy.on_exit(position, sym))
 
     def new_argument(self, node):
         """
@@ -198,10 +207,12 @@ class AbstractionBodyTraverser:
         """
         if self._name is not None:
             self._variables_to_reuse[self._name] = node
-        out = self.process_until_variable()
+        out, undos = self.process_until_variable()
+        undo = ns.chain_undos(undos)
         if out is None:
-            return
+            return undo
         self._is_defining, self._position, self._name = out
+        return undo
 
 
 class CollectingHandler(ns.python_def_use_mask.Handler):
@@ -238,15 +249,19 @@ class CollectingHandler(ns.python_def_use_mask.Handler):
     def on_child_enter(
         self, position: int, symbol: int
     ) -> ns.python_def_use_mask.Handler:
-        return CollectingHandler(
-            symbol, self.underlying_handler.on_child_enter(position, symbol)
-        )
+        underlying, undo = self.underlying_handler.on_child_enter(position, symbol)
+        return CollectingHandler(symbol, underlying), undo
 
     def on_child_exit(
         self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
     ):
         self.children[position] = child
-        self.underlying_handler.on_child_exit(position, symbol, child)
+
+        def undo():
+            self.children.pop(position)
+
+        undo_2 = self.underlying_handler.on_child_exit(position, symbol, child)
+        return ns.chain_undos([undo, undo_2])
 
     def is_defining(self, position: int) -> bool:
         return self.underlying_handler.is_defining(position)
