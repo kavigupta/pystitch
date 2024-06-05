@@ -356,13 +356,14 @@ class DeBruijnHandler(ns.python_def_use_mask.Handler):
             self.dbvar_components.append(index)
             typ = DeBruijnVarHandler
 
-        return typ(
+        handler = typ(
             self.mask,
             self.defined_production_idxs,
             self.config,
             state,
             self.dbvar_components,
         )
+        return handler, self.dbvar_components.pop
 
 
 class DeBruijnVarHandler(DeBruijnHandler):
@@ -372,7 +373,7 @@ class DeBruijnVarHandler(DeBruijnHandler):
     def on_child_exit(
         self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
     ):
-        pass
+        return lambda: None
 
 
 class DeBruijnVarSuccessorHandler(DeBruijnHandler):
@@ -387,7 +388,7 @@ class DeBruijnVarSuccessorHandler(DeBruijnHandler):
     def on_child_exit(
         self, position: int, symbol: int, child: ns.python_def_use_mask.Handler
     ):
-        pass
+        return lambda: None
 
 
 class DBVarWrapperHandler(DeBruijnHandler, ns.python_def_use_mask.TargetHandler):
@@ -432,6 +433,8 @@ class DBVarWrapperHandler(DeBruijnHandler, ns.python_def_use_mask.TargetHandler)
         )
         if symbol is not None and symbol not in self.defined_symbols:
             self.defined_symbols.append(symbol)
+            return self.defined_symbols.pop
+        return lambda: None
 
 
 def dsl_subset_from_dbprograms(*programs, roots, dfa, abstrs, max_explicit_dbvar_index):
