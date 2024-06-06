@@ -191,9 +191,6 @@ def get_defined_indices(mask):
 
 
 def get_def_use_chain_mask(mask):
-    assert isinstance(mask, ns.ConjunctionPreorderMask)
-    assert len(mask.masks) == 1
-    mask = mask.masks[-1]
     assert isinstance(mask, ns.python_def_use_mask.DefUseChainPreorderMask)
     return mask
 
