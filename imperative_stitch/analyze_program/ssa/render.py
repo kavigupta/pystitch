@@ -1,5 +1,3 @@
-from _ast import AST
-import ast
 import copy
 
 from imperative_stitch.analyze_program.ssa.ivm import Gamma, Phi

@@ -1,5 +1,5 @@
-from ast import AST
 import ast
+from ast import AST
 from dataclasses import dataclass
 
 from python_graphs import control_flow

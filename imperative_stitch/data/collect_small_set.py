@@ -1,8 +1,8 @@
 import ast
 import itertools
 import json
-import tqdm.auto as tqdm
 
+import tqdm.auto as tqdm
 from datasets import load_dataset
 
 dataset = load_dataset("codeparrot/codeparrot-clean", split="train")
