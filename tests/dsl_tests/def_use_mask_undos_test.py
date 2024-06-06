@@ -42,20 +42,20 @@ class DefUseMaskAbstractionUndosTest(unittest.TestCase):
         return result
 
     def get_handlers_except_mask(self, mask):
-        handlers = mask.masks[-1].handlers
+        handlers = mask.handlers
         return [self.get_handler_except_mask(handler) for handler in handlers]
 
     def annotate_program(self, program, abstrs, with_undo, with_undo_exit):
         def replace_node_midstream(s_exp, mask, position, alts):
             if with_undo:
                 for alt in alts:
-                    if VARIABLE_REGEX.match(mask.masks[-1].id_to_name(alt)):
+                    if VARIABLE_REGEX.match(mask.id_to_name(alt)):
                         continue
-                    print("handlers", mask.masks[-1].handlers)
+                    print("handlers", mask.handlers)
                     print("before entry", self.get_handlers_except_mask(mask))
                     last_handler = copy.deepcopy(self.get_handlers_except_mask(mask))
                     undo = mask.on_entry(position, alt)
-                    print("handlers", mask.masks[-1].handlers)
+                    print("handlers", mask.handlers)
                     print("after entry", self.get_handlers_except_mask(mask))
                     undo()
                     print("after undo entry", self.get_handlers_except_mask(mask))
@@ -65,11 +65,11 @@ class DefUseMaskAbstractionUndosTest(unittest.TestCase):
                     )
             if with_undo_exit:
                 for alt in alts:
-                    if VARIABLE_REGEX.match(mask.masks[-1].id_to_name(alt)):
+                    if VARIABLE_REGEX.match(mask.id_to_name(alt)):
                         continue
                     undo_entry = mask.on_entry(position, alt)
                     # print("*" * 80)
-                    # print("handlers", mask.masks[-1].handlers)
+                    # print("handlers", mask.handlers)
                     last_handler = copy.deepcopy(self.get_handlers_except_mask(mask))
                     # print("copy", last_handler)
                     undo_exit = mask.on_exit(position, alt)
