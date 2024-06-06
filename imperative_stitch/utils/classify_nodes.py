@@ -16,7 +16,7 @@ def export_dfa(*, abstrs=frozendict({})):
 
     assert isinstance(abstrs, (dict, frozendict)), f"expected dict, got {abstrs}"
 
-    result = ns.python_dfa()
+    result = ns.python_dfa().copy()
 
     for k, abstr in abstrs.items():
         assert k == abstr.name, (k, abstr.name)
