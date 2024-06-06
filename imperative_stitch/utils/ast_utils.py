@@ -1,48 +1,4 @@
 import ast
-import uuid
-
-import ast_scope
-
-from .wrap import wrap_ast
-
-
-def field_is_body(t, f):
-    assert isinstance(t, type)
-    if t == ast.IfExp:
-        return False  # not body of statements
-    if t == ast.Lambda:
-        return False  # not body of statements
-    return f in {"body", "orelse", "finalbody"}
-
-def field_is_starrable(t, f):
-    if f == "elts":
-        assert t in {
-            ast.List,
-            ast.Tuple,
-            ast.Set,
-        }, (t, f)
-        return True
-    return t == ast.Call and f == "args"
-
-def name_field(x):
-    t = type(x)
-    if t == ast.Name:
-        return "id"
-    if t == ast.arg:
-        return "arg"
-    if t == ast.FunctionDef:
-        return "name"
-    if t == ast.AsyncFunctionDef:
-        return "name"
-    if t == ast.ExceptHandler:
-        return "name" if x.name is not None else None
-    if t == ast.ClassDef:
-        return "name"
-    if t == ast.alias:
-        if x.asname is None:
-            return "name"
-        return "asname"
-    raise NotImplementedError(f"Unexpected type: {t}")
 
 
 class AstNodesInOrder(ast.NodeVisitor):
@@ -69,15 +25,3 @@ class ReplaceNodes(ast.NodeTransformer):
         if node in self.node_map:
             return self.node_map[node]
         return super().visit(node)
-
-
-def true_globals(node):
-    name = "_" + uuid.uuid4().hex
-    wpd = wrap_ast(node, name)
-    scope_info = ast_scope.annotate(wpd)
-    return {
-        x
-        for x in scope_info
-        if scope_info[x] == scope_info.global_scope
-        if getattr(x, name_field(x)) != name
-    }
