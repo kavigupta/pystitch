@@ -1,3 +1,4 @@
+import copy
 import json
 
 import neurosym as ns
@@ -16,7 +17,7 @@ def export_dfa(*, abstrs=frozendict({})):
 
     assert isinstance(abstrs, (dict, frozendict)), f"expected dict, got {abstrs}"
 
-    result = ns.python_dfa().copy()
+    result = copy.deepcopy(ns.python_dfa())
 
     for k, abstr in abstrs.items():
         assert k == abstr.name, (k, abstr.name)
