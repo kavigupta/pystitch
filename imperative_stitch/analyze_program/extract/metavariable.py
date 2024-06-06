@@ -1,8 +1,7 @@
 import ast
 from dataclasses import dataclass
 
-from ast_scope.scope import GlobalScope, ErrorScope, FunctionScope, ClassScope
-from imperative_stitch.analyze_program.ssa.ivm import Gamma
+from ast_scope.scope import ClassScope, ErrorScope, FunctionScope, GlobalScope
 
 from imperative_stitch.utils.ast_utils import ReplaceNodes, ast_nodes_in_order
 

@@ -1,49 +1,12 @@
-import ast
 import itertools
 import json
 
 import tqdm.auto as tqdm
-
-from permacache import permacache
 from datasets import load_dataset
+from no_toplevel_code import wrap_code
+from permacache import permacache
 
 from imperative_stitch.utils.run_code import passes_tests
-
-
-def wrap(code):
-    body = ast.parse(code).body
-    imports = []
-    for node in body:
-        if isinstance(node, ast.Import):
-            imports.append(node)
-        elif isinstance(node, ast.ImportFrom):
-            imports.append(node)
-        else:
-            break
-    body = body[len(imports) :]
-    return ast.unparse(
-        ast.fix_missing_locations(
-            ast.Module(
-                body=[
-                    *imports,
-                    ast.FunctionDef(
-                        name="_main",
-                        args=[],
-                        body=body,
-                        decorator_list=[],
-                    ),
-                    ast.Expr(
-                        ast.Call(
-                            func=ast.Name(id="_main", ctx=ast.Load()),
-                            args=[],
-                            keywords=[],
-                        )
-                    ),
-                ],
-                type_ignores=[],
-            )
-        )
-    )
 
 
 def extract_from_data(datapoint, *, max_tests, max_solutions):
@@ -57,6 +20,23 @@ def extract_from_data(datapoint, *, max_tests, max_solutions):
         solution: str
     """
     name = datapoint["name"]
+    inputs, outputs = extract_tests(datapoint, max_tests)
+    solutions = [
+        sol
+        for lang, sol in zip(
+            datapoint["solutions"]["language"], datapoint["solutions"]["solution"]
+        )
+        if lang == 3  # Python3
+    ]
+    solutions = solutions[:max_solutions]
+    for i, sol in enumerate(tqdm.tqdm(solutions)):
+        sol = wrap_code(sol)
+        if not passes_tests(sol, inputs, outputs):
+            continue
+        yield dict(name=f"{name}_{i}", inputs=inputs, outputs=outputs, solution=sol)
+
+
+def extract_tests(datapoint, max_tests):
     tests = (
         datapoint["public_tests"],
         datapoint["private_tests"],
@@ -67,19 +47,7 @@ def extract_from_data(datapoint, *, max_tests, max_solutions):
         inputs += test["input"]
         outputs += test["output"]
     inputs, outputs = inputs[:max_tests], outputs[:max_tests]
-    solutions = [
-        sol
-        for lang, sol in zip(
-            datapoint["solutions"]["language"], datapoint["solutions"]["solution"]
-        )
-        if lang == 3  # Python3
-    ]
-    solutions = solutions[:max_solutions]
-    for i, sol in enumerate(tqdm.tqdm(solutions)):
-        sol = wrap(sol)
-        if not passes_tests(sol, inputs, outputs):
-            continue
-        yield dict(name=f"{name}_{i}", inputs=inputs, outputs=outputs, solution=sol)
+    return inputs, outputs
 
 
 @permacache(
@@ -122,13 +90,10 @@ def runnable_code_dataset(
 
 
 if __name__ == "__main__":
+    out = runnable_code_dataset(
+        amount=10_000,
+        max_solutions_per_datapoint=10,
+        max_tests_per_datapoint=10,
+    )
     with open("data/small_set_runnable_code.json", "w") as f:
-        json.dump(
-            runnable_code_dataset(
-                amount=10_000,
-                max_solutions_per_datapoint=10,
-                max_tests_per_datapoint=10,
-            ),
-            f,
-            indent=2,
-        )
+        json.dump(out, f, indent=2)

@@ -1,7 +1,5 @@
-import tempfile
 import subprocess
-
-import tqdm.auto as tqdm
+import tempfile
 
 from permacache import permacache, stable_hash
 
@@ -29,7 +27,7 @@ def passes_tests(code, inputs, outputs):
     return True
 
 
-def run_python_with_timeout(code, input, *, timeout=10):
+def run_python_with_timeout(code, inp, *, timeout=10):
     """
     Does the given code pass the given tests?
     """
@@ -41,16 +39,19 @@ def run_python_with_timeout(code, input, *, timeout=10):
     signal.signal(signal.SIGALRM, handler)
     signal.alarm(timeout)
     try:
-        return run_python(code, input)
+        return run_python(code, inp)
     except TimeoutError:
-        return False
+        return None
+    finally:
+        signal.alarm(0)
 
 
 @permacache(
-    "imperative_stitch/data/runnable_code_set/run_python_2",
+    "imperative_stitch/data/runnable_code_set/run_python_3",
     key_function=dict(code=stable_hash, input=stable_hash),
+    multiprocess_safe=True,
 )
-def run_python(code, input):
+def run_python(code, inp):
     """
     Run the given python code with the given input.
 
@@ -62,9 +63,8 @@ def run_python(code, input):
         f.write(code.encode("utf-8"))
         f.flush()
         try:
-            z = subprocess.check_output(
-                ["python3", f.name], input=input.encode("utf-8")
-            )
+            z = subprocess.check_output(["python3", f.name], input=inp.encode("utf-8"))
         except subprocess.CalledProcessError as e:
+            del e
             return None
         return z.decode("utf-8")

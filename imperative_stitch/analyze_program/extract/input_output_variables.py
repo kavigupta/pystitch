@@ -7,6 +7,7 @@ import ast_scope.scope
 from imperative_stitch.analyze_program.extract.errors import (
     ClosedVariablePassedDirectly,
     ClosureOverVariableModifiedInExtractedCode,
+    ModifiesVariableClosedOverInNonExtractedCode,
     NonInitializedInputsOrOutputs,
     NotApplicable,
 )
@@ -73,8 +74,14 @@ class Variables:
     def output_vars_without_ssa(self):
         return sorted({x for x, _ in self._output_vars_ssa})
 
+    @property
+    def output_vars_ssa(self):
+        return sorted(self._output_vars_ssa)
 
-def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
+
+def compute_variables(
+    site, scope_info, pfcfg, error_on_closed=False, guarantee_outputs_of=()
+):
     """
     Compute a Variables object for a site. Ignores metavariables.
 
@@ -82,19 +89,22 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
         - site: the extraction site
         - scope_info: a mapping from nodes to scopes
         - pfcfg: the program flow control graph
+        - error_on_closed: whether to error if a closed variable is passed directly
+        - guarantee_outputs_of: a list of variables that must be outputted, with SSA ids
 
     Returns:
         A Variables object
     """
     start, end, ssa_to_origin, node_to_ssa = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    entry, exit, pre_exits = pfcfg.extraction_entry_exit(extracted_nodes)
+    entry_node, exit_node, pre_exits = pfcfg.extraction_entry_exit(extracted_nodes)
     ultimate_origins = compute_ultimate_origins(ssa_to_origin)
 
-    if exit is None or exit == "<return>":
+    if exit_node is None or exit_node == "<return>":
         output_variables = []
     else:
         output_variables = compute_output_variables(site, ssa_to_origin, node_to_ssa)
+    output_variables += guarantee_outputs_of
     output_symbols = sorted({x for x, _ in output_variables})
     output_variable_at_exit = {
         end[pre_exit][sym] for pre_exit in pre_exits for sym in output_symbols
@@ -105,7 +115,7 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     )
     # renormalize the input variables to be the ones that are actually passed in
     # in case the ones used are the result of a phi node
-    input_variables = sorted({start[entry][x] for x, _ in input_variables})
+    input_variables = sorted({start[entry_node][x] for x, _ in input_variables})
 
     parent_variables = variables_from_parent(
         site, node_to_ssa, scope_info, pfcfg.function_astn
@@ -128,9 +138,17 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
             for closed_ssa_id in ssa_to_origin[ssa_id].closed
         )
     )
+
+    closed_in_parent_variables = sorted(
+        ssa_id
+        for node in set(node_to_ssa) - set(site.all_nodes)
+        for ssa_id in node_to_ssa.get(node, ())
+        if isinstance(ssa_to_origin[ssa_id], Gamma)
+    )
+
     errors = []
-    if entry is not None and not all_initialized(
-        start[entry], [x for x, _ in input_variables], ultimate_origins
+    if entry_node is not None and not all_initialized(
+        start[entry_node], [x for x, _ in input_variables], ultimate_origins
     ):
         errors.append(NonInitializedInputsOrOutputs)
 
@@ -152,6 +170,15 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     ):
         errors.append(ClosureOverVariableModifiedInExtractedCode)
 
+    for ssa_id in closed_in_parent_variables:
+        if traces_an_origin_to_node_set(
+            ultimate_origins,
+            ultimate_origins[ssa_id],
+            lambda x: x in extracted_nodes,
+            include_gamma=True,
+        ):
+            errors.append(ModifiesVariableClosedOverInNonExtractedCode)
+
     if error_on_closed and closed_variables:
         errors.append(ClosedVariablePassedDirectly)
 
@@ -164,7 +191,7 @@ def compute_variables(site, scope_info, pfcfg, error_on_closed=False):
     )
 
 
-def all_initialized(lookup, vars, ultimate_origins):
+def all_initialized(lookup, variables, ultimate_origins):
     """
     Whether all the variables are initialized in their ultimate origin
 
@@ -172,7 +199,7 @@ def all_initialized(lookup, vars, ultimate_origins):
     ---------
     lookup: dict[str, (str, int)]
         A mapping from variable to its SSA entry.
-    vars: list[str]
+    variables: list[str]
         The variables to check.
     ultimate_origins: dict[(str, int), origin]
         A mapping from SSA entry to its ultimate origin.
@@ -182,8 +209,8 @@ def all_initialized(lookup, vars, ultimate_origins):
     bool
         True if all the variables are initialized in their ultimate origin.
     """
-    vars = [lookup[v] for v in vars]
-    return all(all(x.initialized() for x in ultimate_origins[var]) for var in vars)
+    variables = [lookup[v] for v in variables]
+    return all(all(x.initialized() for x in ultimate_origins[var]) for var in variables)
 
 
 def is_origin_defined_in_node_set(
@@ -208,16 +235,15 @@ def is_origin_defined_in_node_set(
     assert isinstance(origin, Origin)
     if isinstance(origin, DefinedIn):
         return node_set(origin.site)
-    elif isinstance(origin, Phi):
+    if isinstance(origin, Phi):
         return node_set(origin.node)
-    elif isinstance(origin, Gamma):
+    if isinstance(origin, Gamma):
         return include_gamma and any(
             is_origin_defined_in_node_set(node_to_origin, origin, node_set)
             for closed_var in origin.closed
             for origin in node_to_origin[closed_var]
         )  # do not include anywhere
-    else:
-        return node_set("<<function def>>")
+    return node_set("<<function def>>")
 
 
 def traces_an_origin_to_node_set(
@@ -395,6 +421,8 @@ def compute_input_variables(site, ssa_to_origin, node_to_ssa, out):
             node_journeys[x] += [
                 (*path[:-1], True, path[-1]) for path in node_journeys[x]
             ]
+        else:
+            node_journeys[x] = [(False, True, False)]
 
     result = []
 

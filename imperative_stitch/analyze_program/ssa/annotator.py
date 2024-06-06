@@ -1,11 +1,10 @@
 import ast
 from collections import defaultdict
 
-from imperative_stitch.utils.ast_utils import name_field
-
+import neurosym as ns
 
 from ..structures.per_function_cfg import PerFunctionCFG, eventually_accessible_cfns
-
+from .compute_node_to_containing import compute_enclosed_variables
 from .ivm import (
     Argument,
     DefinedIn,
@@ -15,7 +14,6 @@ from .ivm import (
     Uninitialized,
 )
 from .renamer import name_vars
-from .compute_node_to_containing import compute_enclosed_variables
 
 
 class FunctionSSAAnnotator:
@@ -54,9 +52,11 @@ class FunctionSSAAnnotator:
         for sym in self.function_symbols:
             self._arg_node[sym] = self._mapping.fresh_variable(
                 sym,
-                Argument()
-                if sym in self.function_argument_symbols
-                else Uninitialized(),
+                (
+                    Argument()
+                    if sym in self.function_argument_symbols
+                    else Uninitialized()
+                ),
             )
 
     def run(self):
@@ -71,14 +71,26 @@ class FunctionSSAAnnotator:
         """
         while True:
             start, end = self._start.copy(), self._end.copy()
-            queue = [self.graph.first_cfn]
+            queue = [self.graph.first_cfn, *start]
             while queue:
                 cfn = queue.pop()
                 if self._process(cfn):
                     queue.extend(self.graph.sort_by_cfn_key(cfn.next))
             if start == self._start and end == self._end:
                 break
+
+        renamer = self._mapping.clean()
+
+        self._start, self._end = [
+            {
+                cfn: {sym: renamer.get(var, var) for sym, var in x.items()}
+                for cfn, x in y.items()
+            }
+            for y in [self._start, self._end]
+        ]
+
         annotations = self.collect_annotations()
+
         ordered_cfns = self.graph.sort_by_cfn_key(self._start.keys())
 
         ordered_values = self._mapping.initials() + [
@@ -139,11 +151,12 @@ class FunctionSSAAnnotator:
             annotations[argument].append(argument_to_var[argument.arg])
         for cfn in self._start:
             s, e = self._start[cfn], self._end[cfn]
-            for astn in cfn.instruction.get_reads():
-                astn = get_nodes_for_reads(astn)
+            for astn in self.get_reads_for(cfn) + self.get_dels_for(cfn):
                 if astn.id in s:
                     annotations[astn].append(s[astn.id])
-            for astn, name in self.get_writes_for(cfn):
+            for astn, name in self.get_writes_for(cfn) + [
+                (x, x.id) for x in self.get_dels_for(cfn)
+            ]:
                 if name in e:
                     annotations[astn].append(e[name])
         return dict(annotations.items())
@@ -162,6 +175,9 @@ class FunctionSSAAnnotator:
         result = self.graph.sort_by_astn_key(result, lambda x: x[0])
         return result
 
+    def get_dels_for(self, cfn):
+        return self.graph.sort_by_astn_key(cfn.instruction.get_dels(), lambda x: x)
+
     def _process(self, cfn):
         """
         Process the node `cfn` because one of its parents was updated.
@@ -179,14 +195,11 @@ class FunctionSSAAnnotator:
                 if sym in parent_end:
                     parent_vars.add(parent_end[sym])
             parent_vars = sorted(parent_vars)
-            if len(parent_vars) == 1:
-                [self._start[cfn][sym]] = parent_vars
-            else:
-                self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
-                    sym,
-                    Phi(cfn.instruction.node, tuple(parent_vars)),
-                    old_start.get(sym, None),
-                )
+            self._start[cfn][sym] = self._mapping.fresh_variable_if_needed(
+                sym,
+                Phi(cfn.instruction.node, tuple(parent_vars)),
+                old_start.get(sym, None),
+            )
         new_end = self._ending_variables(cfn, self._start[cfn], self._end.get(cfn, {}))
         if cfn not in self._end or new_end != self._end[cfn]:
             self._end[cfn] = new_end
@@ -214,6 +227,8 @@ class FunctionSSAAnnotator:
             end_variables[x] = self._mapping.fresh_variable_if_needed(
                 x, DefinedIn(cfn), current_end.get(x, None)
             )
+        for x in self.get_dels_for(cfn):
+            end_variables[x.id] = self._mapping.fresh_uninitialized(x.id)
         return end_variables
 
 
@@ -242,9 +257,9 @@ def get_nodes_for_write(node):
     elif isinstance(node, ast.ExceptHandler):
         name = node.name
     elif isinstance(node, ast.alias):
-        name = getattr(node, name_field(node))
+        name = getattr(node, ns.python_ast_tools.name_field(node))
     else:
-        raise Exception(f"Unexpected write: {node}")
+        raise NotImplementedError(f"Unexpected write: {node}")
     return [(node, name)]
 
 

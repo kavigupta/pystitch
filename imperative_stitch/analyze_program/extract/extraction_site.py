@@ -1,5 +1,5 @@
-from ast import AST
 import ast
+from ast import AST
 from dataclasses import dataclass
 
 from python_graphs import control_flow
@@ -77,17 +77,24 @@ class ExtractionSite:
         """
         assert self.sentinel is None
         body = self.containing_sequence
-        self.sentinel = ast.parse("'__start_sentinel__'").body[0]
-        body.insert(self.start, self.sentinel)
-        self.end += 1
+        self.sentinel = [
+            ast.parse(pragma).body[0]
+            for pragma in ("'__start_sentinel_before__'", "'__start_sentinel_inside__'")
+        ]
+        body.insert(self.start, self.sentinel[1])
+        body.insert(self.start, self.sentinel[0])
+        self.start += 1
+        self.end += 2
         return lambda: self._remove_sentinel(self.sentinel)
 
     def _remove_sentinel(self, sentinel):
         """
         Remove the sentinel from the AST.
         """
-        assert self.sentinel == sentinel
+        assert self.sentinel is sentinel
         body = self.containing_sequence
-        assert body.pop(self.start) == self.sentinel
-        self.end -= 1
+        self.start -= 1
+        assert body.pop(self.start) is sentinel[0]
+        assert body.pop(self.start) is sentinel[1]
+        self.end -= 2
         self.sentinel = None

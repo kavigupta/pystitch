@@ -1,27 +1,27 @@
 import ast
 import copy
 from dataclasses import dataclass
-from typing import Callable, Dict
+from typing import Callable
 
 import ast_scope
-from imperative_stitch.analyze_program.extract.errors import MultipleExits
+import neurosym as ns
 
+from imperative_stitch.analyze_program.extract.errors import (
+    BothYieldsAndReturns,
+    MultipleExits,
+)
 from imperative_stitch.analyze_program.extract.metavariable import (
     MetaVariables,
     extract_metavariables,
 )
+from imperative_stitch.analyze_program.extract.pre_and_post_process import preprocess
 
-
-from .input_output_variables import (
-    compute_variables,
-    traces_an_origin_to_node_set,
-)
-from .unused_return import remove_unnecessary_returns
-
+from ..ssa.annotator import run_ssa
+from .generator import is_function_generator
+from .input_output_variables import compute_variables
 from .loop import replace_break_and_continue
 from .stable_variable_order import canonicalize_names_in, canonicalize_variable_order
-from ..ssa.annotator import run_ssa
-from ..ssa.ivm import Gamma
+from .unused_return import remove_unnecessary_returns
 
 
 @dataclass
@@ -31,38 +31,24 @@ class ExtractedCode:
     """
 
     func_def: ast.AST
+    returns: list[ast.AST]
     call: ast.AST
     metavariables: MetaVariables
     undo: Callable[[], None]
 
+    @property
+    def return_names(self):
+        if not self.returns:
+            return []
+        return names_from_target(self.returns[0].value)
 
-def invalid_closure_over_variable_modified_in_non_extracted_code(
-    site, annotations, extracted_nodes, mapping
-):
-    """
-    Returns True if there is a closure over a variable that is modified in non-extracted
-
-    Arguments
-    ---------
-    site: ExtractionSite
-        The extraction site.
-    annotations: dict[AST, set[str]]
-        A mapping from node to the set of variables defined in the node.
-    extracted_nodes: set[AST]
-        The set of nodes in the extraction site.
-
-    Returns
-    -------
-    bool
-        Whether there is a Gamma node that is a closure over a variable that is modified
-    """
-    origins = [
-        mapping[k] for x in site.all_nodes if x in annotations for k in annotations[x]
-    ]
-    origins = [
-        mapping[down] for x in origins if isinstance(x, Gamma) for down in x.downstreams
-    ]
-    return traces_an_origin_to_node_set(origins, lambda x: x not in extracted_nodes)
+    @property
+    def call_names(self):
+        actual_call = self.call[0]
+        if isinstance(actual_call, ast.Expr):
+            return []
+        assert isinstance(actual_call, ast.Assign)
+        return names_from_target(actual_call.targets[0])
 
 
 def create_target(variables, ctx):
@@ -83,8 +69,7 @@ def create_target(variables, ctx):
     """
     if len(variables) == 1:
         return ast.Name(id=variables[0], ctx=ctx)
-    else:
-        return ast.Tuple(elts=[ast.Name(id=x, ctx=ctx) for x in variables], ctx=ctx)
+    return ast.Tuple(elts=[ast.Name(id=x, ctx=ctx) for x in variables], ctx=ctx)
 
 
 def create_return_from_function(variables):
@@ -106,8 +91,30 @@ def create_return_from_function(variables):
     return ast.Return(value=create_target(variables, ast.Load()))
 
 
+def names_from_target(target):
+    """
+    Return the names from a target.
+
+    Arguments
+    ---------
+    target: AST
+        The target.
+
+    Returns
+    -------
+    names: list[str]
+        The names from the target.
+    """
+    if isinstance(target, ast.Name):
+        return [target.id]
+    if isinstance(target, ast.Tuple):
+        return [x.id for x in target.elts]
+    assert target is None, target
+    return []
+
+
 def create_function_definition(
-    extract_name, site, input_variables, output_variables, metavariables
+    extract_name, site, input_variables, output_variables, metavariables, ensure_global
 ):
     """
     Create a function definition for the extracted function.
@@ -124,11 +131,17 @@ def create_function_definition(
         The output variables of the extracted function.
     metavariables: MetaVariables
         The metavariables of the extracted function.
+    ensure_global: list[ast.AST]
+        The variables that should be global in this function.
 
     Returns
     -------
     func_def: AST
         The function definition.
+    undo: () -> None
+        A function that undoes the function definition.
+    returns: List[AST]
+        The return statements of the function definition.
     """
     body = copy.copy(site.statements())
     return_from_function = create_return_from_function(output_variables)
@@ -144,14 +157,32 @@ def create_function_definition(
         body=body,
         decorator_list=[],
     )
+    scope_info = ast_scope.annotate(func_def)
+    make_global = [
+        getattr(astn, ns.python_ast_tools.name_field(astn))
+        for astn in set(scope_info) & set(ensure_global)
+        if scope_info[astn] is not scope_info.global_scope
+    ]
+    if make_global:
+        func_def.body = [ast.Global(names=sorted(set(make_global)))] + func_def.body
     func_def = ast.fix_missing_locations(func_def)
-    _, _, func_def, undo = replace_break_and_continue(func_def, return_from_function)
+    _, _, addtl_returns, func_def, undo = replace_break_and_continue(
+        func_def, return_from_function
+    )
+    returns = addtl_returns + [return_from_function]
     func_def = remove_unnecessary_returns(func_def)
-    return func_def, undo
+    remaining_nodes = set(ast.walk(func_def))
+    returns = [x for x in returns if x in remaining_nodes]
+    return func_def, undo, returns
 
 
 def create_function_call(
-    extract_name, input_variables, output_variables, metavariables, is_return
+    extract_name,
+    input_variables,
+    output_variables,
+    metavariables,
+    is_return,
+    is_generator,
 ):
     """
     Create the function call for the extracted function. Can be either a return
@@ -169,19 +200,27 @@ def create_function_call(
         The output variables of the extracted function.
     is_return: bool
         True if the extracted site returns a value.
+    is_generator: bool
+        True if the extracted site is a generator
 
     Returns
     -------
-    call: AST
-        The function call.
+    call: [AST]
+        The function call. Can be multiple statements.
     """
+    if is_generator and output_variables:
+        raise BothYieldsAndReturns
     call = ast.Call(
         func=ast.Name(id=extract_name, ctx=ast.Load()),
         args=[ast.Name(id=x, ctx=ast.Load()) for x in input_variables]
         + metavariables.parameters,
         keywords=[],
     )
-    if is_return:
+    if is_generator:
+        call = ast.Expr(ast.YieldFrom(value=call))
+        if is_return:
+            call = [call, ast.Return()]
+    elif is_return:
         call = ast.Return(value=call)
     elif not output_variables:
         call = ast.Expr(value=call)
@@ -193,24 +232,26 @@ def create_function_call(
             value=call,
             type_comment=None,
         )
-    call = ast.fix_missing_locations(call)
+    if not isinstance(call, list):
+        call = [call]
+    call = [ast.fix_missing_locations(stmt) for stmt in call]
     return call
 
 
-def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
+def compute_extract_asts(tree, site, *, config, extract_name, undos):
     """
     Returns the function definition and the function call for the extraction.
 
     Arguments
     ---------
-    scope_info: ScopeInfo
-        The scope information of the program.
-    pfcfg: PerFunctionCFG
-        The per-function control flow graph for the relevant function
     site: ExtractionSite
         The extraction site.
+    config: ExtractConfiguration
+        The configuration for the extraction.
     extract_name: str
         The name of the extracted function.
+    undos:
+        a list of functions that undoes the extraction, will be added to
 
     Returns
     -------
@@ -224,63 +265,93 @@ def compute_extract_asts(tree, scope_info, site, *, extract_name, undos):
         A list of functions that undoes the extraction.
     metavariables:
         A Metavariables object representing the metavariables.
+    returns:
+        A list of return statements in the function definition.
     """
+    undo_preprocess = preprocess(tree)
+    scope_info = ast_scope.annotate(tree)
+    undos += [undo_preprocess]
     undo_sentinel = site.inject_sentinel()
     undos += [undo_sentinel]
     pfcfg = site.locate_entry_point(tree)
     start, _, _, annotations = run_ssa(scope_info, pfcfg)
     extracted_nodes = {x for x in start if x.instruction.node in site.all_nodes}
-    _, exit, _ = pfcfg.extraction_entry_exit(extracted_nodes)
+    _, exit_node, _ = pfcfg.extraction_entry_exit(extracted_nodes)
 
-    vars = compute_variables(site, scope_info, pfcfg)
+    global_variables = [
+        x for x in scope_info if scope_info[x] is scope_info.global_scope
+    ]
+    variables = compute_variables(site, scope_info, pfcfg)
+    variables.raise_if_needed()
 
-    vars.raise_if_needed()
-
-    metavariables = extract_metavariables(scope_info, site, annotations, vars)
+    metavariables = extract_metavariables(scope_info, site, annotations, variables)
 
     undo_metavariables = metavariables.act(pfcfg.function_astn)
     undos += [undo_metavariables]
 
+    scope_info = ast_scope.annotate(tree)
+
     pfcfg = site.locate_entry_point(tree)
 
-    vars = compute_variables(site, scope_info, pfcfg, error_on_closed=True)
-    vars.raise_if_needed()
+    variables = compute_variables(
+        site,
+        scope_info,
+        pfcfg,
+        error_on_closed=True,
+        guarantee_outputs_of=variables.output_vars_ssa,
+    )
+    variables.raise_if_needed()
 
     undos.remove(undo_sentinel)
     undo_sentinel()
 
-    func_def, undo_replace = create_function_definition(
+    func_def, undo_replace, _ = create_function_definition(
         extract_name,
         site,
-        vars.input_vars_without_ssa,
-        vars.output_vars_without_ssa,
+        variables.input_vars_without_ssa,
+        variables.output_vars_without_ssa,
         metavariables,
+        global_variables,
     )
-    undos += [undo_replace]
 
     input_variables, output_variables = canonicalize_variable_order(
         func_def,
-        vars.input_vars_without_ssa,
-        vars.output_vars_without_ssa,
+        variables.input_vars_without_ssa,
+        variables.output_vars_without_ssa,
         metavariables,
+        do_not_change_internal_args=config.do_not_change_internal_args,
     )
-    func_def, undo_replace = create_function_definition(
-        extract_name, site, input_variables, output_variables, metavariables
+    undo_replace()
+
+    func_def, undo_replace, returns = create_function_definition(
+        extract_name,
+        site,
+        input_variables,
+        output_variables,
+        metavariables,
+        global_variables,
     )
     undos += [undo_replace]
-    func_def, undo_canonicalize = canonicalize_names_in(func_def, metavariables)
+    func_def, undo_canonicalize = canonicalize_names_in(
+        func_def,
+        metavariables,
+        do_not_change_internal_args=config.do_not_change_internal_args,
+    )
     undos += undo_canonicalize
     call = create_function_call(
         extract_name,
         input_variables,
         output_variables,
         metavariables,
-        is_return=exit == "<return>",
+        is_return=exit_node == "<return>",
+        is_generator=is_function_generator(func_def),
     )
-    return func_def, call, exit, metavariables
+    undos.remove(undo_preprocess)
+    undo_preprocess()
+    return func_def, call, exit_node, metavariables, returns
 
 
-def do_extract(site, tree, *, extract_name):
+def do_extract(site, tree, *, config, extract_name):
     """
     Mutate the AST to extract the code in `site` into a function named `extract_name`.
 
@@ -290,6 +361,8 @@ def do_extract(site, tree, *, extract_name):
         The site to extract.
     tree: AST
         The AST of the whole program.
+    config: ExtractConfiguration
+        The configuration for the extraction.
     extract_name: str
         The name of the extracted function.
 
@@ -308,35 +381,33 @@ def do_extract(site, tree, *, extract_name):
             un()
 
     try:
-        func_def, call, metavariables = _do_extract(
-            site, tree, extract_name=extract_name, undos=undos
+        func_def, call, metavariables, returns = _do_extract(
+            site, tree, config=config, extract_name=extract_name, undos=undos
         )
     except:
         full_undo()
         raise
 
-    return ExtractedCode(func_def, call, metavariables, full_undo)
+    return ExtractedCode(func_def, returns, call, metavariables, full_undo)
 
 
-def _do_extract(site, tree, *, extract_name, undos):
-    scope_info = ast_scope.annotate(tree)
-
-    func_def, call, exit, metavariables = compute_extract_asts(
-        tree, scope_info, site, extract_name=extract_name, undos=undos
+def _do_extract(site, tree, *, config, extract_name, undos):
+    func_def, call, exit_node, metavariables, returns = compute_extract_asts(
+        tree, site, config=config, extract_name=extract_name, undos=undos
     )
 
-    for calls in [call], [call, ast.Break()], [call, ast.Continue()]:
-        success, undo_mutate = attempt_to_mutate(site, tree, calls, exit)
+    for calls in [*call], [*call, ast.Break()], [*call, ast.Continue()]:
+        success, undo_mutate = attempt_to_mutate(site, tree, calls, exit_node)
         if success:
             undos += [undo_mutate]
             break
     else:
         raise AssertionError("Weird and unexpected control flow")
 
-    return func_def, call, metavariables
+    return func_def, call, metavariables, returns
 
 
-def attempt_to_mutate(site, tree, calls, exit):
+def attempt_to_mutate(site, tree, calls, exit_node):
     """
     Attempt to mutate the AST to replace the extraction site with the given calls code.
 
@@ -350,7 +421,7 @@ def attempt_to_mutate(site, tree, calls, exit):
         The AST of the whole program.
     calls: list[AST]
         The code to replace the extraction site with.
-    exit: ControlFlowNode
+    exit_node: ControlFlowNode
         The exit of the extraction site.
 
     Returns
@@ -368,14 +439,20 @@ def attempt_to_mutate(site, tree, calls, exit):
     def undo():
         site.containing_sequence[site.start : site.start + len(calls)] = prev
 
-    if exit is None:
+    if exit_node is None:
         return True, undo
     new_pfcfg = site.locate_entry_point(tree)
-    [call_cfn] = [
-        cfn
-        for cfn in new_pfcfg.next_cfns_of
-        if cfn is not None and cfn.instruction.node == calls[0]
-    ]
+    for call in calls[::-1]:
+        call_cfns = [
+            cfn
+            for cfn in new_pfcfg.next_cfns_of
+            if cfn is not None and cfn.instruction.node == call
+        ]
+        if call_cfns:
+            [call_cfn] = call_cfns
+            break
+    else:
+        assert False, "should have found a call cfn"
     call_exits = [
         x for tag, x in new_pfcfg.next_cfns_of[call_cfn] if tag != "exception"
     ]
@@ -384,7 +461,7 @@ def attempt_to_mutate(site, tree, calls, exit):
         undo()
         raise MultipleExits
     [exit_cfn] = call_exits
-    if not same(exit_cfn, exit):
+    if not same(exit_cfn, exit_node):
         undo()
         return False, None
     return True, undo
@@ -395,6 +472,7 @@ def same(a, b):
         return False
     if isinstance(b, str) and not isinstance(a, str):
         return False
+    # pylint: disable=unidiomatic-typecheck
     assert type(a) == type(b)
     if isinstance(a, str):
         return a == b
