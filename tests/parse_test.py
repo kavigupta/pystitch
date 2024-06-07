@@ -1,4 +1,3 @@
-import ast
 import copy
 import unittest
 
@@ -6,145 +5,24 @@ import neurosym as ns
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import (
+    collect_abstraction_calls,
+    replace_abstraction_calls,
+)
 from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser import ParsedAST, python_to_s_exp, s_exp_to_python
+from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.recursion import no_recursionlimit
 from tests.abstraction_handling.abstraction_test import assertSameCode
-from tests.utils import expand_with_slow_tests, small_set_examples
-
-
-class ParseUnparseInverseTest(unittest.TestCase):
-    def canonicalize(self, python_code):
-        return ast.unparse(ast.parse(python_code))
-
-    def assert_valid_s_exp(self, s_exp, no_leaves):
-        if not isinstance(s_exp, ns.SExpression):
-            assert isinstance(s_exp, str)
-            if no_leaves:
-                self.fail(f"leaf: {s_exp}")
-            return
-        if s_exp.symbol not in {"/seq"}:
-            self.assertTrue(isinstance(s_exp.symbol, str), repr(s_exp.symbol))
-            if not no_leaves:
-                self.assertTrue(len(s_exp.children) >= 1, repr(s_exp))
-        for y in s_exp.children:
-            self.assert_valid_s_exp(y, no_leaves)
-
-    def check_s_exp(self, s_exp, no_leaves=False):
-        self.maxDiff = None
-        parsed = ParsedAST.parse_s_expression(s_exp)
-        print(parsed)
-        with no_recursionlimit():
-            s_exp_update = ns.render_s_expression(ns.parse_s_expression(s_exp))
-        self.assertEqual(s_exp_update, parsed.to_s_exp(no_leaves=no_leaves))
-
-    def check_with_args(self, test_code, no_leaves=False):
-        test_code = self.canonicalize(test_code)
-        s_exp = python_to_s_exp(
-            test_code, renderer_kwargs=dict(columns=80), no_leaves=no_leaves
-        )
-        with no_recursionlimit():
-            self.assert_valid_s_exp(ns.parse_s_expression(s_exp), no_leaves=no_leaves)
-        self.check_s_exp(s_exp, no_leaves=no_leaves)
-        s_exp_parsed = ParsedAST.parse_s_expression(s_exp)
-        print(repr(s_exp_parsed))
-        modified = s_exp_to_python(s_exp)
-        self.assertEqual(test_code, modified)
-
-    def check(self, test_code):
-        self.check_with_args(test_code)
-        self.check_with_args(test_code, no_leaves=True)
-
-    def test_basic_one_liners(self):
-        self.check("x = 2")
-        self.check("7")
-        self.check("import abc")
-
-    def test_imports(self):
-        self.check("import os")
-        self.check("from os import path")
-        self.check("import os.path")
-
-    def test_sequence_of_statements(self):
-        self.maxDiff = None
-        self.check("x = 2\ny = 3\nz = 4")
-        self.assertEqual(
-            python_to_s_exp("x = 2\ny = 3\nz = 4", renderer_kwargs=dict(columns=80000)),
-            "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None) (Assign (list (Name &y:0 Store)) (Constant i3 None) None) (Assign (list (Name &z:0 Store)) (Constant i4 None) None)) nil)",
-        )
-
-    def test_globals(self):
-        self.assertEqual(
-            python_to_s_exp("import os", renderer_kwargs=dict(columns=80)),
-            "(Module (/seq (Import (list (alias g_os None)))) nil)",
-        )
-
-    def test_builtins(self):
-        self.check("print(True)")
-        self.check("0")
-        self.check("x = None")
-
-    def test_if_expr(self):
-        self.check("2 if x == 3 else 4")
-
-    def test_strings(self):
-        self.check("' '")
-        self.check("x = 'abc '")
-        self.check("x = 'a=é b=\\udc80 d=\U0010ffff'")
-        self.check("x = '\\uABCD'")
-
-    def test_lambda(self):
-        self.check("lambda: 1 + 2")
-
-    def test_subscript_basic(self):
-        self.check("x[2]")
-
-    def test_subscript_tuple(self):
-        self.check("x[2, 3]")
-
-    def test_if(self):
-        self.check("if True: pass")
-
-    def test_unparse_sequence(self):
-        # should work with or without the Module wrapper
-        self.assertEqual(
-            s_exp_to_python(
-                "(Module (/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None)) nil)"
-            ),
-            "x = 2",
-        )
-
-        self.assertEqual(
-            s_exp_to_python(
-                "(/seq (Assign (list (Name &x:0 Store)) (Constant i2 None) None))"
-            ),
-            "x = 2",
-        )
-
-    @expand_with_slow_tests(len(small_set_examples()), 100)
-    def test_realistic(self, i):
-        try:
-            print(small_set_examples()[i])
-            self.check(small_set_examples()[i])
-        except Exception as e:
-            self.assertFalse(f"Error: {e}")
-            raise e
-
-    def test_subscript_s_exp(self):
-        self.check_s_exp(
-            "(_slice_tuple (Tuple (list (_slice_content (Constant i3 None))) Load))"
-        )
 
 
 class AbstractionBodyRenderTest(unittest.TestCase):
     basic_symvars = "(Assign (list (Name %1 Store)) (Constant i2 None) None)"
 
     def test_basic_symvars_variables_python(self):
-        body = ParsedAST.parse_s_expression(self.basic_symvars)
+        body = converter.s_exp_to_python_ast(self.basic_symvars)
         assertSameCode(
             self,
             "%1 = 2",
@@ -153,18 +31,18 @@ class AbstractionBodyRenderTest(unittest.TestCase):
 
     def test_basic_symvars_variables_s_exp(self):
         self.maxDiff = None
-        body = ParsedAST.parse_s_expression(self.basic_symvars)
+        body = converter.s_exp_to_python_ast(self.basic_symvars)
         self.assertEqual(
             self.basic_symvars,
-            body.to_s_exp(),
+            ns.render_s_expression(body.to_ns_s_exp()),
         )
         self.assertEqual(
             "(Assign (list (Name (var-%1) (Store))) (Constant (const-i2) (const-None)) (const-None))",
-            body.to_s_exp(no_leaves=True),
+            ns.render_s_expression(body.to_ns_s_exp(dict(no_leaves=True))),
         )
 
     def test_basic_symvars_variables_type_annotated_s_exp(self):
-        body = ParsedAST.parse_s_expression(self.basic_symvars)
+        body = converter.s_exp_to_python_ast(self.basic_symvars)
         self.assertEqual(
             ns.parse_s_expression(
                 """
@@ -173,21 +51,25 @@ class AbstractionBodyRenderTest(unittest.TestCase):
                     (Constant~E (const-i2~Const) (const-None~ConstKind)) (const-None~TC))
                 """
             ),
-            body.to_type_annotated_ns_s_exp(export_dfa(), "S"),
+            ns.to_type_annotated_ns_s_exp(body, export_dfa(), "S"),
         )
 
     def test_sequence_metavar_s_exp_export(self):
         self.maxDiff = None
-        result = ParsedAST.parse_s_expression(
-            """
-            (FunctionDef
-                &f:0
-                (arguments nil
-                (list (arg &x:1 None None))
-                None nil nil None nil)
-                #0 nil None None)
-            """
-        ).to_type_annotated_ns_s_exp(export_dfa(), "S")
+        result = ns.to_type_annotated_ns_s_exp(
+            converter.s_exp_to_python_ast(
+                """
+                (FunctionDef
+                    &f:0
+                    (arguments nil
+                    (list (arg &x:1 None None))
+                    None nil nil None nil)
+                    #0 nil None None)
+                """
+            ),
+            export_dfa(),
+            "S",
+        )
         result = ns.render_s_expression(result)
         expected = ns.render_s_expression(
             ns.parse_s_expression(
@@ -225,7 +107,7 @@ class AbstractionBodyRenderTest(unittest.TestCase):
     """
 
     def test_all_kinds_python(self):
-        body = ParsedAST.parse_s_expression(self.all_kinds)
+        body = converter.s_exp_to_python_ast(self.all_kinds)
         # not amazing rendering but it's fine
         assertSameCode(
             self,
@@ -238,15 +120,15 @@ class AbstractionBodyRenderTest(unittest.TestCase):
         )
 
     def test_all_kinds_s_exp(self):
-        body = ParsedAST.parse_s_expression(self.all_kinds)
+        body = converter.s_exp_to_python_ast(self.all_kinds)
         self.assertEqual(
-            ParsedAST.parse_s_expression(self.all_kinds).to_s_exp(),
-            body.to_s_exp(),
+            converter.s_exp_to_python_ast(self.all_kinds).to_ns_s_exp(),
+            body.to_ns_s_exp(),
         )
 
     def test_all_kinds_type_annotated_s_exp(self):
         self.maxDiff = None
-        body = ParsedAST.parse_s_expression(self.all_kinds)
+        body = converter.s_exp_to_python_ast(self.all_kinds)
         self.assertEqual(
             ns.render_s_expression(
                 ns.parse_s_expression(
@@ -278,7 +160,7 @@ class AbstractionBodyRenderTest(unittest.TestCase):
                 )
             ),
             ns.render_s_expression(
-                body.to_type_annotated_ns_s_exp(export_dfa(), "seqS")
+                ns.to_type_annotated_ns_s_exp(body, export_dfa(), "seqS")
             ),
         )
 
@@ -304,18 +186,22 @@ class AbstractionCallsTest(unittest.TestCase):
     """
 
     def test_gather_calls(self):
-        calls = ParsedAST.parse_s_expression(self.ctx_in_seq).abstraction_calls()
+        calls = collect_abstraction_calls(
+            converter.s_exp_to_python_ast(self.ctx_in_seq)
+        )
         self.assertEqual(len(calls), 1)
-        abstraction_calls = [x.to_s_exp() for x in calls.values()]
+        abstraction_calls = [
+            ns.render_s_expression(x.to_ns_s_exp()) for x in calls.values()
+        ]
         self.assertEqual(sorted(abstraction_calls), ["(fn_1 &n:0 &s:0)"])
 
     def test_substitute_in_seq(self):
-        seq = ParsedAST.parse_s_expression(self.ctx_in_seq)
+        seq = converter.s_exp_to_python_ast(self.ctx_in_seq)
         out = {
-            x: ParsedAST.parse_python_statements("x = 2; x = 3")
-            for x in seq.abstraction_calls()
+            x: ns.python_statements_to_python_ast("x = 2; x = 3")
+            for x in collect_abstraction_calls(seq)
         }
-        substituted = seq.replace_abstraction_calls(out)
+        substituted = replace_abstraction_calls(seq, out)
 
         assertSameCode(
             self,
@@ -328,12 +214,12 @@ class AbstractionCallsTest(unittest.TestCase):
         )
 
     def test_substitute_in_rooted(self):
-        seq = ParsedAST.parse_s_expression(self.ctx_rooted)
+        seq = converter.s_exp_to_python_ast(self.ctx_rooted)
         out = {
-            x: ParsedAST.parse_python_statements("x = 2; x = 3")
-            for x in seq.abstraction_calls()
+            x: ns.python_statements_to_python_ast("x = 2; x = 3")
+            for x in collect_abstraction_calls(seq)
         }
-        substituted = seq.replace_abstraction_calls(out)
+        substituted = replace_abstraction_calls(seq, out)
 
         assertSameCode(
             self,
@@ -348,7 +234,7 @@ class AbstractionCallsTest(unittest.TestCase):
     def assertParseUnparseSExp(self, program):
         program = ns.render_s_expression(ns.parse_s_expression(program))
         program_procd = ns.render_s_expression(
-            ParsedAST.parse_s_expression(program).to_ns_s_exp(dict(no_leaves=False))
+            converter.s_exp_to_python_ast(program).to_ns_s_exp(dict(no_leaves=False))
         )
         self.assertEqual(program, program_procd)
 
@@ -607,13 +493,15 @@ class AbstractionBodiesTest(unittest.TestCase):
         x = copy.deepcopy(x)
         prev_abstrs = []
         for i, abstr in enumerate(x["abstractions"], 1):
-            body = ParsedAST.parse_s_expression(abstr["body"])
+            body = converter.s_exp_to_python_ast(abstr["body"])
             body_ns_s_exp = ns.render_s_expression(
-                body.to_type_annotated_ns_s_exp(
-                    export_dfa(abstrs=prev_abstrs), abstr["dfa_root"]
+                ns.to_type_annotated_ns_s_exp(
+                    body, export_dfa(abstrs=prev_abstrs), abstr["dfa_root"]
                 )
             )
-            body_from_ns_s_exp = ParsedAST.parse_s_expression(body_ns_s_exp).to_s_exp()
+            body_from_ns_s_exp = ns.render_s_expression(
+                converter.s_exp_to_python_ast(body_ns_s_exp).to_ns_s_exp()
+            )
             self.assertEqual(abstr["body"], body_from_ns_s_exp)
             prev_abstrs.append(Abstraction.of(f"fn_{i}", **abstr))
 

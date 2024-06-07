@@ -2,20 +2,25 @@ import copy
 import unittest
 from textwrap import dedent
 
+import neurosym as ns
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
+from imperative_stitch.compress.manipulate_abstraction import (
+    abstraction_calls_to_bodies,
+    abstraction_calls_to_bodies_recursively,
+    collect_abstraction_calls,
+    replace_abstraction_calls,
+)
 from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set,
     load_stitch_output_set_no_dfa,
 )
-from imperative_stitch.parser.parsed_ast import ParsedAST
+from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
-from imperative_stitch.utils.def_use_mask.ordering import (
-    python_node_dictionary,
+from imperative_stitch.utils.def_use_mask_extension.ordering import (
     python_node_ordering_with_abstractions,
 )
-from imperative_stitch.utils.export_as_dsl import DSLSubset, create_dsl
 from tests.utils import (
     expand_with_slow_tests,
     load_annies_compressed_individual_programs,
@@ -31,7 +36,7 @@ fn_1_body = """
 
 fn_1 = Abstraction.of("fn_1", fn_1_body, "seqS", dfa_symvars=["X", "X"])
 
-fn_1_args = [ParsedAST.parse_s_expression(x) for x in ["&a:0", "&z:0"]]
+fn_1_args = [converter.s_exp_to_python_ast(x) for x in ["&a:0", "&z:0"]]
 
 fn_2_body = """
 (If
@@ -97,7 +102,7 @@ fn_2 = Abstraction.of(
 )
 
 fn_2_args_w_nothing = [
-    ParsedAST.parse_s_expression(x)
+    converter.s_exp_to_python_ast(x)
     for x in [
         "(Call (Name g_print Load) (list (Constant i2 None)) nil)",
         "&c:0",
@@ -108,10 +113,10 @@ fn_2_args_w_nothing = [
     ]
 ]
 fn_2_args = fn_2_args_w_nothing[:-1] + [
-    ParsedAST.parse_python_statements("if x == 3: pass")
+    ns.python_statements_to_python_ast("if x == 3: pass")
 ]
 fn_2_args_with_stub = fn_2_args_w_nothing[:-1] + [
-    ParsedAST.parse_s_expression("(fn_3)")
+    converter.s_exp_to_python_ast("(fn_3)")
 ]
 
 fn_3 = Abstraction.of(
@@ -220,8 +225,9 @@ class AbstractionRenderingTest(unittest.TestCase):
 
     def test_body_rendering_with_choiceseq_abstraction(self):
         element = fn_2.substitute_body(fn_2_args_with_stub)
-        stub = element.replace_abstraction_calls(
-            {k: fn_3.create_stub([]) for k in element.abstraction_calls()}
+        stub = replace_abstraction_calls(
+            element,
+            {k: fn_3.create_stub([]) for k in collect_abstraction_calls(element)},
         )
         assertSameCode(
             self,
@@ -248,7 +254,7 @@ class AbstractionRenderingTest(unittest.TestCase):
                     print(0)
             """,
         )
-        body = element.abstraction_calls_to_bodies({"fn_3": fn_3})
+        body = abstraction_calls_to_bodies(element, {"fn_3": fn_3})
         assertSameCode(
             self,
             body.to_python(),
@@ -277,11 +283,11 @@ class AbstractionRenderingTest(unittest.TestCase):
         )
 
     def test_body_expand_recursive(self):
-        context = ParsedAST.parse_s_expression(
+        context = converter.s_exp_to_python_ast(
             "(fn_2 (Call (Name g_print Load) (list (Constant i2 None)) nil) &c:0 &a:0 &b:0 &d:0 (/choiceseq (fn_3)))"
         )
-        context = context.abstraction_calls_to_bodies_recursively(
-            {"fn_2": fn_2, "fn_3": fn_3}
+        context = abstraction_calls_to_bodies_recursively(
+            context, {"fn_2": fn_2, "fn_3": fn_3}
         )
         assertSameCode(
             self,
@@ -439,10 +445,11 @@ class AbstractionRenderingTest(unittest.TestCase):
             dfa_choicevars=["seqS"],
         )
         tmp_abstraction_calls = {"fn_5": fn_5}
-        result = (
-            ParsedAST.parse_s_expression("(/splice (fn_5 %1 %4 %5 %2 #0))")
-            .abstraction_calls_to_bodies(tmp_abstraction_calls)
-            .to_s_exp()
+        result = ns.render_s_expression(
+            abstraction_calls_to_bodies(
+                converter.s_exp_to_python_ast("(/splice (fn_5 %1 %4 %5 %2 #0))"),
+                tmp_abstraction_calls,
+            ).to_ns_s_exp()
         )
         expected = """
         (/splice
@@ -461,7 +468,7 @@ class AbstractionRenderingTest(unittest.TestCase):
                         (Compare (Name %5 Load) (list Eq) (list (Name %2 Load)))
                         (/seq (Return (Name %1 Load))) (/seq))))
         """
-        expected = ParsedAST.parse_s_expression(expected).to_s_exp()
+        expected = ns.render_s_expression(ns.parse_s_expression(expected))
         self.assertEqual(result, expected)
 
     def test_dfa_with_abstractions_works(self):
@@ -469,29 +476,40 @@ class AbstractionRenderingTest(unittest.TestCase):
 
     def test_dsl_with_abstractions_works(self):
         dfa = export_dfa(abstrs={"fn_1": fn_1, "fn_2": fn_2})
-        subset = DSLSubset.from_program(
+        subset = ns.PythonDSLSubset.from_programs(
             dfa,
-            ParsedAST.parse_python_module("x = x + 2; y = y + x + 2"),
+            ns.python_to_python_ast("x = x + 2; y = y + x + 2"),
             root="M",
         )
-        create_dsl(dfa, subset, "M")
+        ns.create_python_dsl(dfa, subset, "M")
 
     def test_in_order_simple(self):
         self.assertEqual(
-            fn_1.variables_in_order(python_node_dictionary()), ["%1", "%2"]
+            fn_1.variables_in_order(
+                ns.python_def_use_mask.python_ordering_dictionary()
+            ),
+            ["%1", "%2"],
         )
         self.assertEqual(
-            fn_1.arguments_traversal_order(python_node_dictionary()), [0, 1]
+            fn_1.arguments_traversal_order(
+                ns.python_def_use_mask.python_ordering_dictionary()
+            ),
+            [0, 1],
         )
 
     def test_in_order_multi(self):
         self.assertEqual(
-            fn_2.variables_in_order(python_node_dictionary()),
+            fn_2.variables_in_order(
+                ns.python_def_use_mask.python_ordering_dictionary()
+            ),
             ["%2", "%3", "%1", "?0", "%4", "#0"],
         )
         # order is #0 %1 %2 %3 %4 ?0
         self.assertEqual(
-            fn_2.arguments_traversal_order(python_node_dictionary()), [2, 3, 1, 5, 4, 0]
+            fn_2.arguments_traversal_order(
+                ns.python_def_use_mask.python_ordering_dictionary()
+            ),
+            [2, 3, 1, 5, 4, 0],
         )
 
     def test_in_order_comprehension(self):
@@ -516,7 +534,8 @@ class AbstractionRenderingTest(unittest.TestCase):
             dfa_metavars=["E", "E"],
         )
         self.assertEqual(
-            fn.variables_in_order(python_node_dictionary()), ["%1", "#1", "#0"]
+            fn.variables_in_order(ns.python_def_use_mask.python_ordering_dictionary()),
+            ["%1", "#1", "#0"],
         )
 
     def check_abstraction_bodies_in(self, x):
@@ -539,15 +558,15 @@ class AbstractionRenderingTest(unittest.TestCase):
 class AbstractionRenderingAnnieSetTest(unittest.TestCase):
     def check_renders(self, s_exp):
         print(s_exp)
-        parsed = ParsedAST.parse_s_expression(s_exp)
+        parsed = converter.s_exp_to_python_ast(s_exp)
         print(parsed)
-        self.assertEqual(parsed.to_s_exp(), s_exp)
+        self.assertEqual(ns.render_s_expression(parsed.to_ns_s_exp()), s_exp)
 
     def check_renders_with_bodies_expanded(self, s_exp, abstrs):
         abstrs_dict = {x.name: x for x in abstrs}
-        parsed = ParsedAST.parse_s_expression(s_exp)
-        parsed = parsed.abstraction_calls_to_bodies_recursively(abstrs_dict)
-        parsed.to_s_exp()
+        parsed = converter.s_exp_to_python_ast(s_exp)
+        parsed = abstraction_calls_to_bodies_recursively(parsed, abstrs_dict)
+        parsed.to_ns_s_exp()
         parsed.to_python()
 
     @expand_with_slow_tests(len(load_annies_compressed_individual_programs()), 10)

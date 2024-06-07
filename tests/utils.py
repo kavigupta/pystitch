@@ -5,12 +5,13 @@ import json
 from functools import lru_cache
 from textwrap import dedent
 
+import neurosym as ns
 import pytest
 from parameterized import parameterized
 
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.data.stitch_output_set import load_annies_compressed_dataset
-from imperative_stitch.parser.parsed_ast import NodeAST, ParsedAST
+from imperative_stitch.parser import converter
 
 
 def canonicalize(code):
@@ -90,7 +91,7 @@ def load_annies_compressed_individual_programs():
 
 
 def replace_s_expr(s_expr):
-    if not isinstance(s_expr, NodeAST):
+    if not isinstance(s_expr, ns.NodeAST):
         return s_expr
     if s_expr.typ != ast.Expr:
         return s_expr
@@ -102,8 +103,8 @@ def replace_s_expr(s_expr):
     if not leaf.startswith("~"):
         return s_expr
     leaf = leaf[1:]
-    return ParsedAST.parse_s_expression(leaf)
+    return converter.s_exp_to_python_ast(leaf)
 
 
 def parse_with_hijacking(code):
-    return ParsedAST.parse_python_module(code).map(replace_s_expr)
+    return ns.python_to_python_ast(code).map(replace_s_expr)
