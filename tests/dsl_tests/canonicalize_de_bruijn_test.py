@@ -12,7 +12,6 @@ from imperative_stitch.analyze_program.ssa.banned_component import (
     BannedComponentError,
     check_banned_components,
 )
-from imperative_stitch.utils.classify_nodes import export_dfa
 from imperative_stitch.compress.abstraction import Abstraction
 from imperative_stitch.compress.manipulate_abstraction import abstraction_calls_to_stubs
 from imperative_stitch.parser import converter
