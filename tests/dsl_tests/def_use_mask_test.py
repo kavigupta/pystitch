@@ -15,7 +15,6 @@ from imperative_stitch.data.stitch_output_set import (
     load_stitch_output_set_no_dfa,
 )
 from imperative_stitch.utils.classify_nodes import export_dfa
-from tests.dsl_tests.dsl_test import fit_to
 from imperative_stitch.parser import converter
 from imperative_stitch.utils.classify_nodes import export_dfa
 from tests.dsl_tests.utils import fit_to
@@ -67,49 +66,12 @@ class DefUseMaskTestGeneric(unittest.TestCase):
             )
         )
         if convert_to_python:
-            annotated = annotated.abstraction_calls_to_stubs(
-                {x.name: x for x in abstrs}
+            annotated = abstraction_calls_to_stubs(
+                annotated, {x.name: x for x in abstrs}
             )
             return annotated.to_python()
         return annotated
 
-    def assertAbstractionAnnotation(
-        self, code, rewritten, abstractions, convert_to_python=True
-    ):
-        print("*" * 80)
-        for abstr in abstractions:
-            print(abstr.body.to_s_exp())
-        print("*" * 80)
-        print(
-            ParsedAST.parse_s_expression(code)
-            .abstraction_calls_to_stubs({x.name: x for x in abstractions})
-            .to_python()
-        )
-        print("*" * 80)
-        if convert_to_python:
-            print(
-                ParsedAST.parse_s_expression(rewritten)
-                .abstraction_calls_to_stubs({x.name: x for x in abstractions})
-                .to_python()
-            )
-        print("*" * 80)
-        try:
-            self.annotate_program(
-                code,
-                parser=ParsedAST.parse_s_expression,
-                abstrs=abstractions,
-            )
-        except AssertionError:
-            return
-        self.annotate_program(
-            rewritten,
-            parser=ParsedAST.parse_s_expression,
-            abstrs=abstractions,
-            convert_to_python=convert_to_python,
-        )
-
-
-class DefUseMaskTest(DefUseMaskTestGeneric):
     def test_annotate_alternate_symbols(self):
         code = self.annotate_program("x = 2; y = x; z = y")
         print(code)
@@ -123,12 +85,6 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
                 """
             ).strip(),
         )
-        if convert_to_python:
-            annotated = abstraction_calls_to_stubs(
-                annotated, {x.name: x for x in abstrs}
-            )
-            return annotated.to_python()
-        return annotated
 
     def assertAbstractionAnnotation(
         self, code, rewritten, abstractions, convert_to_python=True
@@ -166,8 +122,6 @@ class DefUseMaskTest(DefUseMaskTestGeneric):
             convert_to_python=convert_to_python,
         )
 
-
-class DefUseMaskWithAbstractionsTest(DefUseMaskTestGeneric):
     abstr_two_assigns = Abstraction.of(
         "fn_1",
         "(/seq (Assign (list (Name %2 Store)) (Name %1 Load) None) (Assign (list (Name %2 Store)) #0 None))",
