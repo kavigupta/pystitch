@@ -19,8 +19,9 @@ were not there, returning an AST of the code and the ExtractionSite objects.
 import ast
 from collections import defaultdict
 
+import neurosym as ns
+
 from imperative_stitch.analyze_program.extract import ExtractionSite
-from imperative_stitch.utils.ast_utils import field_is_body
 
 
 class RemoveExprMetavariablesPragmas(ast.NodeTransformer):
@@ -61,7 +62,7 @@ class RemoveStartEndPragmas(ast.NodeTransformer):
         return node
 
     def _visit_field(self, node, field):
-        if not field_is_body(type(node), field):
+        if not ns.python_ast_tools.field_is_body(type(node), field):
             return getattr(node, field)
         body = getattr(node, field)
         assert isinstance(body, list)

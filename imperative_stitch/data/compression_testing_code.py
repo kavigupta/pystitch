@@ -1,11 +1,10 @@
 import json
 import os
 
-import fire
+import neurosym as ns
 from datasets import load_dataset
 
 from imperative_stitch.data.runnable_code_set import extract_tests
-from imperative_stitch.parser import python_to_s_exp
 
 
 def compression_testing_code(amount, *, max_tests=100):
@@ -35,7 +34,7 @@ def produce_julia_tests(jl_path):
     assert len(code) >= 10
     code = code[:10]
     for i, tests in enumerate(code):
-        tests = [python_to_s_exp(x) for x in tests]
+        tests = [ns.python_to_s_exp(x) for x in tests]
         p = os.path.join(test_out_folder, str(i) + ".json")
         with open(p, "w") as f:
             json.dump(tests, f)
@@ -59,4 +58,6 @@ def produce_julia_tests(jl_path):
 
 
 if __name__ == "__main__":
+    import fire
+
     fire.Fire(produce_julia_tests)

@@ -1,5 +1,7 @@
 import ast
 
+from no_toplevel_code import unwrap_ast, wrap_code
+
 from imperative_stitch.analyze_program.antiunify.extract_at_multiple_sites import (
     antiunify_extractions,
 )
@@ -8,14 +10,14 @@ from imperative_stitch.analyze_program.extract.extract_configuration import (
     ExtractConfiguration,
 )
 from imperative_stitch.compress.abstraction import Abstraction
-from imperative_stitch.data.parse_extract import parse_extract_pragma
-from imperative_stitch.parser.parsed_ast import ParsedAST
-from imperative_stitch.utils.wrap import (
-    add_sentinel,
-    split_by_sentinel_ast,
-    unwrap_ast,
-    wrap,
+from imperative_stitch.compress.manipulate_abstraction import (
+    abstraction_calls_to_bodies,
+    collect_abstraction_calls,
+    replace_abstraction_calls,
 )
+from imperative_stitch.data.parse_extract import parse_extract_pragma
+from imperative_stitch.parser import converter
+from imperative_stitch.utils.wrap import add_sentinel, split_by_sentinel_ast
 
 
 def add_pragmas_around_single_abstraction_call(parsed, abstr):
@@ -24,18 +26,18 @@ def add_pragmas_around_single_abstraction_call(parsed, abstr):
     the first abstraction call in the parsed code.
 
     Args:
-        parsed: ParsedAST
+        parsed: PythonAST
         abstr: dict[str, Abstraction]
 
     Returns:
         str, python code with pragmas added around the first abstraction call
     """
-    ac = parsed.abstraction_calls()
+    ac = collect_abstraction_calls(parsed)
     key = next(iter(ac))
     call = ac[key]
     ac[key] = abstr[call.tag].substitute_body(call.args, pragmas=True)
-    parsed = parsed.replace_abstraction_calls(ac)
-    parsed = parsed.abstraction_calls_to_bodies(abstr)
+    parsed = replace_abstraction_calls(parsed, ac)
+    parsed = abstraction_calls_to_bodies(parsed, abstr)
     return parsed.to_python()
 
 
@@ -63,8 +65,8 @@ def convert_output(abstractions, rewritten):
     unchanged = {}
 
     for i, code in enumerate(rewritten):
-        parsed = ParsedAST.parse_s_expression(code)
-        if not parsed.abstraction_calls():
+        parsed = converter.s_exp_to_python_ast(code)
+        if not collect_abstraction_calls(parsed):
             unchanged[i] = parsed.to_python()
             continue
 
@@ -92,7 +94,7 @@ def run_extraction(elements):
         extracted: dict[int, str], the rewritten python code with the abstraction calls replaced
     """
     keys = sorted(elements.keys())
-    all_codes = "\n".join(add_sentinel(wrap(elements[k])) for k in keys)
+    all_codes = "\n".join(add_sentinel(wrap_code(elements[k])) for k in keys)
     config = ExtractConfiguration(True)
     tree, sites = parse_extract_pragma(all_codes)
     extrs = [
