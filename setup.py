@@ -19,13 +19,13 @@ setuptools.setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "datasets==2.10.1",
+        "datasets>=2.20.0",
         "ast_scope>=0.4.2",
         "permacache>=3.7.0",
         "frozendict==2.3.8",
         # my fork of python-graphs, update this to the latest commit hash
         "python-graphs @ https://github.com/kavigupta/python-graphs/archive/693b2bc5e65a0f930617d75c3fb0c1750d35a622.zip",
-        "neurosym==0.0.64",
+        "neurosym==0.0.65",
         "increase_recursionlimit==1.0.0",
         "no-toplevel-code==1.0.0",
     ],
