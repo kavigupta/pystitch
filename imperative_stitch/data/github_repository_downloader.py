@@ -28,7 +28,7 @@ def repos_folder():
     "imperative_stitch/data/github_repository_downloader/get_github_link_from_pypi_6"
 )
 def get_github_link_from_pypi(package):
-    code = requests.get(f"https://pypi.org/pypi/{package}/json").json()
+    code = requests.get(f"https://pypi.org/pypi/{package}/json", timeout=1000).json()
     urls = code["info"]["project_urls"]
     if not any("github" in x for x in urls.values()):
         return None
@@ -50,6 +50,7 @@ def get_github_link_from_pypi(package):
 
 
 def github_api():
+    # pylint: disable=consider-using-with
     auth = Auth.Token(open(os.path.expanduser("~/.github_token")).read().strip())
     return Github(auth=auth)
 
@@ -61,8 +62,8 @@ def repo_license_contents(repo_name):
     try:
         g = github_api()
         repo = g.get_repo(repo_name)
-        license = repo.get_license()
-        return license.decoded_content.decode("utf-8")
+        license_text = repo.get_license()
+        return license_text.decoded_content.decode("utf-8")
     except UnknownObjectException:
         return None
 
@@ -137,16 +138,16 @@ def is_open_source(repo_name):
     if "Creative Commons Legal Code" in license_contents:
         return True
     if "GNU AFFERO GENERAL PUBLIC LICENSE" in license_contents:
-        return False
+        return True
     if "Creative Commons Attribution-NonCommercial-ShareAlike 4.0" in license_contents:
-        return False
+        return True
     if (
         "Everyone is permitted to copy and distribute verbatim or modified"
         in license_contents
     ):
-        return False
-    if "Mozilla Public License Version 2.0":
-        return False
+        return True
+    if "Mozilla Public License Version 2.0" in license_contents:
+        return True
     raise ValueError(f"Unknown license: {repo_name} {lines[:5]}")
 
 
@@ -179,7 +180,8 @@ def by_github_stars():
     githubs = []
     for mat in github_link_pat.finditer(
         requests.get(
-            "https://raw.githubusercontent.com/EvanLi/Github-Ranking/c111d4753ec40366b03d39da66083902811a5066/Top100/Python.md"
+            "https://raw.githubusercontent.com/EvanLi/Github-Ranking/c111d4753ec40366b03d39da66083902811a5066/Top100/Python.md",
+            timeout=1000,
         ).content.decode("utf-8")
     ):
         link, first, second = mat.group(1), mat.group(2), mat.group(3)

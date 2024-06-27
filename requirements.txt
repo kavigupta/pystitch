@@ -11,3 +11,4 @@ parameterized==0.9.0
 pylint
 black
 isort
+PyGithub>=2.3.0
