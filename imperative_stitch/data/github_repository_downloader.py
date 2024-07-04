@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import re
@@ -247,9 +248,14 @@ def all_python_files(repo_link, first, second):
                 continue
             try:
                 with open(os.path.join(root, file), "r") as f:
-                    python_files[relpath] = f.read()
+                    code = f.read()
             except UnicodeDecodeError:
-                pass
+                continue
+            try:
+                ast.parse(code)
+            except SyntaxError:
+                continue
+            python_files[relpath] = code
     return python_files
 
 
