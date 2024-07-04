@@ -240,14 +240,16 @@ def all_python_files(repo_link, first, second):
     python_files = {}
     for root, _, files in os.walk(repo_path):
         for file in files:
-            if file.endswith(".py"):
-                try:
-                    with open(os.path.join(root, file), "r") as f:
-                        python_files[
-                            os.path.relpath(os.path.join(root, file), repo_path)
-                        ] = f.read()
-                except UnicodeDecodeError:
-                    pass
+            relpath = os.path.relpath(os.path.join(root, file), repo_path)
+            if not file.endswith(".py"):
+                continue
+            if "doc" in relpath or "test" in relpath or "data" in relpath:
+                continue
+            try:
+                with open(os.path.join(root, file), "r") as f:
+                    python_files[relpath] = f.read()
+            except UnicodeDecodeError:
+                pass
     return python_files
 
 
