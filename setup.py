@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="imperative_stitch",
-    version="3.6.17",
+    version="3.6.18",
     author="Kavi Gupta, Maddy Bowers",
     author_email="imperative-stitch@kavigupta.org",
     description="Imperative version of stitch.",
