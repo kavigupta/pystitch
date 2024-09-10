@@ -5,11 +5,15 @@ import re
 import subprocess
 from typing import Counter
 
+import neurosym as ns
+import numpy as np
 import pandas as pd
 import requests
 import tqdm.auto as tqdm
 from github import Auth, Github, UnknownObjectException
 from permacache import permacache
+
+from imperative_stitch.utils.remove_docstrings import remove_docstrings
 
 github_link_pat = re.compile(r"(https?://github.com/([^/]+)/([^/)]+))/?")
 
@@ -277,6 +281,72 @@ def all_repos_contents():
         with open(os.path.join(path, file), "r") as f:
             result[file] = json.load(f)
     return result
+
+
+@permacache(
+    "imperative_stitch/data/github_repository_downloader/single_repo_random_subset_of_size"
+)
+def single_repo_random_subset_of_size(path, num_chars):
+    """
+    Randomly sample a subset of the data from the given path. The subset will
+    have approximately `num_chars` characters. Docstrings are removed
+    """
+    with open(path, "r") as f:
+        data = sorted(json.load(f).items())
+    return grab_random_subset(num_chars, data)
+
+
+@permacache("imperative_stitch/data/github_repository_downloader/one_each_5")
+def one_each():
+    """
+    Get one example from each repo, randomly
+    """
+    rng = np.random.RandomState(0)
+    data = all_repos_contents()
+    result = {}
+    for k, values in data.items():
+        values = sorted(values.items())
+        while True:
+            k_sub, v = values[rng.randint(len(values))]
+            try:
+                ast.parse(v)
+                result[k + "/" + k_sub] = v
+                break
+            except SyntaxError:
+                pass
+    return result
+
+
+@permacache(
+    "imperative_stitch/data/github_repository_downloader/multiple_repos_random_subset_of_size_2"
+)
+def multiple_repos_random_subset_of_size(num_chars):
+    """
+    Like `single_repo_random_subset_of_size`, but for multiple repos, only one
+    example per repo is taken
+    """
+    data = sorted(one_each().items())
+    return grab_random_subset(num_chars, data)
+
+
+def grab_random_subset(num_chars, data):
+    data = data.copy()
+    np.random.RandomState(0).shuffle(data)
+    result = []
+    pbar = tqdm.tqdm(total=num_chars)
+    total_chars = 0
+    for k, v in data:
+        v = ast.unparse(remove_docstrings(ast.parse(v)))
+        ast.parse(v)
+        result.append((k, ns.python_to_s_exp(v)))
+        total_chars += len(v)
+        pbar.update(len(v))
+        if total_chars > num_chars:
+            break
+    else:
+        raise ValueError("Not enough data")
+    pbar.close()
+    return dict(result)
 
 
 if __name__ == "__main__":
