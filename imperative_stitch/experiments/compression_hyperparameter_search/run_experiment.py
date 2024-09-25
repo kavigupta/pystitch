@@ -1,7 +1,6 @@
 from tqdm.contrib.concurrent import process_map
 
 from .datasets import datasets
-from .hyperparameters import sample_hyperparameters
 from .run_stitch import run_stitch_with_hyperparameters
 
 
@@ -43,5 +42,20 @@ def run_experiment(k_seed_hypers_skip_missing):
     return run_stitch_with_hyperparameters(**kwargs)
 
 
+def vary_min_num_matches():
+    minimum_number_matches = [2, 3, 4, 5, 10, 20]
+
+    def hypers(seed):
+        return {
+            "max_arity": 3,
+            "minimum_number_matches": minimum_number_matches[seed],
+            "application_utility_metavar": -1.5,
+            "application_utility_symvar": -0.2,
+            "application_utility_fixed": -3,
+        }
+
+    return len(minimum_number_matches), hypers
+
+
 if __name__ == "__main__":
-    run_experiment_up_to_seed(10, sample_hyperparameters, skip_missing=False)
+    run_experiment_up_to_seed(*vary_min_num_matches(), skip_missing=False)
