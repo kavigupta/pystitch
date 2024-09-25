@@ -1,6 +1,7 @@
 from tqdm.contrib.concurrent import process_map
 
 from .datasets import datasets
+from .hyperparameters import sample_hyperparameters
 from .run_stitch import run_stitch_with_hyperparameters
 
 
@@ -43,4 +44,4 @@ def run_experiment(k_seed_hypers_skip_missing):
 
 
 if __name__ == "__main__":
-    run_experiment_up_to_seed(10, skip_missing=False)
+    run_experiment_up_to_seed(10, sample_hyperparameters, skip_missing=False)
