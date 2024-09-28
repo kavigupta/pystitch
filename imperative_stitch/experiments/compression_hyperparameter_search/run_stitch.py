@@ -1,6 +1,6 @@
 import time
 
-from permacache import permacache, stable_hash, drop_if
+from permacache import drop_if, permacache, stable_hash
 
 from imperative_stitch.compress.julia_stitch import run_julia_stitch
 

@@ -1,5 +1,9 @@
 from tqdm.contrib.concurrent import process_map
 
+from imperative_stitch.experiments.compression_hyperparameter_search.hyperparameters import (
+    sample_hyperparameters,
+)
+
 from .datasets import datasets
 from .run_stitch import run_stitch_with_hyperparameters
 
@@ -12,7 +16,7 @@ def run_experiment_up_to_seed(num_seeds, hypers_for_seed, *, skip_missing):
         for seed in range(num_seeds)
         for k in data
     ]
-    results_flat = process_map(run_experiment, arguments, max_workers=16)
+    results_flat = process_map(run_experiment, arguments, max_workers=32)
     results_flat = {
         (k, seed): result for (k, seed, _, _), result in zip(arguments, results_flat)
     }
@@ -57,5 +61,11 @@ def vary_min_num_matches():
     return len(minimum_number_matches), hypers
 
 
+def with_only_2_min_matches(seed):
+    h = sample_hyperparameters(seed)
+    h["minimum_number_matches"] = 2
+    return h
+
+
 if __name__ == "__main__":
-    run_experiment_up_to_seed(*vary_min_num_matches(), skip_missing=False)
+    run_experiment_up_to_seed(20, with_only_2_min_matches, skip_missing=False)
