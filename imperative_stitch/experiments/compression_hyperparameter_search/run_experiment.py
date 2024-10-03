@@ -32,12 +32,13 @@ def run_experiment_up_to_seed(num_seeds, hypers_for_seed, *, skip_missing):
 
 def run_experiment(k_seed_hypers_skip_missing):
     k, seed, hypers, skip_missing = k_seed_hypers_skip_missing
+    params = dict(iters=10)
+    params.update(hypers)
     data = datasets()
     kwargs = dict(
         dataset=[v for _, v in sorted(data[k].items())],
         stitch_jl_dir="../Stitch.jl/",
-        iters=10,
-        **hypers,
+        **params,
         print_before_after=f"{k} with seed {seed}",
     )
     if skip_missing and not run_stitch_with_hyperparameters.cache_contains(**kwargs):
@@ -67,5 +68,16 @@ def with_only_2_min_matches(seed):
     return h
 
 
+def with_only_2_min_matches_and_some_auf(seed):
+    h = with_only_2_min_matches(seed)
+    # ensure that AUF is at most -1
+    h["application_utility_fixed"] += -1
+    # more iterations
+    h["iters"] = 100
+    return h
+
+
 if __name__ == "__main__":
-    run_experiment_up_to_seed(20, with_only_2_min_matches, skip_missing=False)
+    run_experiment_up_to_seed(
+        100, with_only_2_min_matches_and_some_auf, skip_missing=False
+    )
