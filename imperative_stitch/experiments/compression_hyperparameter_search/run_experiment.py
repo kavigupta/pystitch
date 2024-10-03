@@ -44,6 +44,7 @@ def run_experiment(k_seed_hypers_skip_missing):
     if skip_missing and not run_stitch_with_hyperparameters.cache_contains(**kwargs):
         print(f"Skipping {k} with seed {seed}")
         return None
+    # pylint: disable=missing-kwoa
     return run_stitch_with_hyperparameters(**kwargs)
 
 
