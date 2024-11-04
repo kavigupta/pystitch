@@ -32,6 +32,8 @@ def run_experiment_up_to_seed(num_seeds, hypers_for_seed, *, skip_missing):
 
 def run_experiment(k_seed_hypers_skip_missing):
     k, seed, hypers, skip_missing = k_seed_hypers_skip_missing
+    if k == ('ml_repo', 1000000):
+        return None
     params = dict(iters=10)
     params.update(hypers)
     data = datasets()
